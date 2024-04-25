@@ -1,0 +1,13 @@
+# JetBrains IDE
+.idea
+
+# Visual Studio Code
+.vscode
+
+# Build
+build
+
+# Environment variables
+.env
+
+.aptos

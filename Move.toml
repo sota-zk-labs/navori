@@ -1,0 +1,17 @@
+[package]
+name = "verifier"
+version = "1.0.0"
+authors = []
+
+[addresses]
+verifier_addr = "6f33bbd231224bba90c2cfc59d1f12137dc63f7ee7bf1394706f1558fb3fc90e"
+
+
+[dev-addresses]
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "main"
+subdir = "aptos-move/framework/aptos-framework"
+
+[dev-dependencies]
