@@ -13,14 +13,14 @@ module verifier_addr::memory_page_fact_registry {
     const CONTINUOUS_PAGE : u256 = 1;
 
     #[event]
-    struct Log_memory_page_fact_regular has store,drop {
+    struct LogMemorypPageFactRegular has store,drop {
         fact_hash : vector<u8>,
         memory_hash : u256,
         prod : u256
     }
 
     #[event]
-    struct Log_memory_page_fact_continuous has store,drop {
+    struct LogMemoryPageFactContinuous has store,drop {
         fact_hash : vector<u8>,
         memory_hash : u256,
         prod : u256
@@ -34,7 +34,7 @@ module verifier_addr::memory_page_fact_registry {
     ) : (vector<u8>,u256,u256) {
 
        let (fact_hash,memory_hash, prod ) = compute_fact_hash(memory_pairs,z,alpha,prime);
-        event::emit(Log_memory_page_fact_regular{fact_hash,memory_hash,prod});
+        event::emit(LogMemorypPageFactRegular {fact_hash,memory_hash,prod});
         register_fact(fact_hash);
         (fact_hash,memory_hash,prod)
     }
@@ -164,7 +164,7 @@ module verifier_addr::memory_page_fact_registry {
             ),
             bcs::to_bytes(&start_address)
             ));
-        event::emit(Log_memory_page_fact_continuous{fact_hash,memory_hash,prod});
+        event::emit(LogMemoryPageFactContinuous{fact_hash,memory_hash,prod});
         register_fact(fact_hash);
         (fact_hash,memory_hash,prod)
  }
