@@ -1,7 +1,5 @@
 module verifier_addr::prime_field_element_0 {
     use aptos_std::from_bcs;
-    use aptos_std::debug;
-
 
     const K_MODULUS : u256= 0x800000000000011000000000000000000000000000000000000000000000001;
     const K_MONTGOMERY_R : u256 = 0x7fffffffffffdf0ffffffffffffffffffffffffffffffffffffffffffffffe1;
@@ -72,8 +70,6 @@ module verifier_addr::prime_field_element_0 {
         let test1 : u256 = 0x100;
         let test2 : u256 = test1;
         let res =  8 % K_MODULUS;
-        debug::print(&test1);
-        debug::print(&test2);
         assert!(res == 8,1);
 
     }
