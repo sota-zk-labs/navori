@@ -28,7 +28,7 @@ module verifier_addr::gps_output_parser {
     const FIRST_CONTINUOUS_PAGE_INDEX: u256 = 1;
 
     #[event]
-    struct Log_memory_pages_hashes has drop, copy {
+    struct LogMemoryPagesHashes has drop, copy {
         program_output_fact : vector<u8>,
         referal_duration    : vector<u8>,
     }
