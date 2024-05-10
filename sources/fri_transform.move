@@ -104,7 +104,7 @@ module verifier_addr::fri_transform {
         (next_layer_value, next_x_Inv)
     }
 
-    #[test(s = @fri_verifier)]
+    #[test(s = @verifier_addr)]
     fun test_transform_coset() {
         let fri_half_inv_group_prt = 0x800000000000011;
     }
