@@ -2,7 +2,7 @@ module verifier_addr::memory_page_fact_registry {
     use std::bcs;
     use std::bcs::to_bytes;
     use std::vector;
-    use verifier_addr::fact_registry::{Self,Verifier_fact,register_fact};
+    use verifier_addr::fact_registry::{Self,VerifierFact,register_fact};
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::from_bcs::to_u256;
     use aptos_std::math64::pow;
@@ -168,7 +168,5 @@ module verifier_addr::memory_page_fact_registry {
         register_fact(fact_hash);
         (fact_hash,memory_hash,prod)
  }
-
-
 
 }
