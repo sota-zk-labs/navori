@@ -13,8 +13,8 @@ module verifier_addr::prng {
     }
 
     public fun load_prng(prngPtr : u256) : (vector<u8>,u256) acquires Prng {
-        let counter =  borrow_global<Prng>(@fri_verifier).counter;
-        let digest =  borrow_global<Prng>(@fri_verifier).digest;
+        let counter =  borrow_global<Prng>(@verifier_addr).counter;
+        let digest =  borrow_global<Prng>(@verifier_addr).digest;
         (digest,counter)
     }
 

@@ -1,4 +1,4 @@
-module fri_verifier::fri_layer {
+module verifier_addr::fri_layer {
     use std::vector;
     use aptos_std::math128::pow;
     use aptos_std::table::{Self, Table, new};
@@ -24,7 +24,7 @@ module fri_verifier::fri_layer {
     }
 
     public fun init(signer : &signer) {
-        let fri_layer =  new<u256,u256>()
+        let fri_layer =  new<u256,u256>();
         move_to(signer, FriLayer{fri_layer});
     }
 
@@ -34,10 +34,11 @@ module fri_verifier::fri_layer {
         evaluations_on_coset_ptr : u256,
         fri_queue_head : u256,
         coset_size : u256
-    ) : (u256,u256,u256) {
-        let queue_item_idx = fri_queue_head;
+    ) : (u256,u256,u256) acquires FriLayer {
+        let fri_layer = &mut borrow_global_mut<FriLayer>(@verifier_addr).fri_layer;
+        let queue_item_idx = *table::borrow(fri_layer, fri_queue_head);
         let max_bit_index = coset_size - 1;
-        let coset_idx = queue_item_idx & max_bit_index;
+        let coset_idx = queue_item_idx & max_bit_index; //todo: need to add not operator : cosetIdx := and(queueItemIdx, not(sub(cosetSize, 1)))
         let next_coset_idx = coset_idx + coset_size;
         let coset_off_set = (fri_queue_head + 2) * (fri_group_ptr + ((queue_item_idx - coset_idx) * 1)) % K_MODULUS ;
         let proof_ptr = channel_ptr;
@@ -51,7 +52,7 @@ module fri_verifier::fri_layer {
                 fri_queue_head = fri_queue_head + FRI_QUEUE_SLOT_SIZE;
                 queue_item_idx = fri_queue_head
             };
-            let evaluationS_on_coset_ptr = field_element_ptr % K_MODULUS;
+            table::upsert(fri_layer, coset_off_set + index, field_element_ptr);
             let evaluation_on_coset_ptr = evaluations_on_coset_ptr + 1;
             index = index + 1;
         };
