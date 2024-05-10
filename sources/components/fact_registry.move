@@ -19,7 +19,7 @@ module verifier_addr::fact_registry {
             referral_expiration_time : timestamp::now_seconds() + referral_duration_seconds,
             verified_fact : table::new<vector<u8>,bool>(),
             any_fact_registered : false,
-        })
+        });
     }
 
 
