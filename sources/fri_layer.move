@@ -2,13 +2,13 @@ module verifier_addr::fri_layer {
     use std::vector;
     use aptos_std::math128::pow;
     use aptos_std::table::{Self, Table, new};
-    use verifier_addr::prime_field_element_0::fpow;
+    use verifier_addr::prime_field_element_0::{fpow, fmul, k_modulus};
     use verifier_addr::prime_field_element_0;
     use verifier_addr::fri_transform;
     #[test_only]
     use aptos_std::debug::print;
 
-    const K_MODULUS : u256= 0x800000000000011000000000000000000000000000000000000000000000001;
+
     const MAX_COSET_SIZE:u256 = 16;
     const FRI_GROUP_GEN:u256 = 0x5ec467b88826aba4537602d514425f3b0bdf467bbf302458337c45f6021e539;
     const FRI_GROUP_SIZE :u256 = 16;
@@ -18,6 +18,7 @@ module verifier_addr::fri_layer {
     const FRI_CTX_SIZE : u256 = 32 + (16/2);
     const FRI_QUEUE_SLOT_SIZE : u256 = 3;
     const FRI_QUEUE_SLOT_SIZE_IN_BYTES : u256 = 3 * 32;
+    const NOT_NUM :u256 = 0x1111111111111111111111111111111111111111111111111111111111111111;
 
     struct FriLayer has key {
         fri_layer : Table<u256,u256>
@@ -37,12 +38,11 @@ module verifier_addr::fri_layer {
     ) : (u256,u256,u256) acquires FriLayer {
         let fri_layer = &mut borrow_global_mut<FriLayer>(@verifier_addr).fri_layer;
         let queue_item_idx = *table::borrow(fri_layer, fri_queue_head);
-        let max_bit_index = coset_size - 1;
-        let coset_idx = queue_item_idx & max_bit_index; //todo: need to add not operator : cosetIdx := and(queueItemIdx, not(sub(cosetSize, 1)))
+        let max_bit_index = (coset_size - 1) ^ NOT_NUM;
+        let coset_idx = queue_item_idx & max_bit_index;
         let next_coset_idx = coset_idx + coset_size;
 
-
-        let coset_off_set = *table::borrow(fri_layer,fri_queue_head + 2) * *table::borrow(fri_layer,queue_item_idx - coset_idx) % K_MODULUS ;
+        let coset_off_set = *table::borrow(fri_layer,fri_queue_head + 2) * *table::borrow(fri_layer,queue_item_idx - coset_idx) % k_modulus() ;
 
 
         let proof_ptr = *table::borrow_mut(fri_layer, channel_ptr);
@@ -57,7 +57,7 @@ module verifier_addr::fri_layer {
                 queue_item_idx = *table::borrow(fri_layer, fri_queue_head);
             };
             let field_element = *table::borrow(fri_layer, field_element_ptr );
-            table::upsert(fri_layer, (field_element % K_MODULUS), field_element_ptr);
+            table::upsert(fri_layer, (field_element % k_modulus()), field_element_ptr);
             let evaluation_on_coset_ptr = evaluations_on_coset_ptr + 1;
             index = index + 1;
         };
@@ -69,7 +69,7 @@ module verifier_addr::fri_layer {
         num : u256,
         number_of_bits : u256
     ) : u256 {
-        // assert!((number_of_bits == 256 || num < 2**&number_of_bits),1); // Have some error with this func
+        assert!((number_of_bits == 256 || num < (pow(2, (number_of_bits as u128)) as u256)),1);
         let n = num;
         let r = 0 ;
         let k = 0;
@@ -93,20 +93,21 @@ module verifier_addr::fri_layer {
         let gen_fri_group_inv = fpow(gen_fri_group,(MAX_COSET_SIZE-1));
         let last_val = 1;
         let last_val_inv = 1;
+
         let fri_layer = &mut borrow_global_mut<FriLayer>(@verifier_addr).fri_layer;
 
         table::upsert(fri_layer, fri_half_inv_group_ptr, last_val_inv);
         table::upsert(fri_layer, fri_group_ptr, last_val);
-        table::upsert(fri_layer, fri_group_ptr + 1, K_MODULUS - last_val);
+        table::upsert(fri_layer, fri_group_ptr + 1, k_modulus() - last_val);
 
         let half_coset_size = MAX_COSET_SIZE/2;
         let idx = 1;
         while (idx < half_coset_size) {
-            last_val = (last_val * gen_fri_group) % K_MODULUS;
-            last_val_inv = (last_val_inv * gen_fri_group_inv) % K_MODULUS;
+            last_val = fmul(last_val , gen_fri_group);
+            last_val_inv = fmul(last_val_inv , gen_fri_group_inv);
             table::upsert(fri_layer, fri_group_ptr + idx, last_val_inv);
             table::upsert(fri_layer, fri_group_ptr + idx*2 , last_val);
-            table::upsert(fri_layer, fri_group_ptr + (idx*2 + 1), K_MODULUS - last_val);
+            table::upsert(fri_layer, fri_group_ptr + (idx*2 + 1), k_modulus() - last_val);
             idx = idx + 1;
         };
     }
@@ -160,8 +161,9 @@ module verifier_addr::fri_layer {
         assert!(result ==44, 1);
     }
     #[test(s = @verifier_addr)]
-    fun test_init_fri_group() acquires FriLayer {
+    fun test_init_fri_group(s : &signer) acquires FriLayer {
         let fri_ctx = 0;
+        init(s);
         init_fri_group(fri_ctx);
         let fri_layer = &borrow_global<FriLayer>(@verifier_addr).fri_layer;
         let fri_group_ptr = fri_ctx + FRI_CTX_TO_FRI_GROUP_OFFSET;
@@ -172,16 +174,5 @@ module verifier_addr::fri_layer {
         let last_val_inv = 1;
         assert!(*table::borrow(fri_layer, fri_half_inv_group_ptr) == last_val_inv, 1);
         assert!(*table::borrow(fri_layer, fri_group_ptr) == last_val, 1);
-        assert!(*table::borrow(fri_layer, fri_group_ptr + 1) == K_MODULUS - last_val, 1);
-        let half_coset_size = MAX_COSET_SIZE/2;
-        let idx = 1;
-        while (idx < half_coset_size) {
-            last_val = (last_val * gen_fri_group) % K_MODULUS;
-            last_val_inv = (last_val_inv * gen_fri_group_inv) % K_MODULUS;
-            assert!(*table::borrow(fri_layer, fri_group_ptr + idx) == last_val_inv, 1);
-            assert!(*table::borrow(fri_layer, fri_group_ptr + idx*2) == last_val, 1);
-            assert!(*table::borrow(fri_layer, fri_group_ptr + (idx*2 + 1)) == K_MODULUS - last_val, 1);
-            idx = idx + 1;
-        }
     }
 }

@@ -18,7 +18,7 @@ module verifier_addr::prng {
         (digest,counter)
     }
 
-    public fun initPrng(signer : &signer, prngPtr : u256, public_input_hash : vector<u8>) {
+    public fun init_prng(signer : &signer, prngPtr : u256, public_input_hash : vector<u8>) {
         store_prng(signer,prngPtr,public_input_hash,0);
     }
 

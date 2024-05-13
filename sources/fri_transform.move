@@ -1,13 +1,19 @@
 module verifier_addr::fri_transform {
     use aptos_std::table::{Self, Table, new};
+    use verifier_addr::prime_field_element_0::k_modulus;
     use verifier_addr::prime_field_element_0;
 
+    #[test_only]
+    use aptos_std::debug;
+    use std::bcs::to_bytes;
+    use std::bcs;
 
-    const FRI_MIN_STEP_SIZE: u256 = 3;
+
+    const FRI_MIN_STEP_SIZE: u256 = 2;
     const FRI_MAX_STEP_SIZE: u256 = 4;
 
     const K_MODULUS_TIMES_16: u256 = 0x8000000000000110000000000000000000000000000000000000000000000010;
-    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+
 
     struct FriTransform has key {
         fri_transform : Table<u256,u256>
@@ -67,11 +73,11 @@ module verifier_addr::fri_transform {
         let imaginary_unit = *table::borrow_mut(fri_transform, fri_half_inv_group_prt + 1); // note this
 
         let f1 =  *table::borrow_mut(fri_transform, evaluations_on_coset_ptr + 1);
-        f0 = (f0 + f1 + prime_field_element_0::fmul(fri_eval_point_div_by_x, f0 + (K_MODULUS - f1)));
+        f0 = (f0 + f1 + prime_field_element_0::fmul(fri_eval_point_div_by_x, f0 + (k_modulus() - f1)));
         let f2 = *table::borrow_mut(fri_transform, evaluations_on_coset_ptr + 2);
         let f3 = *table::borrow_mut(fri_transform, evaluations_on_coset_ptr + 3);
         f2 = (f2 + f3 + prime_field_element_0::fmul(
-            f2 + (K_MODULUS - f3),
+            f2 + (k_modulus() - f3),
             prime_field_element_0::fmul(fri_eval_point_div_by_x, imaginary_unit)
         ));
         f0 = (f0 + f2 + prime_field_element_0::fmul(fri_eval_point_div_by_x_squared, f0 + (K_MODULUS_TIMES_16 - f2)));
@@ -79,12 +85,12 @@ module verifier_addr::fri_transform {
         let f4 = *table::borrow_mut(fri_transform, evaluations_on_coset_ptr + 4);
         let fri_eval_point_div_by_x2 = prime_field_element_0::fmul(fri_eval_point_div_by_x,  *table::borrow(fri_transform ,fri_half_inv_group_prt+2));
         let f5 = *table::borrow_mut(fri_transform, evaluations_on_coset_ptr + 5);
-        f4 = (f4 + f5 + prime_field_element_0::fmul(f4 + (K_MODULUS - f5), fri_eval_point_div_by_x2));
+        f4 = (f4 + f5 + prime_field_element_0::fmul(f4 + (k_modulus() - f5), fri_eval_point_div_by_x2));
 
         let f6 = *table::borrow_mut(fri_transform, evaluations_on_coset_ptr + 6);
         let f7 =  *table::borrow_mut(fri_transform, evaluations_on_coset_ptr + 7);
         f6 = (f6 + f7 + prime_field_element_0::fmul(
-            f6 + (K_MODULUS - f7),
+            f6 + (k_modulus() - f7),
             prime_field_element_0::fmul(fri_eval_point_div_by_x2, imaginary_unit)
         ));
 
@@ -106,6 +112,6 @@ module verifier_addr::fri_transform {
 
     #[test(s = @verifier_addr)]
     fun test_transform_coset() {
-        let fri_half_inv_group_prt = 0x800000000000011;
+
     }
 }
