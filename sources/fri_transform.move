@@ -14,6 +14,10 @@ module verifier_addr::fri_transform {
 
     const K_MODULUS_TIMES_16: u256 = 0x8000000000000110000000000000000000000000000000000000000000000010;
 
+    public fun fri_max_step_size() : u256 {
+        FRI_MAX_STEP_SIZE
+    }
+
 
     struct FriTransform has key {
         fri_transform : Table<u256,u256>
