@@ -1,13 +1,6 @@
 module verifier_addr::prime_field_element_0 {
     use aptos_std::from_bcs;
 
-    #[test_only]
-    use aptos_std::debug;
-    #[test_only]
-    use aptos_std::debug::print;
-    #[test_only]
-    use aptos_std::math128::pow;
-
     const K_MODULUS : u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
     const K_MONTGOMERY_R : u256 = 0x7fffffffffffdf0ffffffffffffffffffffffffffffffffffffffffffffffe1;
     const K_MONTGOMERY_R_INV : u256 = 0x40000000000001100000000000012100000000000000000000000000000000;
@@ -106,6 +99,10 @@ module verifier_addr::prime_field_element_0 {
     }
 
 
+    #[test_only]
+    use aptos_std::debug;
+    use aptos_std::debug::print;
+    use aptos_std::math128::pow;
 
     #[test(s = @verifier_addr)]
 
