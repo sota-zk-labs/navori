@@ -18,7 +18,9 @@ module verifier_addr::fri_statement {
     #[test_only]
     use aptos_std::debug::print_stack_trace;
     #[test_only]
-    use verifier_addr::fri_test::{get_proof, get_fri_queue, get_evaluation_point, get_fri_step_size, get_expected_root};
+    use verifier_addr::fri_test::{
+        get_proof_3, get_fri_queue_3, get_evaluation_point_3, get_fri_step_size_3, get_expected_root_3
+    };
 
 
     struct Fri has key {
@@ -51,6 +53,7 @@ module verifier_addr::fri_statement {
         let n_queries = (vector::length(&fri_queue) / 3 as u256); // expected eq 13 (40 /3)
         let fri_queue_ptr = (vector::length(&proof) + 6 as u256);
         let channel_ptr = fri_queue_ptr + (length(&fri_queue) as u256);
+        upsert(fri, channel_ptr, 5);
         let merkle_queue_ptr = channel_ptr + 1;
         let fri_ctx = merkle_queue_ptr + n_queries * 2;
 
@@ -116,20 +119,20 @@ module verifier_addr::fri_statement {
 
     #[test()]
     fun test_validate_fri_queue() {
-        validate_fri_queue(get_fri_queue());
+        validate_fri_queue(get_fri_queue_3());
     }
 
     #[test(a = @verifier_addr)]
     fun test_verify_fri(a : signer) acquires Fri {
-        verify_fri(a, get_proof(), get_fri_queue(), get_evaluation_point(), get_fri_step_size(), get_expected_root());
-        // let fri = &borrow_global<Fri>(@verifier_addr).fri;
-        // let i = 0;
-        // while( i < 500) {
-        //     let res = table::borrow_with_default(fri, i,&0);
-        //     print(&i);
-        //     print(res);
-        //     i = i+1;
-        // };
+        verify_fri(a, get_proof_3(), get_fri_queue_3(), get_evaluation_point_3(), get_fri_step_size_3(), get_expected_root_3());
+        let fri = &borrow_global<Fri>(@verifier_addr).fri;
+        let i = 0;
+        while( i < 500) {
+            let res = table::borrow_with_default(fri, i,&0);
+            print(&i);
+            print(res);
+            i = i+1;
+        };
     }
 
 }

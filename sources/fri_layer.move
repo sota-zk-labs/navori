@@ -8,6 +8,8 @@ module verifier_addr::fri_layer {
     use verifier_addr::prime_field_element_0;
     use verifier_addr::fri_transform;
     #[test_only]
+    use std::bcs;
+    #[test_only]
     use aptos_std::bls12381::proof_of_possession_from_bytes;
 
 
@@ -21,7 +23,7 @@ module verifier_addr::fri_layer {
     const FRI_CTX_SIZE : u256 = 32 + (16/2);
     const FRI_QUEUE_SLOT_SIZE : u256 = 3;
     const FRI_QUEUE_SLOT_SIZE_IN_BYTES : u256 = 3 * 32;
-    const NOT_NUM :u256 = 0x1111111111111111111111111111111111111111111111111111111111111111;
+    const NOT_NUM :u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
     public fun fri_ctx_size() : u256 {
         FRI_CTX_SIZE
@@ -44,7 +46,6 @@ module verifier_addr::fri_layer {
         let queue_item_idx = *table::borrow(fri, fri_queue_head);
         let max_bit_index = (coset_size - 1) ^ NOT_NUM;
         // The coset index is represented by the most significant bits of the queue item index.
-        print(&max_bit_index);
         let coset_idx = queue_item_idx & max_bit_index;
         let next_coset_idx = coset_idx + coset_size;
         // Get the algebraic coset offset:
@@ -58,34 +59,41 @@ module verifier_addr::fri_layer {
         // (c*g^(-k))=
         let fri_queue = *table::borrow(fri,fri_queue_head + 2);
         // (g^k)=
-        let res =  fri_group_ptr + queue_item_idx  - coset_idx;
-        print(&fri_group_ptr);
-        print(&queue_item_idx);
-        print(&coset_idx);
-        print(&res);
-        let queue_item = *table::borrow(fri, fri_group_ptr + queue_item_idx  - coset_idx);
 
-        let coset_off_set =  fmul(fri_queue,queue_item);
-
+        let queue_item = *table::borrow(fri, fri_group_ptr + queue_item_idx - coset_idx );
+        let coset_off_set =  fmul(fri_queue, queue_item);
 
         let proof_ptr = *table::borrow_mut(fri, channel_ptr);
+
+
+
         let index = coset_idx;
+
+
+
         while ( index < next_coset_idx ) {
             let field_element_ptr = proof_ptr;
             proof_ptr = proof_ptr + 1;
+
             if (index == queue_item_idx ) {
                 field_element_ptr = fri_queue_head +1;
                 proof_ptr = proof_ptr - 1;
                 fri_queue_head = fri_queue_head + FRI_QUEUE_SLOT_SIZE;
                 queue_item_idx = *table::borrow(fri, fri_queue_head);
             };
-            let field_element = *table::borrow(fri, field_element_ptr);
+
+            let field_element = *table::borrow(fri, field_element_ptr +1);
             table::upsert(fri, evaluations_on_coset_ptr, field_element % k_modulus());
             evaluations_on_coset_ptr = evaluations_on_coset_ptr + 1;
             index = index + 1;
         };
         table::upsert(fri, channel_ptr, proof_ptr);
         let new_fri_queue_head = fri_queue_head;
+
+        print(&new_fri_queue_head);
+        print(&coset_idx);
+        print(&coset_off_set);
+
         (new_fri_queue_head, coset_idx, coset_off_set)
     }
     public fun bit_reverse(
@@ -172,9 +180,7 @@ module verifier_addr::fri_layer {
             (input_ptr,index, coset_offset) = gather_coset_inputs(
                 fri,channel_ptr, fri_ctx + FRI_CTX_TO_FRI_GROUP_OFFSET, evaluation_on_coset_ptr, input_ptr, fri_coset_size
             );
-            print(&input_ptr);
-            print(&index);
-            print(&coset_offset);
+
 
             index = index / fri_coset_size;
             table::upsert(fri, merkle_queue_ptr, index);
@@ -238,5 +244,15 @@ module verifier_addr::fri_layer {
     //     assert!(coset_idx == 66548, 1);
     //     assert!(coset_off_set == 373156084008009632251477334213775483240314116978652347198633408380203029970, 1);
     // }
+    #[test]
+    fun test_not() {
+        let num :u256 = 8654;
+        let three :u256 = 0x03;
+        let max_bit_index :u256 = (three) ^ NOT_NUM;
+        print(&bcs::to_bytes(&three));
+        print(&max_bit_index );
+        let coset_idx = num & max_bit_index;
+        print(&coset_idx);
+    }
 
 }
