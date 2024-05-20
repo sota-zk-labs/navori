@@ -1,8 +1,5 @@
 #[test_only]
 module verifier_addr::fri_test {
-    use std::vector;
-    use verifier_addr::fri_statement;
-
     public fun get_proof_2(): vector<u256> {
         vector[
             417264564499348480315033890604880545618332037331481418802943435326517154820,
@@ -186,6 +183,9 @@ module verifier_addr::fri_test {
         87254006650115822521038000749002345683174843578870016537379265999274067886080
     }
     // 3
+    // Transaction hash for the proof :
+    // 0xbd08177f737a822005498caa19eee1ce60e6e5f10027cb455bdcb938270a84a6
+
 
     public fun get_proof_3(): vector<u256> {
         vector[
@@ -450,5 +450,4 @@ module verifier_addr::fri_test {
     public fun get_expected_root_3(): u256 {
         9390404794146759926609078012164974184924937654759657766410025620812402262016
     }
-
 }
