@@ -1,9 +1,13 @@
 module verifier_addr::fri_layer {
+    use std::bcs::to_bytes;
     use std::vector;
+    use aptos_std::aptos_hash::keccak256;
     use aptos_std::math128::pow;
-    use aptos_std::debug::print;
-    use aptos_std::table::{Self, Table, new};
-    use verifier_addr::fri_transform::fri_max_step_size;
+    use aptos_std::debug::{print, print_stack_trace};
+    use aptos_std::from_bcs::to_u256;
+    use aptos_std::table::{Self, Table, new, upsert};
+    use verifier_addr::append_vector::append_vector;
+    use verifier_addr::fri_transform::{fri_max_step_size, transform_coset};
     use verifier_addr::prime_field_element_0::{fpow, fmul, k_modulus};
     use verifier_addr::prime_field_element_0;
     use verifier_addr::fri_transform;
@@ -24,6 +28,7 @@ module verifier_addr::fri_layer {
     const FRI_QUEUE_SLOT_SIZE : u256 = 3;
     const FRI_QUEUE_SLOT_SIZE_IN_BYTES : u256 = 3 * 32;
     const NOT_NUM :u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    const COMMITMENT_MASK : u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
 
     public fun fri_ctx_size() : u256 {
         FRI_CTX_SIZE
@@ -63,13 +68,14 @@ module verifier_addr::fri_layer {
         let queue_item = *table::borrow(fri, fri_group_ptr + queue_item_idx - coset_idx );
         let coset_off_set =  fmul(fri_queue, queue_item);
 
+
+
         let proof_ptr = *table::borrow_mut(fri, channel_ptr);
-
-
-
         let index = coset_idx;
 
-
+        // print(&index);
+        // print(&next_coset_idx);
+        // print(&proof_ptr);
 
         while ( index < next_coset_idx ) {
             let field_element_ptr = proof_ptr;
@@ -82,7 +88,7 @@ module verifier_addr::fri_layer {
                 queue_item_idx = *table::borrow(fri, fri_queue_head);
             };
 
-            let field_element = *table::borrow(fri, field_element_ptr +1);
+            let field_element = *table::borrow_with_default(fri, field_element_ptr,&0);
             table::upsert(fri, evaluations_on_coset_ptr, field_element % k_modulus());
             evaluations_on_coset_ptr = evaluations_on_coset_ptr + 1;
             index = index + 1;
@@ -90,9 +96,9 @@ module verifier_addr::fri_layer {
         table::upsert(fri, channel_ptr, proof_ptr);
         let new_fri_queue_head = fri_queue_head;
 
-        print(&new_fri_queue_head);
-        print(&coset_idx);
-        print(&coset_off_set);
+        // print(&new_fri_queue_head);
+        // print(&coset_idx);
+        // print(&coset_off_set);
 
         (new_fri_queue_head, coset_idx, coset_off_set)
     }
@@ -182,13 +188,35 @@ module verifier_addr::fri_layer {
             );
 
 
+
             index = index / fri_coset_size;
             table::upsert(fri, merkle_queue_ptr, index);
-            table::upsert(fri, merkle_queue_ptr + 1, coset_offset);
+            let res = COMMITMENT_MASK & to_u256(keccak256( append_vector(  to_bytes(&evaluation_on_coset_ptr),to_bytes(&fri_coset_size))));
+
+            table::upsert(fri, merkle_queue_ptr + 1, COMMITMENT_MASK & to_u256(keccak256( append_vector(  to_bytes(&evaluation_on_coset_ptr),to_bytes(&fri_coset_size))))) ;
+
+            merkle_queue_ptr =  merkle_queue_ptr + 2;
 
 
+            let (fri_value, fri_inversed_point) = transform_coset(
+                 fri,
+                    fri_ctx + FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET,
+                evaluation_on_coset_ptr,
+                coset_offset,
+                fri_eval_point,
+                fri_coset_size
+            );
+            print(&fri_value);
+            print(&fri_inversed_point);
+
+            upsert(fri, output_ptr,index);
+            upsert(fri, output_ptr + 1, fri_value);
+            upsert(fri, output_ptr + 2, fri_inversed_point);
+            output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
         };
-        input_ptr
+
+        let res = (output_ptr - fri_queue_ptr)/ FRI_QUEUE_SLOT_SIZE;
+        res
     }
 
 
@@ -244,15 +272,12 @@ module verifier_addr::fri_layer {
     //     assert!(coset_idx == 66548, 1);
     //     assert!(coset_off_set == 373156084008009632251477334213775483240314116978652347198633408380203029970, 1);
     // }
-    #[test]
-    fun test_not() {
-        let num :u256 = 8654;
-        let three :u256 = 0x03;
-        let max_bit_index :u256 = (three) ^ NOT_NUM;
-        print(&bcs::to_bytes(&three));
-        print(&max_bit_index );
-        let coset_idx = num & max_bit_index;
-        print(&coset_idx);
-    }
+    // #[test]
+    // fun test_not() {
+    //     let num :u256 = 8654;
+    //     let three :u256 = 0x03;
+    //     let result = keccak256(append_vector(to_bytes(&num),to_bytes(&three)));
+    //     print(&result);
+    // }
 
 }

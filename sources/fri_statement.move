@@ -1,5 +1,6 @@
 module verifier_addr::fri_statement {
     use std::bcs;
+    use std::bcs::to_bytes;
     use std::features::cryptography_algebra_enabled;
     use std::signer::address_of;
     use std::vector;
@@ -12,14 +13,15 @@ module verifier_addr::fri_statement {
     use aptos_std::debug::print;
     use aptos_std::from_bcs::to_u256;
     use aptos_std::math128::pow;
-    use aptos_std::table;
+    use verifier_addr::merkle_verifier::verify_merkle;
     use verifier_addr::append_vector::append_vector;
     use verifier_addr::convert_memory::from_vector;
     #[test_only]
     use aptos_std::debug::print_stack_trace;
     #[test_only]
     use verifier_addr::fri_test::{
-        get_proof_3, get_fri_queue_3, get_evaluation_point_3, get_fri_step_size_3, get_expected_root_3
+        get_proof_3, get_fri_queue_3, get_evaluation_point_3, get_fri_step_size_3, get_expected_root_3, get_proof_2,
+        get_evaluation_point_2, get_fri_queue_2, get_fri_step_size_2, get_expected_root_2
     };
 
 
@@ -56,8 +58,9 @@ module verifier_addr::fri_statement {
         upsert(fri, channel_ptr, 5);
         let merkle_queue_ptr = channel_ptr + 1;
         let fri_ctx = merkle_queue_ptr + n_queries * 2;
-
-        from_vector(proof, fri, 6);
+        upsert(fri,4,(vector::length(&proof) as u256));
+        from_vector(proof, fri, 5);
+        upsert(fri, 4 + (vector::length(&proof) as u256) +1,(vector::length(&fri_queue) as u256));
         from_vector(fri_queue, fri, fri_queue_ptr);
 
         let data_to_hash = fri_ctx + mm_fri_ctx_size;
@@ -85,6 +88,7 @@ module verifier_addr::fri_statement {
             evaluation_point,
             fri_coset_size,
         );
+        verify_merkle(fri,channel_ptr,merkle_queue_ptr,to_bytes(&expected_root) ,n_queries);
 
     }
 
@@ -123,16 +127,20 @@ module verifier_addr::fri_statement {
     }
 
     #[test(a = @verifier_addr)]
-    fun test_verify_fri(a : signer) acquires Fri {
+    fun test_verify_fri_3(a : signer) acquires Fri {
         verify_fri(a, get_proof_3(), get_fri_queue_3(), get_evaluation_point_3(), get_fri_step_size_3(), get_expected_root_3());
         let fri = &borrow_global<Fri>(@verifier_addr).fri;
         let i = 0;
-        while( i < 500) {
-            let res = table::borrow_with_default(fri, i,&0);
-            print(&i);
-            print(res);
-            i = i+1;
-        };
-    }
+        // while(i < 500) {
+        //     let val = table::borrow_with_default(fri, i,&0);
+        //     print(&i);
+        //     print(val);
+        //     i = i + 1;
+        // }
 
+    }
+    #[test(a = @verifier_addr)]
+    fun test_verify_fri_2(a : signer) acquires Fri {
+        verify_fri(a,get_proof_2(),get_fri_queue_2(),get_evaluation_point_2(),get_fri_step_size_2(),get_expected_root_2());
+    }
 }
