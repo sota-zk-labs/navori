@@ -3,7 +3,8 @@ module verifier_addr::merkle_verifier {
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::debug::print;
     use aptos_std::from_bcs::to_u256;
-    use aptos_std::table::{Table, borrow, upsert};
+    use aptos_std::table::{Table, borrow, upsert, borrow_with_default};
+    use verifier_addr::U256ToByte32::{u256_to_bytes32, bytes32_to_u256};
     use verifier_addr::append_vector::append_vector;
     #[test_only]
     use aptos_std::string_utils::to_string;
@@ -18,14 +19,17 @@ module verifier_addr::merkle_verifier {
 
     //error
     const TOO_MANY_MERKLE_QUERIES : u64=  1;
+    const INVALID_MARKLE_PROOF : u64 = 2;
 
     public fun verify_merkle(
         fri : &mut Table<u256,u256>,
         channel_ptr : u256,
         queue_ptr : u256,
-        root : vector<u8>,
+        root : u256,
         n : u256
     ) : vector<u8> {
+
+        // print(&bytes32_to_u256(root));
         assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES, TOO_MANY_MERKLE_QUERIES );
 
         // queuePtr + i * MERKLE_SLOT_SIZE_IN_BYTES gives the i'th index in the queue.
@@ -45,7 +49,6 @@ module verifier_addr::merkle_verifier {
             let sibling_index = index ^ 1;
             // sibblingOffset := COMMITMENT_SIZE_IN_BYTES * lsb(siblingIndex).
             let sibling_offset = (sibling_index * COMMITMENT_SIZE) % TWO_COMMITMENTS_SIZE;
-
             // Store the hash corresponding to index in the correct slot.
             // 0 if index is even and 0x20 if index is odd.
             // The hash of the sibling will be written to the other slot.
@@ -88,25 +91,19 @@ module verifier_addr::merkle_verifier {
             let new_hash = *borrow(fri, new_hash_ptr);
             upsert(fri,sibling_offset,new_hash);
 
-            let hash = keccak256(append_vector(to_bytes(&0x00), to_bytes(&TWO_COMMITMENTS_SIZE)));
+            let f0 = u256_to_bytes32(*borrow(fri, 0)) ;
+            let f1 = u256_to_bytes32(*borrow(fri, 1)) ;
 
-            upsert(fri, wr_idx + hashes_ptr, COMMITMENT_MASK & to_u256(hash));
+            let pre_hash =  keccak256(append_vector(f0,f1));
+            upsert(fri, wr_idx + hashes_ptr, COMMITMENT_MASK & bytes32_to_u256(pre_hash));
             wr_idx = (wr_idx + MERKLE_SLOT_SIZE) % queue_size;
         };
         let hash = *borrow(fri, hashes_ptr + rd_idx);
         upsert(fri,channel_ptr,proof_ptr);
-        print(&to_bytes(&hash));
-        print(&root);
-        to_bytes(&hash)
 
-    }
-    #[test()]
-    fun test_bytes_32() {
-        let root :u256 = 9390404794146759926609078012164974184924937654759657766410025620812402262016;
-        let res =  to_bytes(&root);
-        print(&res);
-        let a = to_u256(res);
-        print(&a);
+        assert!(hash == root,INVALID_MARKLE_PROOF);
+        u256_to_bytes32(hash)
+
     }
 }
 

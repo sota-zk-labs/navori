@@ -1,20 +1,11 @@
 module verifier_addr::fri_layer {
-    use std::bcs::to_bytes;
     use std::vector;
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math128::pow;
-    use aptos_std::debug::{print, print_stack_trace};
-    use aptos_std::from_bcs::to_u256;
-    use aptos_std::table::{Self, Table, new, upsert};
-    use verifier_addr::append_vector::append_vector;
+    use aptos_std::table::{Self, Table, upsert};
+    use verifier_addr::U256ToByte32::{u256_to_bytes32, bytes32_to_u256};
     use verifier_addr::fri_transform::{fri_max_step_size, transform_coset};
     use verifier_addr::prime_field_element_0::{fpow, fmul, k_modulus};
-    use verifier_addr::prime_field_element_0;
-    use verifier_addr::fri_transform;
-    #[test_only]
-    use std::bcs;
-    #[test_only]
-    use aptos_std::bls12381::proof_of_possession_from_bytes;
 
 
 
@@ -191,9 +182,19 @@ module verifier_addr::fri_layer {
 
             index = index / fri_coset_size;
             table::upsert(fri, merkle_queue_ptr, index);
-            let res = COMMITMENT_MASK & to_u256(keccak256( append_vector(  to_bytes(&evaluation_on_coset_ptr),to_bytes(&fri_coset_size))));
 
-            table::upsert(fri, merkle_queue_ptr + 1, COMMITMENT_MASK & to_u256(keccak256( append_vector(  to_bytes(&evaluation_on_coset_ptr),to_bytes(&fri_coset_size))))) ;
+
+            let hash = *table::borrow(fri, evaluation_on_coset_ptr);
+
+
+
+            let hash = u256_to_bytes32(hash);
+            for (i in (evaluation_on_coset_ptr+1)..(evaluation_on_coset_ptr + fri_coset_size )) {
+                vector::append(&mut hash, u256_to_bytes32(*table::borrow(fri, i)));
+            };
+
+
+            table::upsert(fri, merkle_queue_ptr + 1,COMMITMENT_MASK & bytes32_to_u256(keccak256(hash)));
 
             merkle_queue_ptr =  merkle_queue_ptr + 2;
 
@@ -206,8 +207,8 @@ module verifier_addr::fri_layer {
                 fri_eval_point,
                 fri_coset_size
             );
-            print(&fri_value);
-            print(&fri_inversed_point);
+            // print(&fri_value);
+            // print(&fri_inversed_point);
 
             upsert(fri, output_ptr,index);
             upsert(fri, output_ptr + 1, fri_value);
@@ -215,8 +216,8 @@ module verifier_addr::fri_layer {
             output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
         };
 
-        let res = (output_ptr - fri_queue_ptr)/ FRI_QUEUE_SLOT_SIZE;
-        res
+        (output_ptr - fri_queue_ptr)/ FRI_QUEUE_SLOT_SIZE
+
     }
 
 
