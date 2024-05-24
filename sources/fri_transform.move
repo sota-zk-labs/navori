@@ -22,6 +22,7 @@ module verifier_addr::fri_transform {
     }
 
 
+
     public fun transform_coset(
         memory: &mut Memory,
         fri_half_inv_group_prt: u256,

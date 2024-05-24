@@ -7,14 +7,14 @@ module verifier_addr::fri_statement {
     use std::vector::{length, for_each};
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::table::{Table, new, upsert};
-    use verifier_addr::fri_layer::{fri_ctx_size, init_fri_group, compute_next_layer};
+    use verifier_addr::fri_layer::{FRI_CTX_SIZE, init_fri_group, compute_next_layer};
     use verifier_addr::prime_field_element_0::k_modulus;
     use verifier_addr::fri_layer;
     use aptos_std::debug::print;
     use aptos_std::from_bcs::to_u256;
     use aptos_std::math128::pow;
     use lib_addr::memory;
-    use lib_addr::endia_encode::to_big_endian;
+    use lib_addr::endia_encode::{to_big_endian, to_little_endian};
     use verifier_addr::fact_registry::register_fact;
     use lib_addr::memory::{mloadrange, mload, mstore, allocate, get_next, set_next, Memory};
     use verifier_addr::merkle_verifier::verify_merkle;
@@ -49,11 +49,6 @@ module verifier_addr::fri_statement {
             allocate(&mut memory, f);
         });
 
-        allocate(&mut memory, evaluation_point);
-        allocate(&mut memory, fri_step_size);
-        allocate(&mut memory, expected_root);
-
-        // init_fri(&signer);
         // must <= FRI_MAX_STEPS_SIZE
         // let fri = &mut borrow_global_mut<Fri>(address_of(&signer)).fri;
         assert!(fri_step_size <= 4, err_fri_step_size_too_large());
@@ -64,17 +59,19 @@ module verifier_addr::fri_statement {
         // Validate the FRI queue.
         validate_fri_queue(fri_queue);
 
-        let mm_fri_ctx_size = fri_ctx_size();
+        let mm_fri_ctx_size = FRI_CTX_SIZE();
         let n_queries = (vector::length(&fri_queue) / 3 as u256); // expected eq 13 (40 /3)
         let merkle_queue_ptr: u256;
         let channel_ptr: u256;
         let fri_ctx: u256;
         let data_to_hash: u256;
 
-        let fri_queue_ptr = fri_queue_ptr + 0x20;
-        let channel_ptr = fri_queue_ptr + (length(&fri_queue) as u256);
 
-        channel_ptr = get_next(&mut memory);
+        let fri_queue_ptr = fri_queue_ptr + 0x20;
+
+        channel_ptr = get_next(&memory);
+        print(&channel_ptr);
+
         mstore(&mut memory, channel_ptr, proof_ptr + 0x20);
         merkle_queue_ptr = channel_ptr + 0x20;
         fri_ctx = merkle_queue_ptr + 0x40 * n_queries;
@@ -86,37 +83,47 @@ module verifier_addr::fri_statement {
         mstore(&mut memory, data_to_hash + 0x80, expected_root);
 
         // Hash FRI inputs and add to dataToHash.
-        // TODO: check keccak
+
+        let hash = mloadrange(&mut memory, fri_queue_ptr, 0x60 * n_queries);
         mstore(
             &mut memory,
             data_to_hash + 0x40,
-            to_u256(keccak256(append_vector(to_bytes(&fri_queue_ptr), to_bytes(&(n_queries * 3)))))
+            to_u256(keccak256(hash))
         );
+
 
         init_fri_group(&mut memory, fri_ctx);
-        let fri_coset_size = (pow(2, (fri_step_size as u128)) as u256);
+        let i = 0;
+        while ( i < 500) {
+            print(&to_bytes(&i));
+            print(&to_little_endian( to_bytes(&mload(&memory, i*0x20))));
+            i = i + 1;
+        }
 
-        n_queries = compute_next_layer(
-            &mut memory,
-            channel_ptr,
-            fri_queue_ptr,
-            merkle_queue_ptr,
-            n_queries,
-            fri_ctx,
-            evaluation_point,
-            fri_coset_size,
-        );
 
-        // TODO: check the keccak
-        verify_merkle(&mut memory, channel_ptr, merkle_queue_ptr, to_big_endian(to_bytes(&expected_root)), n_queries);
-
-        let keccak_input = mloadrange(&mut memory, fri_queue_ptr, 0x60 * n_queries);
-        mstore(&mut memory, data_to_hash + 0x60, to_u256(keccak256(keccak_input)));
-
-        let keccak_input = mloadrange(&mut memory, data_to_hash, 0xa0);
-        let fact_hash = keccak256(keccak_input);
-
-        register_fact(fact_hash)
+        // let fri_coset_size = (pow(2, (fri_step_size as u128)) as u256);
+        //
+        // n_queries = compute_next_layer(
+        //     &mut memory,
+        //     channel_ptr,
+        //     fri_queue_ptr,
+        //     merkle_queue_ptr,
+        //     n_queries,
+        //     fri_ctx,
+        //     evaluation_point,
+        //     fri_coset_size,
+        // );
+        //
+        // // TODO: check the keccak
+        // verify_merkle(&mut memory, channel_ptr, merkle_queue_ptr, to_big_endian(to_bytes(&expected_root)), n_queries);
+        //
+        // let keccak_input = mloadrange(&mut memory, fri_queue_ptr, 0x60 * n_queries);
+        // mstore(&mut memory, data_to_hash + 0x60, to_u256(keccak256(keccak_input)));
+        //
+        // let keccak_input = mloadrange(&mut memory, data_to_hash, 0xa0);
+        // let fact_hash = keccak256(keccak_input);
+        //
+        // register_fact(fact_hash)
     }
 
     fun validate_fri_queue(fri_queue: vector<u256>) {
@@ -168,13 +175,7 @@ module verifier_addr::fri_statement {
             get_fri_step_size_3(),
             get_expected_root_3()
         );
-        let i = 0;
-        // while(i < 500) {
-        //     let val = table::borrow_with_default(fri, i,&0);
-        //     print(&i);
-        //     print(val);
-        //     i = i + 1;
-        // }
+
     }
 
     #[test]

@@ -108,7 +108,7 @@ module verifier_addr::gps_output_parser {
             cur_addr = cur_addr + 2;
             task = task + 1;
             if (task < n_task) {
-                break;
+                break
             };
         };
     }
