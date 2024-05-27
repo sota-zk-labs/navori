@@ -1,13 +1,17 @@
 // Mimic EVM memory, which is a byte array
 module lib_addr::memory {
     use std::bcs::to_bytes;
+    use std::string::utf8;
     use std::vector;
     use aptos_std::debug::print;
     use aptos_std::from_bcs::to_u256;
     use aptos_std::simple_map;
     use aptos_std::simple_map::SimpleMap;
-    use lib_addr::bytes::pad;
+
     use lib_addr::endia_encode::{to_big_endian, to_little_endian};
+
+    #[test_only]
+    use aptos_std::aptos_hash::keccak256;
 
     const SLOT_LENGTH: u256 = 0x20u256;
 
@@ -135,8 +139,20 @@ module lib_addr::memory {
         mstore(memory, ALLOCATION_PTR, value)
     }
 
-    #[test_only]
-    use aptos_std::aptos_hash::keccak256;
+    public fun dump(memory: &Memory) {
+        let index = 0;
+        print(&utf8(b"==============================================="));
+        print(&utf8(b"Memory dump:"));
+        while (index < 400) {
+            let offset = (index as u256) * SLOT_LENGTH;
+            let value = mloadrange(memory, offset, SLOT_LENGTH);
+            print(&to_big_endian((to_bytes(&offset))));
+            print(&value);
+            index = index + 1;
+        };
+        print(&utf8(b"==============================================="));
+    }
+
     // #[test_only]
     // use aptos_std::debug::print;
 

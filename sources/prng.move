@@ -1,6 +1,5 @@
 module verifier_addr::prng {
     use aptos_std::aptos_hash::keccak256;
-    use verifier_addr::prime_field_element_0;
 
     struct Prng has key {
         prngPtr: u256,
@@ -12,7 +11,7 @@ module verifier_addr::prng {
         move_to(signer, Prng { prngPtr, digest, counter });
     }
 
-    public fun load_prng(prngPtr: u256): (vector<u8>, u256) acquires Prng {
+    public fun load_prng(prngPtr : u256): (vector<u8>, u256) acquires Prng {
         let counter = borrow_global<Prng>(@verifier_addr).counter;
         let digest = borrow_global<Prng>(@verifier_addr).digest;
         (digest, counter)

@@ -1,5 +1,4 @@
 module lib_addr::storage {
-    use std::bcs::to_bytes;
     use std::signer::address_of;
     use aptos_std::table;
     use aptos_std::table::Table;

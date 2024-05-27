@@ -1,15 +1,6 @@
 module verifier_addr::fri_transform {
-    use aptos_std::table::{Self, Table, new, borrow};
-    use verifier_addr::prime_field_element_0::{k_modulus, fmul, fadd};
-    use verifier_addr::prime_field_element_0;
     use lib_addr::memory::{Memory, mload};
-
-    #[test_only]
-    use aptos_std::debug;
-    use std::bcs::to_bytes;
-    use std::bcs;
-    use aptos_std::debug::print;
-    use aptos_std::table::{upsert, borrow_mut};
+    use verifier_addr::prime_field_element_0::{fmul, k_modulus};
 
     public fun FRI_MAX_STEP_SIZE(): u256 {
         4
@@ -121,7 +112,6 @@ module verifier_addr::fri_transform {
         fri_eval_point: u256
     ): (u256, u256) {
         let f0 = mload(memory, evaluations_on_coset_ptr);
-        // print(&f0);
 
         let fri_eval_point_div_by_x = fmul(
             fri_eval_point,
@@ -141,7 +131,7 @@ module verifier_addr::fri_transform {
             fri_eval_point_div_by_x,
             f0 + (k_modulus() - f1)));
 
-
+        // f2 < 3P ( = 1 + 1 + 1).
         let f2 = mload(memory, evaluations_on_coset_ptr + 0x40);
         let f3 = mload(memory, evaluations_on_coset_ptr + 0x60);
         f2 = (f2 + f3 + fmul(
@@ -149,7 +139,7 @@ module verifier_addr::fri_transform {
             fmul(fri_eval_point_div_by_x, imaginary_unit)
         ));
 
-
+        // f0 < 7P ( = 3 + 3 + 1).
         f0 = (f0 + f2 + fmul(
             fri_eval_point_div_by_x_squared,
             f0 + (K_MODULUS_TIMES_16() - f2)));

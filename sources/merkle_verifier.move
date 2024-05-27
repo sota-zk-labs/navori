@@ -1,27 +1,25 @@
 module verifier_addr::merkle_verifier {
     use std::bcs::to_bytes;
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::debug::print;
-    use aptos_std::from_bcs::{to_u8, to_u256};
+    use aptos_std::from_bcs::to_u256;
+
     use lib_addr::endia_encode::to_big_endian;
-    use lib_addr::memory::{mload, Memory, mstore, mloadrange};
-    use lib_addr::memory;
-    use lib_addr::math_mod;
-    use verifier_addr::error::{err_too_many_merkle_queries, err_invalid_merkle_proof};
+    use lib_addr::math_mod::mod_mul;
+    use lib_addr::memory::{Memory, mload, mloadrange, mstore};
+    use verifier_addr::error::{err_invalid_merkle_proof, err_too_many_merkle_queries};
 
-
-    public fun MAX_N_MERKLE_VERIFIER_QUERIES () : u256 {
+    public fun MAX_N_MERKLE_VERIFIER_QUERIES(): u256 {
         128
     }
 
     // The size of a SLOT in the verifyMerkle queue.
     // Every slot holds a (index, hash) pair.
-    public fun MERKLE_SLOT_SIZE_IN_BYTES () : u256 {
+    public fun MERKLE_SLOT_SIZE_IN_BYTES(): u256 {
         0x40
     }
 
     // Commitments are masked to 160bit using the following mask to save gas costs.
-    public fun COMMITMENT_MASK () :u256 {
+    public fun COMMITMENT_MASK(): u256 {
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
     }
 
@@ -79,18 +77,21 @@ module verifier_addr::merkle_verifier {
         while (index > 1) {
             let sibling_index = index ^ 1;
             // sibblingOffset := COMMITMENT_SIZE_IN_BYTES * lsb(siblingIndex).
-            let sibling_offset = math_mod::mod_mul(
+            let sibling_offset = mod_mul(
                 sibling_index,
                 COMMITMENT_SIZE_IN_BYTES(),
                 TWO_COMMITMENTS_SIZE_IN_BYTES()
             );
 
+
             // Store the hash corresponding to index in the correct slot.
             // 0 if index is even and 0x20 if index is odd.
             // The hash of the sibling will be written to the other slot.
             let value = mload(memory, rd_idx + hashes_ptr);
-            mstore(memory, 0x20u256 ^ sibling_offset, value);
-            rd_idx = math_mod::mod_add(rd_idx, MERKLE_SLOT_SIZE_IN_BYTES(), queue_size);
+            mstore(memory, 0x20 ^ sibling_offset, value);
+
+
+            rd_idx = (rd_idx + MERKLE_SLOT_SIZE_IN_BYTES()) % queue_size;
 
             // Inline channel operation:
             // Assume we are going to read a new hash from the proof.
@@ -103,7 +104,6 @@ module verifier_addr::merkle_verifier {
             // the case where we are working on one item).
             // wrIdx will be updated after writing the relevant hash to the queue.
             mstore(memory, wr_idx + queue_ptr, index / 2);
-
             // Load the next index from the queue and check if it is our sibling.
             index = mload(memory, rd_idx + queue_ptr);
             if (index == sibling_index) {
@@ -111,7 +111,7 @@ module verifier_addr::merkle_verifier {
                 new_hash_ptr = rd_idx + hashes_ptr;
                 // Revert reading from proof.
                 proof_ptr = proof_ptr - COMMITMENT_SIZE_IN_BYTES();
-                rd_idx = math_mod::mod_add(rd_idx, MERKLE_SLOT_SIZE_IN_BYTES(), queue_size);
+                rd_idx = (rd_idx + MERKLE_SLOT_SIZE_IN_BYTES()) % queue_size;
 
                 // Index was consumed, read the next one.
                 // Note that the queue can't be empty at this point.
@@ -119,20 +119,19 @@ module verifier_addr::merkle_verifier {
                 // queue, and the parent is never the sibling.
                 index = mload(memory, rd_idx + queue_ptr);
             };
-
+            let new_hash = mload(memory, new_hash_ptr);
+            mstore(memory, sibling_offset, new_hash);
 
             // Push the new hash to the end of the queue.
-            // TODO: check the keccak
-            let keccak_input = mloadrange(memory, 0x00u256, TWO_COMMITMENTS_SIZE_IN_BYTES());
-            mstore(memory, wr_idx + hashes_ptr, COMMITMENT_MASK() & to_u256(keccak256(keccak_input)));
-            wr_idx = math_mod::mod_add(wr_idx, MERKLE_SLOT_SIZE_IN_BYTES(), queue_size);
+            let keccak_input = mloadrange(memory, 0x00, TWO_COMMITMENTS_SIZE_IN_BYTES());
+            mstore(memory, wr_idx + hashes_ptr, COMMITMENT_MASK() & to_u256(to_big_endian(keccak256(keccak_input))));
+            wr_idx = (wr_idx + MERKLE_SLOT_SIZE_IN_BYTES()) % queue_size;
         };
-        hash = to_bytes(&mload(memory, rd_idx + hashes_ptr));
+        hash = to_big_endian(to_bytes(&mload(memory, rd_idx + hashes_ptr)));
 
         // Update the proof pointer in the context.
         mstore(memory, channel_ptr, proof_ptr);
-
-        assert!(hash != root, err_invalid_merkle_proof());
+        assert!(hash == root, err_invalid_merkle_proof());
         return hash
     }
 }

@@ -1,33 +1,33 @@
 module verifier_addr::fri_statement {
-    use std::bcs;
     use std::bcs::to_bytes;
-    use std::features::cryptography_algebra_enabled;
-    use std::signer::address_of;
     use std::vector;
-    use std::vector::{length, for_each};
+    use std::vector::for_each;
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::table::{Table, new, upsert};
-    use verifier_addr::fri_layer::{FRI_CTX_SIZE, init_fri_group, compute_next_layer};
-    use verifier_addr::prime_field_element_0::k_modulus;
-    use verifier_addr::fri_layer;
-    use aptos_std::debug::print;
     use aptos_std::from_bcs::to_u256;
     use aptos_std::math128::pow;
-    use lib_addr::memory;
-    use lib_addr::endia_encode::{to_big_endian, to_little_endian};
-    use verifier_addr::fact_registry::register_fact;
-    use lib_addr::memory::{mloadrange, mload, mstore, allocate, get_next, set_next, Memory};
-    use verifier_addr::merkle_verifier::verify_merkle;
-    use verifier_addr::vector::append_vector;
+
     use err_addr::fri_error::err_fri_step_size_too_large;
-    #[test_only]
-    use aptos_std::debug::print_stack_trace;
+    use lib_addr::endia_encode::to_big_endian;
+    use lib_addr::memory;
+    use lib_addr::memory::{allocate, get_next, mloadrange, mstore};
+    use verifier_addr::fact_registry::register_fact;
+    use verifier_addr::fri_layer::{compute_next_layer, FRI_CTX_SIZE, init_fri_group};
+    use verifier_addr::merkle_verifier::verify_merkle;
+    use verifier_addr::prime_field_element_0::k_modulus;
+
     #[test_only]
     use verifier_addr::fri_test::{
-        get_proof_3, get_fri_queue_3, get_evaluation_point_3, get_fri_step_size_3, get_expected_root_3, get_proof_2,
-        get_evaluation_point_2, get_fri_queue_2, get_fri_step_size_2, get_expected_root_2
+        get_evaluation_point_2,
+        get_evaluation_point_3,
+        get_expected_root_2,
+        get_expected_root_3,
+        get_fri_queue_2,
+        get_fri_queue_3,
+        get_fri_step_size_2,
+        get_fri_step_size_3,
+        get_proof_2,
+        get_proof_3
     };
-
 
     public fun verify_fri(
         proof: vector<u256>,
@@ -49,9 +49,6 @@ module verifier_addr::fri_statement {
             allocate(&mut memory, f);
         });
 
-        // init_fri(&signer);
-        // must <= FRI_MAX_STEPS_SIZE
-        // let fri = &mut borrow_global_mut<Fri>(address_of(&signer)).fri;
         assert!(fri_step_size <= 4, err_fri_step_size_too_large());
 
         // Verify evaluation point within valid range.
@@ -74,8 +71,8 @@ module verifier_addr::fri_statement {
         mstore(&mut memory, channel_ptr, proof_ptr + 0x20);
         merkle_queue_ptr = channel_ptr + 0x20;
         fri_ctx = merkle_queue_ptr + 0x40 * n_queries;
+
         data_to_hash = fri_ctx + mm_fri_ctx_size;
-        set_next(&mut memory, data_to_hash + 0xa0);
 
         mstore(&mut memory, data_to_hash, evaluation_point);
         mstore(&mut memory, data_to_hash + 0x20, fri_step_size);
@@ -87,10 +84,10 @@ module verifier_addr::fri_statement {
         mstore(
             &mut memory,
             data_to_hash + 0x40,
-            to_u256(keccak256(keccak_input))
+            to_u256(to_big_endian(keccak256(keccak_input)))
         );
-
         init_fri_group(&mut memory, fri_ctx);
+
         let fri_coset_size = (pow(2, (fri_step_size as u128)) as u256);
 
         n_queries = compute_next_layer(
@@ -104,16 +101,16 @@ module verifier_addr::fri_statement {
             fri_coset_size,
         );
 
-        // TODO: check the keccak
         verify_merkle(&mut memory, channel_ptr, merkle_queue_ptr, to_big_endian(to_bytes(&expected_root)), n_queries);
 
+        //todo : convert the register_fact part 
         let keccak_input = mloadrange(&mut memory, fri_queue_ptr, 0x60 * n_queries);
         mstore(&mut memory, data_to_hash + 0x60, to_u256(keccak256(keccak_input)));
 
         let keccak_input = mloadrange(&mut memory, data_to_hash, 0xa0);
         let fact_hash = keccak256(keccak_input);
 
-        register_fact(fact_hash)
+        register_fact(fact_hash);
     }
 
     fun validate_fri_queue(fri_queue: vector<u256>) {
@@ -165,7 +162,6 @@ module verifier_addr::fri_statement {
             get_fri_step_size_3(),
             get_expected_root_3()
         );
-
     }
 
     #[test]
