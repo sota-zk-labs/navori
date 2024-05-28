@@ -37,7 +37,6 @@ module verifier_addr::fact_registry {
     }
 
     fun has_registered_fact(): bool acquires VerifierFact {
-        let verifier_fact = borrow_global<VerifierFact>(@verifier_addr);
-        verifier_fact.any_fact_registered
+        borrow_global<VerifierFact>(@verifier_addr).any_fact_registered;
     }
 }

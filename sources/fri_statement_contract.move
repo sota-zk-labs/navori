@@ -1,4 +1,4 @@
-module verifier_addr::fri_statement {
+module verifier_addr::fri_statement_contract {
     use std::bcs::to_bytes;
     use std::vector;
     use std::vector::for_each;
