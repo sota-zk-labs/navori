@@ -16,6 +16,8 @@ module verifier_addr::fri_statement {
     use verifier_addr::prime_field_element_0::k_modulus;
 
     #[test_only]
+    use verifier_addr::fact_registry::is_valid;
+    #[test_only]
     use verifier_addr::fri_test::{
         get_evaluation_point_2,
         get_evaluation_point_3,
@@ -30,6 +32,7 @@ module verifier_addr::fri_statement {
     };
 
     public fun verify_fri(
+        signer: signer,
         proof: vector<u256>,
         fri_queue: vector<u256>,
         evaluation_point: u256,
@@ -103,14 +106,12 @@ module verifier_addr::fri_statement {
 
         verify_merkle(&mut memory, channel_ptr, merkle_queue_ptr, to_big_endian(to_bytes(&expected_root)), n_queries);
 
-        //todo : convert the register_fact part 
         let keccak_input = mloadrange(&mut memory, fri_queue_ptr, 0x60 * n_queries);
-        mstore(&mut memory, data_to_hash + 0x60, to_u256(keccak256(keccak_input)));
+        mstore(&mut memory, data_to_hash + 0x60, to_u256(to_big_endian(keccak256(keccak_input))));
 
         let keccak_input = mloadrange(&mut memory, data_to_hash, 0xa0);
         let fact_hash = keccak256(keccak_input);
-
-        register_fact(fact_hash);
+        register_fact(signer, fact_hash);
     }
 
     fun validate_fri_queue(fri_queue: vector<u256>) {
@@ -153,25 +154,33 @@ module verifier_addr::fri_statement {
         validate_fri_queue(get_fri_queue_3());
     }
 
-    #[test]
-    fun test_verify_fri_3() {
+    #[test(signer = @verifier_addr)]
+    fun test_verify_fri_3(signer: signer) {
         verify_fri(
+            signer,
             get_proof_3(),
             get_fri_queue_3(),
             get_evaluation_point_3(),
             get_fri_step_size_3(),
             get_expected_root_3()
         );
+        let fact_hash: u256 = 0x81b6de7f72176840720dbf7460352c0a18342fd155c307bee6e384302b472179;
+        let res = to_big_endian(to_bytes(&fact_hash));
+        assert!(is_valid(res), 1);
     }
 
-    #[test]
-    fun test_verify_fri_2() {
+    #[test(signer = @verifier_addr)]
+    fun test_verify_fri_2(signer: signer) {
         verify_fri(
+            signer,
             get_proof_2(),
             get_fri_queue_2(),
             get_evaluation_point_2(),
             get_fri_step_size_2(),
             get_expected_root_2()
         );
+        let fact_hash: u256 = 0xbc348fdab2b2e1f3564918265f0c0371e70078a8195897eb9a76687bbda53558;
+        let res = to_big_endian(to_bytes(&fact_hash));
+        assert!(is_valid(res), 1);
     }
 }
