@@ -43,11 +43,11 @@ module verifier_addr::merkle_verifier {
         memory: &mut Memory,
         channel_ptr: u256,
         queue_ptr: u256,
-        root: u256,
+        root: vector<u8>,
         n: u256,
-    ): u256 {
+    ): vector<u8> {
         assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES, err_too_many_merkle_queries());
-        let hash: u256 = 0;
+        let hash: vector<u8>;
 
         // queuePtr + i * MERKLE_SLOT_SIZE_IN_BYTES gives the i'th index in the queue.
         // hashesPtr + i * MERKLE_SLOT_SIZE_IN_BYTES gives the i'th hash in the queue.
@@ -108,11 +108,12 @@ module verifier_addr::merkle_verifier {
 
 
             // Push the new hash to the end of the queue.
-            let keccak_input = mloadrange(memory, 0x00u256, (TWO_COMMITMENTS_SIZE_IN_BYTES as u64));
+            // TODO: check the keccak
+            let keccak_input = mloadrange(memory, 0x00u256, TWO_COMMITMENTS_SIZE_IN_BYTES);
             mstore(memory, wr_idx + hashes_ptr, COMMITMENT_MASK & to_u256(keccak256(keccak_input)));
             wr_idx = math_mod::mod_add(wr_idx, MERKLE_SLOT_SIZE_IN_BYTES, queue_size);
         };
-        hash = mload(memory, rd_idx + hashes_ptr);
+        hash = to_bytes(&mload(memory, rd_idx + hashes_ptr));
 
         // Update the proof pointer in the context.
         mstore(memory, channel_ptr, proof_ptr);

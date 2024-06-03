@@ -2,6 +2,7 @@ module verifier_addr::fri_transform {
     use aptos_std::table::{Self, Table, new, borrow};
     use verifier_addr::prime_field_element_0::{k_modulus, fmul, fadd};
     use verifier_addr::prime_field_element_0;
+    use lib_addr::memory::{Memory, mload};
 
     #[test_only]
     use aptos_std::debug;
@@ -22,7 +23,7 @@ module verifier_addr::fri_transform {
 
 
     public fun transform_coset(
-        fri: &mut Table<u256, u256>,
+        memory: &mut Memory,
         fri_half_inv_group_prt: u256,
         evaluations_on_coset_ptr: u256,
         coset_off_set: u256,
@@ -31,7 +32,7 @@ module verifier_addr::fri_transform {
     ): (u256, u256) {
         if (fri_coset_size == 8) {
             transform_coset_of_size_8(
-                fri,
+                memory,
                 fri_half_inv_group_prt,
                 evaluations_on_coset_ptr,
                 coset_off_set,
@@ -39,7 +40,7 @@ module verifier_addr::fri_transform {
             )
         } else if (fri_coset_size == 4) {
             transform_coset_of_size_4(
-                fri,
+                memory,
                 fri_half_inv_group_prt,
                 evaluations_on_coset_ptr,
                 coset_off_set,
@@ -47,7 +48,7 @@ module verifier_addr::fri_transform {
             )
         } else {
             transform_coset_of_size_16(
-                fri,
+                memory,
                 fri_half_inv_group_prt,
                 evaluations_on_coset_ptr,
                 coset_off_set,
@@ -67,7 +68,7 @@ module verifier_addr::fri_transform {
 
     */
     fun transform_coset_of_size_4(
-        fri: &mut Table<u256, u256>,
+        memory: &mut Memory,
         fri_half_inv_group_prt: u256,
         evaluations_on_coset_ptr: u256,
         coset_off_set: u256,
@@ -78,21 +79,21 @@ module verifier_addr::fri_transform {
             coset_off_set
         );
 
-        let f0 = *table::borrow(fri, evaluations_on_coset_ptr);
+        let f0 = mload(memory, evaluations_on_coset_ptr);
 
-        let f1 = *table::borrow(fri, evaluations_on_coset_ptr + 1);
+        let f1 = mload(memory, evaluations_on_coset_ptr + 0x20);
         // f0 < 3P ( = 1 + 1 + 1).
         f0 = (f0 + f1 + fmul(
             fri_eval_point_div_by_x,
             f0 + (k_modulus() - f1)
         ));
 
-        let f2 = *table::borrow(fri, evaluations_on_coset_ptr + 2);
-        let f3 = *table::borrow(fri, evaluations_on_coset_ptr + 3);
+        let f2 = mload(memory, evaluations_on_coset_ptr + 0x40);
+        let f3 = mload(memory, evaluations_on_coset_ptr + 0x60);
 
         f2 = (f2 + f3 + fmul(
             f2 + (k_modulus() - f3),
-            fmul(*borrow(fri, fri_half_inv_group_prt + 1), fri_eval_point_div_by_x)
+            fmul(mload(memory, fri_half_inv_group_prt + 1), fri_eval_point_div_by_x)
         )) % k_modulus();
 
         let new_x_inv = fmul(coset_off_set, coset_off_set);
@@ -112,13 +113,13 @@ module verifier_addr::fri_transform {
       For more detail, see description of the FRI transformations at the top of this file.
     */
     fun transform_coset_of_size_8(
-        fri: &mut Table<u256, u256>,
+        memory: &mut Memory,
         fri_half_inv_group_prt: u256,
         evaluations_on_coset_ptr: u256,
         coset_off_set: u256,
         fri_eval_point: u256
     ): (u256, u256) {
-        let f0 = *table::borrow(fri, evaluations_on_coset_ptr);
+        let f0 = mload(memory, evaluations_on_coset_ptr);
         // print(&f0);
 
         let fri_eval_point_div_by_x = fmul(
@@ -131,17 +132,17 @@ module verifier_addr::fri_transform {
             fri_eval_point_div_by_x
         );
 
-        let imaginary_unit = *table::borrow(fri, fri_half_inv_group_prt + 1);
+        let imaginary_unit = mload(memory, fri_half_inv_group_prt + 0x20);
 
 
-        let f1 = *table::borrow(fri, evaluations_on_coset_ptr + 1);
+        let f1 = mload(memory, evaluations_on_coset_ptr + 0x20);
         f0 = (f0 + f1 + fmul(
             fri_eval_point_div_by_x,
             f0 + (k_modulus() - f1)));
 
 
-        let f2 = *table::borrow(fri, evaluations_on_coset_ptr + 2);
-        let f3 = *table::borrow(fri, evaluations_on_coset_ptr + 3);
+        let f2 = mload(memory, evaluations_on_coset_ptr + 0x40);
+        let f3 = mload(memory, evaluations_on_coset_ptr + 0x60);
         f2 = (f2 + f3 + fmul(
             f2 + (k_modulus() - f3),
             fmul(fri_eval_point_div_by_x, imaginary_unit)
@@ -153,19 +154,19 @@ module verifier_addr::fri_transform {
             f0 + (K_MODULUS_TIMES_16 - f2)));
 
 
-        let f4 = *table::borrow(fri, evaluations_on_coset_ptr + 4);
+        let f4 = mload(memory, evaluations_on_coset_ptr + 0x80);
         let fri_eval_point_div_by_x2 = fmul(
             fri_eval_point_div_by_x,
-            *table::borrow(fri, fri_half_inv_group_prt + 2));
+            mload(memory, fri_half_inv_group_prt + 0x40));
 
-        let f5 = *table::borrow_mut(fri, evaluations_on_coset_ptr + 5);
+        let f5 = mload(memory, evaluations_on_coset_ptr + 0xa0);
 
         f4 = (f4 + f5 + fmul(
             f4 + (k_modulus() - f5),
             fri_eval_point_div_by_x2));
 
-        let f6 = *table::borrow(fri, evaluations_on_coset_ptr + 6);
-        let f7 = *table::borrow(fri, evaluations_on_coset_ptr + 7);
+        let f6 = mload(memory, evaluations_on_coset_ptr + 0xc0);
+        let f7 = mload(memory, evaluations_on_coset_ptr + 0xe0);
 
         f6 = (f6 + f7 + fmul(
             f6 + (k_modulus() - f7),
@@ -192,28 +193,28 @@ module verifier_addr::fri_transform {
     }
 
     fun transform_coset_of_size_16(
-        fri: &mut Table<u256, u256>,
+        memory: &mut Memory,
         fri_half_inv_group_prt: u256,
         evaluations_on_coset_ptr: u256,
         coset_off_set: u256,
         fri_eval_point: u256
     ): (u256, u256) {
-        let f0 = *table::borrow(fri, evaluations_on_coset_ptr);
+        let f0 = mload(memory, evaluations_on_coset_ptr);
 
         let fri_eval_point_div_by_x = fmul(
             fri_eval_point,
             coset_off_set
         );
-        let imaginary_unit = *table::borrow(fri, fri_half_inv_group_prt + 1);
+        let imaginary_unit = mload(memory, fri_half_inv_group_prt + 0x20);
 
-        let f1 = *table::borrow(fri, evaluations_on_coset_ptr + 1);
+        let f1 = mload(memory, evaluations_on_coset_ptr + 0x20);
         f0 = (f0 + f1 + fmul(
             fri_eval_point_div_by_x,
             f0 + (k_modulus() - f1)
         ));
 
-        let f2 = *table::borrow(fri, evaluations_on_coset_ptr + 2);
-        let f3 = *table::borrow(fri, evaluations_on_coset_ptr + 3);
+        let f2 = mload(memory, evaluations_on_coset_ptr + 0x40);
+        let f3 = mload(memory, evaluations_on_coset_ptr + 0x60);
 
         f2 = (f2 + f3 + fmul(
             f2 + (k_modulus() - f3),
@@ -234,21 +235,21 @@ module verifier_addr::fri_transform {
             f0 + (K_MODULUS_TIMES_16 - f2)
         ));
 
-        let f4 = *table::borrow(fri, evaluations_on_coset_ptr + 4);
+        let f4 = mload(memory, evaluations_on_coset_ptr + 0x80);
         let fri_eval_point_div_by_x2 = fmul(
             fri_eval_point_div_by_x,
-            *table::borrow(fri, fri_half_inv_group_prt + 2)
+            mload(memory, fri_half_inv_group_prt + 0x40)
         );
 
-        let f5 = *table::borrow(fri, evaluations_on_coset_ptr + 5);
+        let f5 = mload(memory, evaluations_on_coset_ptr + 0xa0);
         // f4 < 3P ( = 1 + 1 + 1).
         f4 = (f4 + f5 + fmul(
             f4 + (k_modulus() - f5),
             fri_eval_point_div_by_x2
         ));
 
-        let f6 = *table::borrow(fri, evaluations_on_coset_ptr + 6);
-        let f7 = *table::borrow(fri, evaluations_on_coset_ptr + 7);
+        let f6 = mload(memory, evaluations_on_coset_ptr + 0xc0);
+        let f7 = mload(memory, evaluations_on_coset_ptr + 0xe0);
         // f6 < 3P ( = 1 + 1 + 1).
         f6 = (f6 + f7 + fmul(
             f6 + (k_modulus() - f7),
@@ -266,19 +267,19 @@ module verifier_addr::fri_transform {
             f0 + (K_MODULUS_TIMES_16 - f4)
         ));
 
-        let f8 = *table::borrow(fri, evaluations_on_coset_ptr + 8);
+        let f8 = mload(memory, evaluations_on_coset_ptr + 0x100);
         let fri_eval_point_div_by_x4 = fmul(
             fri_eval_point_div_by_x,
-            *table::borrow(fri, fri_half_inv_group_prt + 4)
+            mload(memory, fri_half_inv_group_prt + 0x80)
         );
-        let f9 = *table::borrow(fri, evaluations_on_coset_ptr + 9);
+        let f9 = mload(memory, evaluations_on_coset_ptr + 0x120);
         // f8 < 3P ( = 1 + 1 + 1).
         f8 = (f8 + f9 + fmul(
             f8 + (k_modulus() - f9),
             fri_eval_point_div_by_x4
         ));
-        let f10 = *table::borrow(fri, evaluations_on_coset_ptr + 10);
-        let f11 = *table::borrow(fri, evaluations_on_coset_ptr + 11);
+        let f10 = mload(memory, evaluations_on_coset_ptr + 0x140);
+        let f11 = mload(memory, evaluations_on_coset_ptr + 0x160);
         // f10 < 3P ( = 1 + 1 + 1).
         f10 = (f10 + f11 + fmul(
             f10 + (k_modulus() - f11),
@@ -291,19 +292,19 @@ module verifier_addr::fri_transform {
             f8 + (K_MODULUS_TIMES_16 - f10)
         ));
 
-        let f12 = *table::borrow(fri, evaluations_on_coset_ptr + 12);
+        let f12 = mload(memory, evaluations_on_coset_ptr + 0x180);
         let fri_eval_point_div_by_x6 = fmul(
             fri_eval_point_div_by_x,
-            *table::borrow(fri, fri_half_inv_group_prt + 6)
+            mload(memory, fri_half_inv_group_prt + 0xc0)
         );
-        let f13 = *table::borrow(fri, evaluations_on_coset_ptr + 13);
+        let f13 = mload(memory, evaluations_on_coset_ptr + 0x1a0);
         // f12 < 3P ( = 1 + 1 + 1).
         f12 = (f12 + f13 + fmul(
             f12 + (k_modulus() - f13),
             fri_eval_point_div_by_x6
         ));
-        let f14 = *table::borrow(fri, evaluations_on_coset_ptr + 14);
-        let f15 = *table::borrow(fri, evaluations_on_coset_ptr + 15);
+        let f14 = mload(memory, evaluations_on_coset_ptr + 0x1c0);
+        let f15 = mload(memory, evaluations_on_coset_ptr + 0x1e0);
         // f14 < 3P ( = 1 + 1 + 1).
         f14 = (f14 + f15 + fmul(
             f14 + (k_modulus() - f15),

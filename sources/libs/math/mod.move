@@ -83,7 +83,7 @@ module lib_addr::math_mod {
         let res = mod_div(a, b, k);
 
         print(&res);
-        assert(res == 1, 1);
+        assert!(res == 1, 1);
 
     }
 }
