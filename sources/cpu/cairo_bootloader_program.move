@@ -1,7 +1,7 @@
 module verifier_addr::cairo_bootloader_program {
-    const PROGRAM_SIZE : u256 = 728;
+    const PROGRAM_SIZE: u256 = 728;
 
-    public fun cairo_bootloader_program() : vector<u256> {
+    public fun cairo_bootloader_program(): vector<u256> {
         vector[
             290341444919459839,
             9,

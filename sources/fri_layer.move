@@ -17,37 +17,35 @@ module verifier_addr::fri_layer {
     use aptos_std::bls12381::proof_of_possession_from_bytes;
 
 
+    const MAX_COSET_SIZE: u256 = 16;
+    const FRI_GROUP_GEN: u256 = 0x5ec467b88826aba4537602d514425f3b0bdf467bbf302458337c45f6021e539;
+    const FRI_GROUP_SIZE: u256 = 16;
+    const FRI_CTX_TO_COSET_EVALUATIONS_OFFSET: u256 = 0;
+    const FRI_CTX_TO_FRI_GROUP_OFFSET: u256 = 16;
+    const FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET: u256 = 16 + 16;
+    const FRI_CTX_SIZE: u256 = 32 + (16 / 2);
+    const FRI_QUEUE_SLOT_SIZE: u256 = 3;
+    const FRI_QUEUE_SLOT_SIZE_IN_BYTES: u256 = 3 * 32;
+    const NOT_NUM: u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    const COMMITMENT_MASK: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
 
-    const MAX_COSET_SIZE:u256 = 16;
-    const FRI_GROUP_GEN:u256 = 0x5ec467b88826aba4537602d514425f3b0bdf467bbf302458337c45f6021e539;
-    const FRI_GROUP_SIZE :u256 = 16;
-    const FRI_CTX_TO_COSET_EVALUATIONS_OFFSET :u256 = 0;
-    const FRI_CTX_TO_FRI_GROUP_OFFSET :u256 = 16;
-    const FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET : u256 = 16  + 16;
-    const FRI_CTX_SIZE : u256 = 32 + (16/2);
-    const FRI_QUEUE_SLOT_SIZE : u256 = 3;
-    const FRI_QUEUE_SLOT_SIZE_IN_BYTES : u256 = 3 * 32;
-    const NOT_NUM :u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    const COMMITMENT_MASK : u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
-
-    public fun fri_ctx_size() : u256 {
+    public fun fri_ctx_size(): u256 {
         FRI_CTX_SIZE
     }
 
     struct FriLayer has key {
-        fri_layer : Table<u256,u256>
+        fri_layer: Table<u256, u256>
     }
 
 
     public fun gather_coset_inputs(
-        fri : &mut Table<u256,u256>,
-        channel_ptr : u256,
-        fri_group_ptr : u256,
-        evaluations_on_coset_ptr : u256,
-        fri_queue_head : u256,
-        coset_size : u256
-    ) : (u256,u256,u256){
-
+        fri: &mut Table<u256, u256>,
+        channel_ptr: u256,
+        fri_group_ptr: u256,
+        evaluations_on_coset_ptr: u256,
+        fri_queue_head: u256,
+        coset_size: u256
+    ): (u256, u256, u256) {
         let queue_item_idx = *table::borrow(fri, fri_queue_head);
         let max_bit_index = (coset_size - 1) ^ NOT_NUM;
         // The coset index is represented by the most significant bits of the queue item index.
@@ -62,12 +60,11 @@ module verifier_addr::fri_layer {
         // by the group element that corresponds to the index inside the coset (g^k).
 
         // (c*g^(-k))=
-        let fri_queue = *table::borrow(fri,fri_queue_head + 2);
+        let fri_queue = *table::borrow(fri, fri_queue_head + 2);
         // (g^k)=
 
-        let queue_item = *table::borrow(fri, fri_group_ptr + queue_item_idx - coset_idx );
-        let coset_off_set =  fmul(fri_queue, queue_item);
-
+        let queue_item = *table::borrow(fri, fri_group_ptr + queue_item_idx - coset_idx);
+        let coset_off_set = fmul(fri_queue, queue_item);
 
 
         let proof_ptr = *table::borrow_mut(fri, channel_ptr);
@@ -77,18 +74,18 @@ module verifier_addr::fri_layer {
         // print(&next_coset_idx);
         // print(&proof_ptr);
 
-        while ( index < next_coset_idx ) {
+        while (index < next_coset_idx) {
             let field_element_ptr = proof_ptr;
             proof_ptr = proof_ptr + 1;
 
-            if (index == queue_item_idx ) {
-                field_element_ptr = fri_queue_head +1;
+            if (index == queue_item_idx) {
+                field_element_ptr = fri_queue_head + 1;
                 proof_ptr = proof_ptr - 1;
                 fri_queue_head = fri_queue_head + FRI_QUEUE_SLOT_SIZE;
                 queue_item_idx = *table::borrow(fri, fri_queue_head);
             };
 
-            let field_element = *table::borrow_with_default(fri, field_element_ptr,&0);
+            let field_element = *table::borrow_with_default(fri, field_element_ptr, &0);
             table::upsert(fri, evaluations_on_coset_ptr, field_element % k_modulus());
             evaluations_on_coset_ptr = evaluations_on_coset_ptr + 1;
             index = index + 1;
@@ -102,18 +99,19 @@ module verifier_addr::fri_layer {
 
         (new_fri_queue_head, coset_idx, coset_off_set)
     }
+
     public fun bit_reverse(
-        num : u256,
-        number_of_bits : u256
-    ) : u256 {
-        assert!((number_of_bits == 256 || num < (pow(2, (number_of_bits as u128)) as u256)),1);
+        num: u256,
+        number_of_bits: u256
+    ): u256 {
+        assert!((number_of_bits == 256 || num < (pow(2, (number_of_bits as u128)) as u256)), 1);
         let n = num;
         let r = 0 ;
         let k = 0;
         while (k < number_of_bits) {
-            r = (r * 2) | (n %2);
-            n = n/2;
-            k = k +1;
+            r = (r * 2) | (n % 2);
+            n = n / 2;
+            k = k + 1;
         };
         r
     }
@@ -122,15 +120,14 @@ module verifier_addr::fri_layer {
           Initializes the FRI group and half inv group in the FRI context.
     */
     public fun init_fri_group(
-        s : &signer,
-        fri : &mut Table<u256,u256>,
-        fri_ctx : u256
+        s: &signer,
+        fri: &mut Table<u256, u256>,
+        fri_ctx: u256
     ) {
-
         let fri_group_ptr = fri_ctx + FRI_CTX_TO_FRI_GROUP_OFFSET;
         let fri_half_inv_group_ptr = fri_ctx + FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET;
         let gen_fri_group = FRI_GROUP_GEN;
-        let gen_fri_group_inv = fpow(gen_fri_group,(MAX_COSET_SIZE-1));
+        let gen_fri_group_inv = fpow(gen_fri_group, (MAX_COSET_SIZE - 1));
         let last_val = 1;
         let last_val_inv = 1;
 
@@ -138,15 +135,15 @@ module verifier_addr::fri_layer {
         table::upsert(fri, fri_group_ptr, last_val);
         table::upsert(fri, fri_group_ptr + 1, k_modulus() - last_val);
 
-        let half_coset_size = MAX_COSET_SIZE/2;
+        let half_coset_size = MAX_COSET_SIZE / 2;
         let i = 1;
         while (i < half_coset_size) {
-            last_val = fmul(last_val , gen_fri_group);
-            last_val_inv = fmul(last_val_inv , gen_fri_group_inv);
-            let idx= bit_reverse(i, fri_max_step_size() - 1);
+            last_val = fmul(last_val, gen_fri_group);
+            last_val_inv = fmul(last_val_inv, gen_fri_group_inv);
+            let idx = bit_reverse(i, fri_max_step_size() - 1);
             table::upsert(fri, fri_half_inv_group_ptr + idx, last_val_inv);
-            table::upsert(fri, fri_group_ptr + idx*2 , last_val);
-            table::upsert(fri, fri_group_ptr + idx*2 + 1, k_modulus() - last_val);
+            table::upsert(fri, fri_group_ptr + idx * 2, last_val);
+            table::upsert(fri, fri_group_ptr + idx * 2 + 1, k_modulus() - last_val);
             i = i + 1;
         };
     }
@@ -165,42 +162,53 @@ module verifier_addr::fri_layer {
       As the function computes the next layer it also collects that data from
       the previous layer for Merkle verification.
     */
-    public fun compute_next_layer (
-        fri : &mut Table<u256,u256>,
-        channel_ptr : u256,
-        fri_queue_ptr : u256,
-        merkle_queue_ptr : u256,
-        n_queries : u256,
-        fri_ctx : u256,
-        fri_eval_point : u256,
-        fri_coset_size : u256,
-    ) : u256  {
-
+    public fun compute_next_layer(
+        fri: &mut Table<u256, u256>,
+        channel_ptr: u256,
+        fri_queue_ptr: u256,
+        merkle_queue_ptr: u256,
+        n_queries: u256,
+        fri_ctx: u256,
+        fri_eval_point: u256,
+        fri_coset_size: u256,
+    ): u256 {
         let evaluation_on_coset_ptr = fri_ctx + FRI_CTX_TO_COSET_EVALUATIONS_OFFSET;
         let input_ptr = fri_queue_ptr;
         let input_end = input_ptr + (FRI_QUEUE_SLOT_SIZE * n_queries);
         let output_ptr = fri_queue_ptr;
-        while ( input_ptr < input_end) {
+        while (input_ptr < input_end) {
             let coset_offset;
             let index;
-            (input_ptr,index, coset_offset) = gather_coset_inputs(
-                fri,channel_ptr, fri_ctx + FRI_CTX_TO_FRI_GROUP_OFFSET, evaluation_on_coset_ptr, input_ptr, fri_coset_size
+            (input_ptr, index, coset_offset) = gather_coset_inputs(
+                fri,
+                channel_ptr,
+                fri_ctx + FRI_CTX_TO_FRI_GROUP_OFFSET,
+                evaluation_on_coset_ptr,
+                input_ptr,
+                fri_coset_size
             );
-
 
 
             index = index / fri_coset_size;
             table::upsert(fri, merkle_queue_ptr, index);
-            let res = COMMITMENT_MASK & to_u256(keccak256( append_vector(  to_bytes(&evaluation_on_coset_ptr),to_bytes(&fri_coset_size))));
+            let res = COMMITMENT_MASK & to_u256(
+                keccak256(append_vector(to_bytes(&evaluation_on_coset_ptr), to_bytes(&fri_coset_size)))
+            );
 
-            table::upsert(fri, merkle_queue_ptr + 1, COMMITMENT_MASK & to_u256(keccak256( append_vector(  to_bytes(&evaluation_on_coset_ptr),to_bytes(&fri_coset_size))))) ;
+            table::upsert(
+                fri,
+                merkle_queue_ptr + 1,
+                COMMITMENT_MASK & to_u256(
+                    keccak256(append_vector(to_bytes(&evaluation_on_coset_ptr), to_bytes(&fri_coset_size)))
+                )
+            ) ;
 
-            merkle_queue_ptr =  merkle_queue_ptr + 2;
+            merkle_queue_ptr = merkle_queue_ptr + 2;
 
 
             let (fri_value, fri_inversed_point) = transform_coset(
-                 fri,
-                    fri_ctx + FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET,
+                fri,
+                fri_ctx + FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET,
                 evaluation_on_coset_ptr,
                 coset_offset,
                 fri_eval_point,
@@ -209,13 +217,13 @@ module verifier_addr::fri_layer {
             print(&fri_value);
             print(&fri_inversed_point);
 
-            upsert(fri, output_ptr,index);
+            upsert(fri, output_ptr, index);
             upsert(fri, output_ptr + 1, fri_value);
             upsert(fri, output_ptr + 2, fri_inversed_point);
             output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
         };
 
-        let res = (output_ptr - fri_queue_ptr)/ FRI_QUEUE_SLOT_SIZE;
+        let res = (output_ptr - fri_queue_ptr) / FRI_QUEUE_SLOT_SIZE;
         res
     }
 
@@ -279,5 +287,4 @@ module verifier_addr::fri_layer {
     //     let result = keccak256(append_vector(to_bytes(&num),to_bytes(&three)));
     //     print(&result);
     // }
-
 }

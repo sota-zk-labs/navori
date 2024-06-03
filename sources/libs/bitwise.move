@@ -11,6 +11,11 @@ module lib_addr::bitwise {
     #[test]
     fun test_not() {
         assert(not(0u256) == 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffu256, 1);
-        assert(not(0x00000000000000000000000000000000ffffffffffffffffffffffffffffffffu256) == 0xffffffffffffffffffffffffffffffff00000000000000000000000000000000u256, 1);
+        assert(
+            not(
+                0x00000000000000000000000000000000ffffffffffffffffffffffffffffffffu256
+            ) == 0xffffffffffffffffffffffffffffffff00000000000000000000000000000000u256,
+            1
+        );
     }
 }
