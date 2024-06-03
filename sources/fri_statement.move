@@ -18,8 +18,7 @@ module verifier_addr::fri_statement {
     use verifier_addr::fact_registry::register_fact;
     use lib_addr::memory::{mloadrange, mload, mstore, allocate, get_next, set_next, Memory};
     use verifier_addr::merkle_verifier::verify_merkle;
-    use verifier_addr::append_vector::append_vector;
-    use verifier_addr::convert_memory::from_vector;
+    use verifier_addr::vector::append_vector;
     use err_addr::fri_error::err_fri_step_size_too_large;
     #[test_only]
     use aptos_std::debug::print_stack_trace;

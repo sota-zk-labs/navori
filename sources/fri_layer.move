@@ -9,7 +9,7 @@ module verifier_addr::fri_layer {
     use aptos_std::table::{Self, Table, new, upsert};
     use lib_addr::bitwise::not;
     use lib_addr::memory::{Memory, mstore, mload};
-    use verifier_addr::append_vector::append_vector;
+    use verifier_addr::vector::append_vector;
     use verifier_addr::fri_transform::{fri_max_step_size, transform_coset};
     use verifier_addr::prime_field_element_0::{fpow, fmul, k_modulus, one_val};
     use verifier_addr::prime_field_element_0;
