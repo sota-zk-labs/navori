@@ -93,7 +93,7 @@ module verifier_addr::fri_transform {
 
         f2 = (f2 + f3 + fmul(
             f2 + (k_modulus() - f3),
-            fmul(mload(memory, fri_half_inv_group_prt + 1), fri_eval_point_div_by_x)
+            fmul(mload(memory, fri_half_inv_group_prt + 0x20), fri_eval_point_div_by_x)
         )) % k_modulus();
 
         let new_x_inv = fmul(coset_off_set, coset_off_set);

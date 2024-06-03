@@ -14,7 +14,7 @@ module verifier_addr::fri_statement {
     use aptos_std::from_bcs::to_u256;
     use aptos_std::math128::pow;
     use lib_addr::memory;
-    use lib_addr::EndianConversion::to_big_endian;
+    use lib_addr::endia_encode::to_big_endian;
     use verifier_addr::fact_registry::register_fact;
     use lib_addr::memory::{mloadrange, mload, mstore, allocate, get_next, set_next, Memory};
     use verifier_addr::merkle_verifier::verify_merkle;
@@ -31,7 +31,6 @@ module verifier_addr::fri_statement {
 
 
     public fun verify_fri(
-        signer: signer,
         proof: vector<u256>,
         fri_queue: vector<u256>,
         evaluation_point: u256,
@@ -161,35 +160,32 @@ module verifier_addr::fri_statement {
         validate_fri_queue(get_fri_queue_3());
     }
 
-    // #[test(a = @verifier_addr)]
-    // fun test_verify_fri_3(a: signer) {
-    //     verify_fri(
-    //         a,
-    //         get_proof_3(),
-    //         get_fri_queue_3(),
-    //         get_evaluation_point_3(),
-    //         get_fri_step_size_3(),
-    //         get_expected_root_3()
-    //     );
-    //     let fri = &borrow_global<Fri>(@verifier_addr).fri;
-    //     let i = 0;
-    //     // while(i < 500) {
-    //     //     let val = table::borrow_with_default(fri, i,&0);
-    //     //     print(&i);
-    //     //     print(val);
-    //     //     i = i + 1;
-    //     // }
-    // }
+    #[test]
+    fun test_verify_fri_3() {
+        verify_fri(
+            get_proof_3(),
+            get_fri_queue_3(),
+            get_evaluation_point_3(),
+            get_fri_step_size_3(),
+            get_expected_root_3()
+        );
+        let i = 0;
+        // while(i < 500) {
+        //     let val = table::borrow_with_default(fri, i,&0);
+        //     print(&i);
+        //     print(val);
+        //     i = i + 1;
+        // }
+    }
 
-    // #[test(a = @verifier_addr)]
-    // fun test_verify_fri_2(a: signer) {
-    //     verify_fri(
-    //         a,
-    //         get_proof_2(),
-    //         get_fri_queue_2(),
-    //         get_evaluation_point_2(),
-    //         get_fri_step_size_2(),
-    //         get_expected_root_2()
-    //     );
-    // }
+    #[test]
+    fun test_verify_fri_2() {
+        verify_fri(
+            get_proof_2(),
+            get_fri_queue_2(),
+            get_evaluation_point_2(),
+            get_fri_step_size_2(),
+            get_expected_root_2()
+        );
+    }
 }

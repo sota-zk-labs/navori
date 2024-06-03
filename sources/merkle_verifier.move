@@ -3,7 +3,7 @@ module verifier_addr::merkle_verifier {
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::debug::print;
     use aptos_std::from_bcs::{to_u8, to_u256};
-    use lib_addr::EndianConversion::to_big_endian;
+    use lib_addr::endia_encode::to_big_endian;
     use lib_addr::memory::{mload, Memory, mstore, mloadrange};
     use lib_addr::memory;
     use lib_addr::math_mod;

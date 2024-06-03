@@ -1,5 +1,6 @@
 module verifier_addr::fri_layer {
     use std::bcs::to_bytes;
+    use std::string::utf8;
     use std::vector;
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math128::pow;
