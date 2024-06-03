@@ -11,6 +11,8 @@ module lib_addr::memory {
 
     const SLOT_LENGTH: u256 = 0x20u256;
 
+    const ALLOCATION_PTR: u256 = 0x40u256;
+
     // Each slot memory contain 32bytes, total 2^256 slots
     // Example:
     // 0x0:
@@ -39,7 +41,7 @@ module lib_addr::memory {
         // 0x40 is next free pointer location, set it to 0x80
         mstore(&mut memory, 0x00, 0x00);
         mstore(&mut memory, 0x20, 0x00);
-        mstore(&mut memory, 0x40, 0x80);
+        mstore(&mut memory, ALLOCATION_PTR, 0x80);
         mstore(&mut memory, 0x60, 0x00);
         return memory
     }
@@ -121,16 +123,16 @@ module lib_addr::memory {
     public fun allocate(memory: &mut Memory, value: u256): u256 {
         let offset = get_next(memory);
         mstore(memory, offset, value);
-        mstore(memory, 0x40, offset + 32);
+        mstore(memory, ALLOCATION_PTR, offset + SLOT_LENGTH);
         return offset
     }
 
     public fun get_next(memory: &Memory): u256 {
-        mload(memory, 0x40)
+        mload(memory, ALLOCATION_PTR)
     }
 
     public fun set_next(memory: &mut Memory, value: u256) {
-        mstore(memory, 0x40, value)
+        mstore(memory, ALLOCATION_PTR, value)
     }
 
     #[test_only]
@@ -149,8 +151,9 @@ module lib_addr::memory {
     fun test_mload() {
         let memory = new();
         let value = 0x80;
-        mstore(&mut memory, 0x40, value);
-        let res = mload(&memory, 0x40);
+        let slot = 0x100;
+        mstore(&mut memory, slot, value);
+        let res = mload(&memory, slot);
         print(&res);
         assert!(res == value, 1);
     }
@@ -175,9 +178,9 @@ module lib_addr::memory {
         let memory = new();
         allocate(&mut memory, 1024);
         let res = mloadrange(&memory, 0x80, 16);
-        print(&res);
+        assert!(to_little_endian(res) == to_bytes(&0u128), 1);
         let res = mloadrange(&memory, 0x90, 16);
-        print(&res);
+        assert!(to_little_endian(res) == (to_bytes(&1024u128)), 1);
     }
 
     #[test]
@@ -212,5 +215,15 @@ module lib_addr::memory {
         let memory = new();
         let slice = mloadrange(&memory, 0x00, 0x40);
         print(&keccak256(slice));
+    }
+
+    #[test]
+    fun test() {
+        let memory = new();
+        let value = 501080743087788603510483634306448304961082922258017134548723095553640979638;
+        mstore(&mut memory, 6344, value);
+        let res = mload(&memory, 6344);
+        print(&res);
+        assert!(res == value, 1);
     }
 }

@@ -49,6 +49,7 @@ module verifier_addr::fri_statement {
             allocate(&mut memory, f);
         });
 
+        // init_fri(&signer);
         // must <= FRI_MAX_STEPS_SIZE
         // let fri = &mut borrow_global_mut<Fri>(address_of(&signer)).fri;
         assert!(fri_step_size <= 4, err_fri_step_size_too_large());
@@ -66,17 +67,15 @@ module verifier_addr::fri_statement {
         let fri_ctx: u256;
         let data_to_hash: u256;
 
-
         let fri_queue_ptr = fri_queue_ptr + 0x20;
 
         channel_ptr = get_next(&memory);
-        print(&channel_ptr);
 
         mstore(&mut memory, channel_ptr, proof_ptr + 0x20);
         merkle_queue_ptr = channel_ptr + 0x20;
         fri_ctx = merkle_queue_ptr + 0x40 * n_queries;
         data_to_hash = fri_ctx + mm_fri_ctx_size;
-        set_next(&mut memory, 0xa0);
+        set_next(&mut memory, data_to_hash + 0xa0);
 
         mstore(&mut memory, data_to_hash, evaluation_point);
         mstore(&mut memory, data_to_hash + 0x20, fri_step_size);
@@ -84,46 +83,37 @@ module verifier_addr::fri_statement {
 
         // Hash FRI inputs and add to dataToHash.
 
-        let hash = mloadrange(&mut memory, fri_queue_ptr, 0x60 * n_queries);
+        let keccak_input = mloadrange(&mut memory, fri_queue_ptr, 0x60 * n_queries);
         mstore(
             &mut memory,
             data_to_hash + 0x40,
-            to_u256(keccak256(hash))
+            to_u256(keccak256(keccak_input))
         );
 
-
         init_fri_group(&mut memory, fri_ctx);
-        let i = 0;
-        while ( i < 500) {
-            print(&to_bytes(&i));
-            print(&to_little_endian( to_bytes(&mload(&memory, i*0x20))));
-            i = i + 1;
-        }
+        let fri_coset_size = (pow(2, (fri_step_size as u128)) as u256);
 
+        n_queries = compute_next_layer(
+            &mut memory,
+            channel_ptr,
+            fri_queue_ptr,
+            merkle_queue_ptr,
+            n_queries,
+            fri_ctx,
+            evaluation_point,
+            fri_coset_size,
+        );
 
-        // let fri_coset_size = (pow(2, (fri_step_size as u128)) as u256);
-        //
-        // n_queries = compute_next_layer(
-        //     &mut memory,
-        //     channel_ptr,
-        //     fri_queue_ptr,
-        //     merkle_queue_ptr,
-        //     n_queries,
-        //     fri_ctx,
-        //     evaluation_point,
-        //     fri_coset_size,
-        // );
-        //
-        // // TODO: check the keccak
-        // verify_merkle(&mut memory, channel_ptr, merkle_queue_ptr, to_big_endian(to_bytes(&expected_root)), n_queries);
-        //
-        // let keccak_input = mloadrange(&mut memory, fri_queue_ptr, 0x60 * n_queries);
-        // mstore(&mut memory, data_to_hash + 0x60, to_u256(keccak256(keccak_input)));
-        //
-        // let keccak_input = mloadrange(&mut memory, data_to_hash, 0xa0);
-        // let fact_hash = keccak256(keccak_input);
-        //
-        // register_fact(fact_hash)
+        // TODO: check the keccak
+        verify_merkle(&mut memory, channel_ptr, merkle_queue_ptr, to_big_endian(to_bytes(&expected_root)), n_queries);
+
+        let keccak_input = mloadrange(&mut memory, fri_queue_ptr, 0x60 * n_queries);
+        mstore(&mut memory, data_to_hash + 0x60, to_u256(keccak256(keccak_input)));
+
+        let keccak_input = mloadrange(&mut memory, data_to_hash, 0xa0);
+        let fact_hash = keccak256(keccak_input);
+
+        register_fact(fact_hash)
     }
 
     fun validate_fri_queue(fri_queue: vector<u256>) {

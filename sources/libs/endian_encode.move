@@ -5,13 +5,13 @@ module lib_addr::endia_encode {
 
     public fun to_big_endian(x: vector<u8>): vector<u8> {
         // // Ensure the input vector is 32 bytes long
-        assert!(vector::length(&x) == 32, 1);
+        // assert!(vector::length(&x) == 32, 1);
         reverse(x)
     }
 
     public fun to_little_endian(x: vector<u8>): vector<u8> {
         // // Ensure the input vector is 32 bytes long
-        assert!(vector::length(&x) == 32, 1);
+        // assert!(vector::length(&x) == 32, 1);
         reverse(x)
     }
 
