@@ -1,4 +1,4 @@
-module verifier_addr::append_vector {
+module verifier_addr::vector {
     use std::vector;
 
     public fun append_vector(
