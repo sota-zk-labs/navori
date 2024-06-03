@@ -1,7 +1,5 @@
 module lib_addr::math_mod {
 
-    use aptos_std::debug::print;
-
     public fun mod_add(a: u256, b: u256, k: u256): u256 {
         (a % k) + (b % k) % k
     }
@@ -42,8 +40,8 @@ module lib_addr::math_mod {
         res
     }
 
-    // #[test_only]
-    // use aptos_std::debug::print;
+    #[test_only]
+    use aptos_std::debug::print;
 
     #[test]
     fun test_mod_add_max() {
@@ -61,7 +59,6 @@ module lib_addr::math_mod {
         let b = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffu256;
         let k = 0x800000000000011000000000000000000000000000000000000000000000001;
         let res = mod_sub(a, b, k);
-        print(&res);
         assert(res == 0, 1);
     }
 
@@ -81,9 +78,16 @@ module lib_addr::math_mod {
         let b = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffu256;
         let k = 0x800000000000011000000000000000000000000000000000000000000000001;
         let res = mod_div(a, b, k);
-
-        print(&res);
         assert!(res == 1, 1);
+    }
 
+    #[test()]
+    fun test_expmod() {
+        let a = 0x5ec467b88826aba4537602d514425f3b0bdf467bbf302458337c45f6021e539;
+        let b = 15;
+        let c = 2607735469685256064975697808597423000021425046638838630471627721324227832437;
+        let k = 0x800000000000011000000000000000000000000000000000000000000000001;
+        let res = mod_exp(a, b, k);
+        assert!(res == c, 1);
     }
 }

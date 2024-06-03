@@ -11,17 +11,17 @@ module verifier_addr::fri_transform {
     use aptos_std::debug::print;
     use aptos_std::table::{upsert, borrow_mut};
 
-
-    const FRI_MIN_STEP_SIZE: u256 = 2;
-    const FRI_MAX_STEP_SIZE: u256 = 4;
-
-    const K_MODULUS_TIMES_16: u256 = 0x8000000000000110000000000000000000000000000000000000000000000010;
-
-    public fun fri_max_step_size(): u256 {
-        FRI_MAX_STEP_SIZE
+    public fun FRI_MAX_STEP_SIZE(): u256 {
+        4
     }
 
+    public fun FRI_MIN_STEP_SIZE(): u256 {
+        2
+    }
 
+    public fun K_MODULUS_TIMES_16(): u256 {
+        0x8000000000000110000000000000000000000000000000000000000000000010
+    }
 
     public fun transform_coset(
         memory: &mut Memory,
@@ -152,7 +152,7 @@ module verifier_addr::fri_transform {
 
         f0 = (f0 + f2 + fmul(
             fri_eval_point_div_by_x_squared,
-            f0 + (K_MODULUS_TIMES_16 - f2)));
+            f0 + (K_MODULUS_TIMES_16() - f2)));
 
 
         let f4 = mload(memory, evaluations_on_coset_ptr + 0x80);
@@ -176,14 +176,14 @@ module verifier_addr::fri_transform {
 
         f4 = (f4 + f6 + fmul(
             fmul(fri_eval_point_div_by_x2, fri_eval_point_div_by_x2),
-            f4 + (K_MODULUS_TIMES_16 - f6)
+            f4 + (K_MODULUS_TIMES_16() - f6)
         ));
 
         let next_layer_value = (
             f0 + f4
                 + fmul(
                 fmul(fri_eval_point_div_by_x_squared, fri_eval_point_div_by_x_squared),
-                f0 + (K_MODULUS_TIMES_16 - f4)
+                f0 + (K_MODULUS_TIMES_16() - f4)
             )
         ) % k_modulus();
 
@@ -233,7 +233,7 @@ module verifier_addr::fri_transform {
 
         f0 = (f0 + f2 + fmul(
             fri_eval_point_div_by_x_squared,
-            f0 + (K_MODULUS_TIMES_16 - f2)
+            f0 + (K_MODULUS_TIMES_16() - f2)
         ));
 
         let f4 = mload(memory, evaluations_on_coset_ptr + 0x80);
@@ -259,13 +259,13 @@ module verifier_addr::fri_transform {
         // f4 < 7P ( = 3 + 3 + 1).
         f4 = (f4 + f6 + fmul(
             fmul(fri_eval_point_div_by_x2, fri_eval_point_div_by_x2),
-            f4 + (K_MODULUS_TIMES_16 - f6)
+            f4 + (K_MODULUS_TIMES_16() - f6)
         ));
 
         // f0 < 15P ( = 7 + 7 + 1).
         f0 = (f0 + f4 + fmul(
             fri_eval_point_div_by_x_tessed,
-            f0 + (K_MODULUS_TIMES_16 - f4)
+            f0 + (K_MODULUS_TIMES_16() - f4)
         ));
 
         let f8 = mload(memory, evaluations_on_coset_ptr + 0x100);
@@ -290,7 +290,7 @@ module verifier_addr::fri_transform {
         // f8 < 7P ( = 3 + 3 + 1).
         f8 = (f8 + f10 + fmul(
             fmul(fri_eval_point_div_by_x4, fri_eval_point_div_by_x4),
-            f8 + (K_MODULUS_TIMES_16 - f10)
+            f8 + (K_MODULUS_TIMES_16() - f10)
         ));
 
         let f12 = mload(memory, evaluations_on_coset_ptr + 0x180);
@@ -314,18 +314,18 @@ module verifier_addr::fri_transform {
         // f12 < 7P ( = 3 + 3 + 1).
         f12 = (f12 + f14 + fmul(
             fmul(fri_eval_point_div_by_x6, fri_eval_point_div_by_x6),
-            f12 + (K_MODULUS_TIMES_16 - f14)
+            f12 + (K_MODULUS_TIMES_16() - f14)
         ));
 
         // f8 < 15P ( = 7 + 7 + 1).
         f8 = (f8 + f12 + fmul(
             fmul(fri_eval_point_div_by_x_tessed, fri_eval_point_div_by_x_tessed),
-            f8 + (K_MODULUS_TIMES_16 - f12)
+            f8 + (K_MODULUS_TIMES_16() - f12)
         ));
 
         let next_layer_value = (f0 + f8 + fmul(
             fmul(fri_eval_point_div_by_x_tessed, fri_eval_point_div_by_x_tessed),
-            f0 + (K_MODULUS_TIMES_16 - f8)
+            f0 + (K_MODULUS_TIMES_16() - f8)
         )) % k_modulus();
 
         let x_Inv2 = fmul(coset_off_set, coset_off_set);

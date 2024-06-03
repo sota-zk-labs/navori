@@ -27,104 +27,45 @@ module verifier_addr::prime_field_element_0 {
         ONE_VAL
     }
 
-
     public fun fmul(a: u256, b: u256): u256 {
-        let res = 0;
-        a = a % K_MODULUS;
-        while (b > 0) {
-            if (b % 2 == 1) {
-                res = (res + a) % K_MODULUS;
-            };
-
-            a = (a * 2) % K_MODULUS;
-            b = b / 2;
-        };
-        res
+        mod_mul(a, b, K_MODULUS)
     }
 
     public fun from_montgomery(val: u256): u256 {
-        let res = fmul(val, K_MONTGOMERY_R_INV);
-        res
+        fmul(val, K_MONTGOMERY_R_INV)
     }
 
     public fun from_montgomery_bytes(bs: vector<u8>): u256 {
-        let res = from_bcs::to_u256(bs);
-        from_montgomery(res)
+        from_montgomery(from_bcs::to_u256(bs))
     }
 
     public fun to_montgomery_int(val: u256): u256 {
-        let res = fmul(val, K_MONTGOMERY_R);
-        res
+        fmul(val, K_MONTGOMERY_R)
     }
 
     public fun fadd(a: u256, b: u256): u256 {
-        let res = a + b;
-        let res = res % K_MODULUS;
-        res
+        mod_add(a, b, K_MODULUS)
     }
 
     public fun fsub(a: u256, b: u256): u256 {
-        fadd(a, K_MODULUS - b)
+        mod_sub(a, b, K_MODULUS)
     }
 
     public fun fpow(val: u256, exp: u256): u256 {
-        expmod(val, exp, K_MODULUS)
-    }
-
-    fun expmod(base: u256, exponent: u256, modulus: u256): u256 {
-        let res: u256 = 1;
-        let base = base % modulus;
-        let exponent = exponent;
-
-        while (exponent > 0) {
-            if (exponent % 2 == 1) {
-                res = fmul(res, base);
-            };
-            exponent = exponent / 2;
-            base = fmul(base, base);
-        };
-        res
-    }
-
-    public fun left_shift(val: u256, shift: u256): u256 {
-        let res = val;
-        let count = shift;
-
-        while (count > 0) {
-            res = res * 2;
-            count = count - 1;
-        };
-
-        res
+        mod_exp(val, exp, K_MODULUS)
     }
 
     public fun inverse(val: u256): u256 {
-        expmod(val, K_MODULUS - 2, K_MODULUS)
+        mod_exp(val, K_MODULUS - 2, K_MODULUS)
     }
-
 
     #[test_only]
     use aptos_std::debug;
     use aptos_std::debug::print;
     use aptos_std::math128::pow;
+    use lib_addr::math_mod::{mod_mul, mod_add, mod_sub, mod_exp};
 
-    #[test(s = @verifier_addr)]
-
-    fun testmath_basic() {
-        let test1: u256 = 0x100;
-        let test2: u256 = test1;
-        let res = 8 % K_MODULUS;
-        assert!(res == 8, 1);
-    }
-
-    #[test(s = @verifier_addr)]
-    fun test_expmod() {
-        let a = K_MODULUS;
-        let res = expmod(0x5ec467b88826aba4537602d514425f3b0bdf467bbf302458337c45f6021e539, 15, K_MODULUS);
-        assert!(res == 2607735469685256064975697808597423000021425046638838630471627721324227832437, 1);
-    }
-
-    #[test(s = @verifier_addr)]
+    #[test()]
     fun test_fpow() {
         let res = fmul(K_MONTGOMERY_R, K_MONTGOMERY_R);
         print(&res);
