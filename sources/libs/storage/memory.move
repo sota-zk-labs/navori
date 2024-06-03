@@ -2,6 +2,7 @@
 module lib_addr::memory {
     use std::bcs::to_bytes;
     use std::vector;
+    use aptos_std::debug::print;
     use aptos_std::from_bcs::to_u256;
     use aptos_std::simple_map;
     use aptos_std::simple_map::SimpleMap;
@@ -49,7 +50,7 @@ module lib_addr::memory {
         let slot_amount = 1;
         let last_slot_offset = 0;
 
-        if (length < SLOT_LENGTH - first_slot_offset) {
+        if (length <= SLOT_LENGTH - first_slot_offset) {
             last_slot_offset = first_slot_offset + length;
             return (slot_index, slot_amount, first_slot_offset, last_slot_offset)
         };
@@ -86,7 +87,7 @@ module lib_addr::memory {
             if (index == 0) {
                 vector::append(&mut res, vector::slice(&slot_value, (first_slot_offset as u64), (SLOT_LENGTH as u64)));
             } else if (index == slot_amount - 1) {
-                vector::append(&mut res, vector::slice(&slot_value, 0, (SLOT_LENGTH - last_slot_offset as u64)));
+                vector::append(&mut res, vector::slice(&slot_value, 0, (last_slot_offset as u64)));
             } else {
                 vector::append(&mut res, slot_value);
             };
@@ -134,8 +135,8 @@ module lib_addr::memory {
 
     #[test_only]
     use aptos_std::aptos_hash::keccak256;
-    #[test_only]
-    use aptos_std::debug::print;
+    // #[test_only]
+    // use aptos_std::debug::print;
 
     #[test]
     fun test_mstore() {
