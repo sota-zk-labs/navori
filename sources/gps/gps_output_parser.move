@@ -61,8 +61,8 @@ module verifier_addr::gps_output_parser {
 
         let task_meta_data_copy = task_metadata;
 
-        let page_info_ptr = vector::empty<u256>();
-        page_info_ptr = vector::slice(&public_memory_pages, 1, vector::length(&public_memory_pages));
+        let page_info_ptr = vector::slice(&public_memory_pages, 1, vector::length(&public_memory_pages));
+
         let task = 0;
         loop {
             let cur_offset = 0;
