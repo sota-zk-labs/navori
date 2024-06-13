@@ -29,27 +29,27 @@ module verifier_addr::gps_output_parser {
 
     #[event]
     struct LogMemoryPagesHashes has drop, copy {
-        program_output_fact : vector<u8>,
-        referal_duration    : vector<u8>,
+        program_output_fact: vector<u8>,
+        referal_duration: vector<u8>,
     }
 
-    public fun initialize(s : &signer, ref_fact_registry : address, referal_duration : u64 ) {
-        fact_registry::init_fact_registry(s, ref_fact_registry,referal_duration);
+    fun initialize(s: &signer, ref_fact_registry: address, referal_duration: u64) {
+        fact_registry::init_fact_registry(s, ref_fact_registry, referal_duration);
     }
 
-    fun register_gps_fact (
-        task_metadata : vector<u256>,
-        public_memory_pages : vector<u256>,
-        output_start_address : u256
+    fun register_gps_fact(
+        task_metadata: vector<u256>,
+        public_memory_pages: vector<u256>,
+        output_start_address: u256
     ) {
         let total_num_pages = vector::borrow(&public_memory_pages, 0);
 
-        let task:u256;
-        let n_tree_pairs : u256;
-        let n_task = *vector::borrow(&task_metadata,0);
+        let task: u256;
+        let n_tree_pairs: u256;
+        let n_task = *vector::borrow(&task_metadata, 0);
 
-        let page_hashed_log_data =  vector::empty<u256>();
-        vector::insert(&mut page_hashed_log_data,1,0x40);
+        let page_hashed_log_data = vector::empty<u256>();
+        vector::insert(&mut page_hashed_log_data, 1, 0x40);
 
         let task_metadata_offset = METADATA_TASKS_OFFSET;
 
@@ -61,8 +61,8 @@ module verifier_addr::gps_output_parser {
 
         let task_meta_data_copy = task_metadata;
 
-        let page_info_ptr = vector::empty<u256>();
-        page_info_ptr = vector::slice(&public_memory_pages,1, vector::length(&public_memory_pages) );
+        let page_info_ptr = vector::slice(&public_memory_pages, 1, vector::length(&public_memory_pages));
+
         let task = 0;
         loop {
             let cur_offset = 0;
@@ -72,32 +72,35 @@ module verifier_addr::gps_output_parser {
 
             for (tree_pairs in 0..n_tree_pairs) {
                 let n_pages = *vector::borrow(&task_meta_data_copy,
-                    ((task_metadata_offset + METADATA_TASK_HEADER_SIZE +2*tree_pairs + METADATA_OFFSET_TREE_PAIR_N_PAGES) as u64)
+                    ((task_metadata_offset + METADATA_TASK_HEADER_SIZE + 2 * tree_pairs + METADATA_OFFSET_TREE_PAIR_N_PAGES) as u64)
                 );
-                for(i in 0..n_pages) {
-                    let (page_size,page_hash) = push_page_to_stack(
+                for (i in 0..n_pages) {
+                    let (page_size, page_hash) = push_page_to_stack(
                         page_info_ptr,
                         cur_addr,
                         cur_offset,
                         node_stack,
                         node_stack_len
                     );
-                    vector::insert(&mut page_hashed_log_data, (cur_page-first_page_of_task+3 as u64),page_hash);
+                    vector::insert(&mut page_hashed_log_data, (cur_page - first_page_of_task + 3 as u64), page_hash);
                     cur_page = cur_page + 1;
                     node_stack_len = node_stack_len + 1;
                     cur_addr = cur_addr + page_size;
                     cur_offset = cur_offset + page_size;
-                    page_info_ptr = vector::slice(&page_info_ptr,3,vector::length(&page_info_ptr));
+                    page_info_ptr = vector::slice(&page_info_ptr, 3, vector::length(&page_info_ptr));
                 };
                 let n_nodes = *vector::borrow(&task_meta_data_copy,
-                    ((task_metadata_offset + METADATA_TASK_HEADER_SIZE +2*tree_pairs + METADATA_OFFSET_TREE_PAIR_N_NODES) as u64)
+                    ((task_metadata_offset + METADATA_TASK_HEADER_SIZE + 2 * tree_pairs + METADATA_OFFSET_TREE_PAIR_N_NODES) as u64)
                 );
                 if (n_nodes != 0) {
-                    node_stack_len = construct_node(node_stack,node_stack_len,n_nodes);
+                    node_stack_len = construct_node(node_stack, node_stack_len, n_nodes);
                 };
             };
             assert!(node_stack_len == 1, 10);
-            let program_hash = *vector::borrow(&task_meta_data_copy, (task_metadata_offset + METADATA_OFFSET_TASK_PROGRAM_HASH as u64));
+            let program_hash = *vector::borrow(
+                &task_meta_data_copy,
+                (task_metadata_offset + METADATA_OFFSET_TASK_PROGRAM_HASH as u64)
+            );
             let program_output_fact = *vector::borrow(&node_stack, (NODE_STACK_OFFSET_HASH as u64));
             let fact = keccak256(bcs::to_bytes(&(program_hash + program_output_fact)));
             task_metadata_offset = task_metadata_offset + METADATA_TASK_HEADER_SIZE + 2 * n_tree_pairs;
@@ -111,41 +114,41 @@ module verifier_addr::gps_output_parser {
     }
 
     fun push_page_to_stack(
-        page_info_prt : vector<u256>,
-        cur_addr : u256,
-        cur_offset : u256,
-        node_stack : vector<u256>,
-        node_stack_len : u256) : (u256,u256) {
-        let page_addr = *vector::borrow(&page_info_prt,page_info::get_page_info_address_offset());
-        let page_size = *vector::borrow(&page_info_prt,page_info::get_page_info_size_offset());
-        let page_hash = *vector::borrow(&page_info_prt,page_info::get_page_info_hash_offset());
+        page_info_prt: vector<u256>,
+        cur_addr: u256,
+        cur_offset: u256,
+        node_stack: vector<u256>,
+        node_stack_len: u256): (u256, u256) {
+        let page_addr = *vector::borrow(&page_info_prt, page_info::get_page_info_address_offset());
+        let page_size = *vector::borrow(&page_info_prt, page_info::get_page_info_size_offset());
+        let page_hash = *vector::borrow(&page_info_prt, page_info::get_page_info_hash_offset());
 
-        assert!(page_addr == cur_addr,8);
+        assert!(page_addr == cur_addr, 8);
 
         vector::insert(&mut node_stack,
             (NODE_STACK_ITEM_SIZE * node_stack_len + NODE_STACK_OFFSET_END as u64), cur_offset + page_size);
         vector::insert(&mut node_stack,
             (NODE_STACK_ITEM_SIZE * node_stack_len + NODE_STACK_OFFSET_HASH as u64), page_hash);
-        (page_size,page_hash)
+        (page_size, page_hash)
     }
 
-    fun construct_node (
-        node_stack :vector<u256>,
-        node_stack_len : u256,
-        n_nodes : u256,
-    ) : u256 {
-        assert!(n_nodes <= node_stack_len,9);
+    fun construct_node(
+        node_stack: vector<u256>,
+        node_stack_len: u256,
+        n_nodes: u256,
+    ): u256 {
+        assert!(n_nodes <= node_stack_len, 9);
         let new_node_end = *vector::borrow(&node_stack,
             (NODE_STACK_ITEM_SIZE * (node_stack_len - 1) + NODE_STACK_OFFSET_END as u64)
         );
         let new_stack_len = node_stack_len - n_nodes;
         let node_start = 1 + new_stack_len * NODE_STACK_ITEM_SIZE;
-        let new_node_hash = to_u256(keccak256( bcs::to_bytes(&vector::slice(&node_stack,
+        let new_node_hash = to_u256(keccak256(bcs::to_bytes(&vector::slice(&node_stack,
             (node_start as u64), (node_start + n_nodes * NODE_STACK_ITEM_SIZE as u64)))));
         vector::insert(&mut node_stack,
             (NODE_STACK_ITEM_SIZE * new_stack_len + NODE_STACK_OFFSET_END as u64), new_node_end);
         vector::insert(&mut node_stack,
-            (NODE_STACK_ITEM_SIZE * new_stack_len + NODE_STACK_OFFSET_HASH as u64), new_node_hash +1 );
+            (NODE_STACK_ITEM_SIZE * new_stack_len + NODE_STACK_OFFSET_HASH as u64), new_node_hash + 1);
         new_stack_len + 1
     }
 }
