@@ -16,7 +16,10 @@ module verifier_addr::fri_statement_contract {
     use verifier_addr::prime_field_element_0::k_modulus;
 
     #[test_only]
-    use verifier_addr::fact_registry::is_valid;
+    use verifier_addr::fact_registry::{init_fact_registry, is_valid};
+    use aptos_std::debug::print;
+    #[test_only]
+    use std::vector::borrow;
     #[test_only]
     use verifier_addr::fri_test::{
         get_evaluation_point_2,
@@ -32,7 +35,6 @@ module verifier_addr::fri_statement_contract {
     };
 
     public fun verify_fri(
-        signer: signer,
         proof: vector<u256>,
         fri_queue: vector<u256>,
         evaluation_point: u256,
@@ -111,7 +113,7 @@ module verifier_addr::fri_statement_contract {
 
         let keccak_input = mloadrange(&mut memory, data_to_hash, 0xa0);
         let fact_hash = keccak256(keccak_input);
-        register_fact(signer, fact_hash);
+        register_fact(fact_hash);
     }
 
     fun validate_fri_queue(fri_queue: vector<u256>) {
@@ -155,9 +157,9 @@ module verifier_addr::fri_statement_contract {
     }
 
     #[test(signer = @verifier_addr)]
-    fun test_verify_fri_3(signer: signer) {
+    fun test_verify_fri_3(signer : &signer){
+        init_fact_registry(signer);
         verify_fri(
-            signer,
             get_proof_3(),
             get_fri_queue_3(),
             get_evaluation_point_3(),
@@ -170,9 +172,9 @@ module verifier_addr::fri_statement_contract {
     }
 
     #[test(signer = @verifier_addr)]
-    fun test_verify_fri_2(signer: signer) {
+    fun test_verify_fri_2(signer: &signer) {
+        init_fact_registry(signer);
         verify_fri(
-            signer,
             get_proof_2(),
             get_fri_queue_2(),
             get_evaluation_point_2(),
@@ -182,5 +184,24 @@ module verifier_addr::fri_statement_contract {
         let fact_hash: u256 = 0xbc348fdab2b2e1f3564918265f0c0371e70078a8195897eb9a76687bbda53558;
         let res = to_big_endian(to_bytes(&fact_hash));
         assert!(is_valid(res), 1);
+    }
+    #[test]
+    fun test_hash() {
+        let memory = memory::new();
+        allocate(&mut memory,4);
+        allocate(&mut memory,5);
+        let keccak_input= mloadrange(&mut memory,0x80,0x40);
+        print(&(keccak_input));
+        let keccak_hash = keccak256(keccak_input);
+        print(&keccak_hash);
+        print(&to_big_endian(keccak_hash));
+    }
+    #[test]
+    fun test_hash1() {
+        let data:vector<u8> = vector[4,5];
+        print(&(data));
+        let keccak_hash = keccak256(data);
+        print(&keccak_hash);
+        print(&to_big_endian(keccak_hash));
     }
 }
