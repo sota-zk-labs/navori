@@ -24,10 +24,10 @@ module verifier_addr::fact_registry {
         *borrow(&borrow_global<VerifierFact>(@verifier_addr).verified_fact, fact)
     }
 
-    public fun register_fact(signer: signer, fact_hash: vector<u8>) acquires VerifierFact {
-        if (exists<VerifierFact>(@verifier_addr) == false) {
-            init_fact_registry(&signer);
-        };
+    public fun register_fact(fact_hash: vector<u8>) acquires VerifierFact {
+        // if (exists<VerifierFact>(@verifier_addr) == false) {
+        //     init_fact_registry(&signer);
+        // };
         let verifier_fact = borrow_global_mut<VerifierFact>(@verifier_addr);
         upsert(&mut verifier_fact.verified_fact, fact_hash, true);
 
@@ -37,6 +37,6 @@ module verifier_addr::fact_registry {
     }
 
     fun has_registered_fact(): bool acquires VerifierFact {
-        borrow_global<VerifierFact>(@verifier_addr).any_fact_registered;
+        borrow_global<VerifierFact>(@verifier_addr).any_fact_registered
     }
 }
