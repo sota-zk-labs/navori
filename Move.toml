@@ -4,8 +4,8 @@ version = "1.0.0"
 authors = []
 
 [addresses]
-verifier_addr = "6f33bbd231224bba90c2cfc59d1f12137dc63f7ee7bf1394706f1558fb3fc90e"
-
+verifier_addr = "4edb83949a3146a3b75f7e6729ad35b201505ea4292aa01d80b1628af61fa5bd"
+sender_addr = "4edb83949a3146a3b75f7e6729ad35b201505ea4292aa01d80b1628af61fa5bd"
 
 [dev-addresses]
 

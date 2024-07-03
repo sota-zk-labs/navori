@@ -1,56 +1,42 @@
 module verifier_addr::fact_registry {
-    use aptos_std::table::{Table,Self};
-    use aptos_framework::timestamp;
+    use aptos_std::table::{Self, borrow, Table, upsert};
 
-    struct VerifierFact has key,store {
-        reference_fact_registry : address,
-        referral_expiration_time : u64,
-        verified_fact : Table<vector<u8>,bool>,
-        any_fact_registered : bool,
+    struct VerifierFact has key, store {
+        verified_fact: Table<vector<u8>, bool>,
+        any_fact_registered: bool
     }
 
-    public fun init_fact_registry(s : &signer, reference_fact_registry : address, referral_duration_seconds : u64) {
-        assert!(reference_fact_registry != @0x0,1);
-        // init more requirements here
-
-
+    public fun init_fact_registry(s: &signer) {
         move_to(s, VerifierFact {
-            reference_fact_registry,
-            referral_expiration_time : timestamp::now_seconds() + referral_duration_seconds,
-            verified_fact : table::new<vector<u8>,bool>(),
-            any_fact_registered : false,
+            verified_fact: table::new<vector<u8>, bool>(),
+            any_fact_registered: false
         });
     }
 
+    #[view]
+    public fun is_valid(fact: vector<u8>): bool acquires VerifierFact {
+        let verifier_fact = borrow_global<VerifierFact>(@verifier_addr);
+        *table::borrow(&verifier_fact.verified_fact, fact)
+    }
 
+    #[view]
+    public fun fast_check(fact: vector<u8>): bool acquires VerifierFact {
+        *borrow(&borrow_global<VerifierFact>(@verifier_addr).verified_fact, fact)
+    }
 
-    public fun register_fact(fact_hash : vector<u8>) acquires VerifierFact {
+    public fun register_fact(signer: signer, fact_hash: vector<u8>) acquires VerifierFact {
+        if (exists<VerifierFact>(@verifier_addr) == false) {
+            init_fact_registry(&signer);
+        };
         let verifier_fact = borrow_global_mut<VerifierFact>(@verifier_addr);
-        table::upsert(&mut verifier_fact.verified_fact, fact_hash, true);
+        upsert(&mut verifier_fact.verified_fact, fact_hash, true);
 
-        if (!verifier_fact.any_fact_registered) {
+        if (verifier_fact.any_fact_registered == false) {
             verifier_fact.any_fact_registered = true;
         }
-
     }
 
-
-    #[view]
-    public fun is_valid(fact : vector<u8>) : bool acquires VerifierFact {
-        let verifier_fact = borrow_global<VerifierFact>(@verifier_addr);
-        *table::borrow(&verifier_fact.verified_fact,fact)
+    fun has_registered_fact(): bool acquires VerifierFact {
+        borrow_global<VerifierFact>(@verifier_addr).any_fact_registered
     }
-
-    #[view]
-    public fun is_any_fact_registered() : bool acquires VerifierFact {
-        let verifier_fact = borrow_global<VerifierFact>(@verifier_addr);
-        verifier_fact.any_fact_registered
-    }
-
-    #[view]
-    public fun is_active() : bool acquires VerifierFact {
-        let verifier_fact = borrow_global<VerifierFact>(@verifier_addr);
-        timestamp::now_seconds() < verifier_fact.referral_expiration_time
-    }
-
 }

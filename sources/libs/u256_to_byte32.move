@@ -1,4 +1,4 @@
-module verifier_addr::U256ToByte32 {
+module verifier_addr::u256_to_byte32 {
     use std::vector;
     use std::vector::empty;
     #[test_only]
@@ -33,7 +33,7 @@ module verifier_addr::U256ToByte32 {
         res
     }
 
-    /// Test function to demonstrate the conversion.
+    // Test function to demonstrate the conversion.
     #[test]
     public fun test_conversion() {
         let value: u256 = 9390404794146759926609078012164974184924937654759657766410025620812402262016;
