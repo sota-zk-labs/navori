@@ -1,16 +1,19 @@
 module lib_addr::math_mod {
 
     public fun mod_add(a: u256, b: u256, k: u256): u256 {
-        (a % k) + (b % k) % k
+        let res = a % k + b % k;
+        return if (res < k) {res} else {res - k}
     }
 
     public fun mod_sub(a: u256, b: u256, k: u256): u256 {
-        ((a % k) - (b % k) + k) % k
+        let res = a % k - b % k;
+        return if (res < 0) {res + k} else {res}
     }
 
     public fun mod_mul(a: u256, b: u256, k: u256): u256 {
         let res = 0;
         a = a % k;
+        b = b % k;
         while (b > 0) {
             if (b % 2 == 1) {
                 res = (res + a) % k;
@@ -23,7 +26,7 @@ module lib_addr::math_mod {
     }
 
     public fun mod_div(a: u256, b: u256, k: u256): u256 {
-        ((a % k) / (b % k)) % k
+        mod_mul(a, mod_exp(b, k - 2, k), k)
     }
 
     public fun mod_exp(b: u256, e: u256, k: u256): u256 {
@@ -89,5 +92,11 @@ module lib_addr::math_mod {
         let k = 0x800000000000011000000000000000000000000000000000000000000000001;
         let res = mod_exp(a, b, k);
         assert!(res == c, 1);
+    }
+
+    #[test]
+    fun test_mod_div() {
+        assert!(mod_div(21, 3, 5) == 2, 1);
+        assert!(mod_div(24, 4, 5) == 1, 1);
     }
 }
