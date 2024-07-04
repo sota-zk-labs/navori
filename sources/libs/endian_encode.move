@@ -1,6 +1,4 @@
 module lib_addr::endia_encode {
-    use std::vector;
-    use aptos_std::debug::print;
     use lib_addr::bytes::reverse;
 
     public fun to_big_endian(x: vector<u8>): vector<u8> {
@@ -18,6 +16,8 @@ module lib_addr::endia_encode {
 
     #[test_only]
     use std::bcs::to_bytes;
+    #[test_only]
+    use aptos_std::debug::print;
 
     #[test]
     fun test_conversion() {

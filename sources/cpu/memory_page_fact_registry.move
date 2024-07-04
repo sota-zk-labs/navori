@@ -1,18 +1,12 @@
 module verifier_addr::memory_page_fact_registry {
-    use std::bcs;
-    use std::vector::{for_each, length};
+    use std::vector::{for_each, length, borrow};
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::from_bcs::to_u256;
-    use aptos_std::math64::pow;
     use aptos_framework::event;
     use aptos_framework::event::emit;
+    use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
 
-    use lib_addr::endia_encode::to_big_endian;
-    use lib_addr::math_mod::mod_mul;
-    use lib_addr::memory;
-    use lib_addr::memory::{allocate, mload, mloadrange};
+    use lib_addr::math_mod::{mod_mul, mod_add};
     use verifier_addr::fact_registry::register_fact;
-    use verifier_addr::vector::append_vector;
 
     const REGULAR_PAGE: u256 = 0;
     const CONTINUOUS_PAGE: u256 = 1;
@@ -46,8 +40,8 @@ module verifier_addr::memory_page_fact_registry {
         alpha: u256,
         prime: u256
     ): (vector<u8>, u256, u256) {
-        assert!(length(&memory_pairs) < pow(2, 20), TOO_MANY_MEMORY_VALUES);
-        assert!(length(&memory_pairs) % 2 == 0, SIZE_OF_MEMORYPAIRS_MUST_BE_EVEN);
+        assert!(length(&memory_pairs) < (1 << 20), TOO_MANY_MEMORY_VALUES);
+        assert!(length(&memory_pairs) & 2 == 0, SIZE_OF_MEMORYPAIRS_MUST_BE_EVEN);
         assert!(z < prime, INVALID_VALUE_OF_Z);
         assert!(alpha < prime, INVALID_VALUE_OF_ALPHA);
 
@@ -64,151 +58,124 @@ module verifier_addr::memory_page_fact_registry {
         alpha: u256,
         prime: u256
     ): (vector<u8>, u256, u256) {
-        //uint256[] memory memoryPairs
-        let memory = memory::new();
-        let memory_ptr = allocate(&mut memory, (length(&memory_pairs) as u256));
-        for_each(memory_pairs, |p| {
-            allocate(&mut memory, p);
-        });
+        let n = length(&memory_pairs);
+        let memory_size = n / 2; // NOLINT: divide-before-multiply.
 
-        let memory_size = length(&memory_pairs) / 2; // NOLINT: divide-before-multiply.
-
-        let prod = 1;
-
-
-        let memory_ptr = memory_ptr + 0x20;
-        let last_ptr = memory_ptr + (memory_size as u256) * 0x40;
-
-        let ptr = memory_ptr;
-        while (ptr < last_ptr) {
-            let address_value_lin_comb = (mload(&memory, ptr) + mod_mul(
-                alpha,
-                mload(&memory, ptr + 0x20),
-                prime
-            )) % prime;
-            prod = mod_mul(prod, z + prime - address_value_lin_comb, prime);
-            ptr = ptr + 0x40;
-        };
-        let input_hash = mloadrange(&memory, memory_ptr, (memory_size * 0x40 as u256));
-        let memory_hash = to_big_endian(keccak256(input_hash));
-        //TODO: need convert to bigendian format
-        let fact_hash = keccak256(
-            append_vector(
-                append_vector(
-                    append_vector(
-                        append_vector(
-                            append_vector(
-                                append_vector(
-                                    bcs::to_bytes(&REGULAR_PAGE), bcs::to_bytes(&prime)
-                                ),
-                                bcs::to_bytes(&memory_size)
-                            ),
-                            bcs::to_bytes(&z)
-                        ),
-                        bcs::to_bytes(&prod)
-                    ),
-                    bcs::to_bytes(&memory_hash)
+        let prod = 1u256;
+        let memory_ptr = 0;
+        while (memory_ptr < n) {
+            // Compute address + alpha * value.
+            let address_value_lin_comb = mod_add(
+                // address
+                *borrow(&memory_pairs, memory_ptr),
+                mod_mul(
+                    // value
+                    *borrow(&memory_pairs, memory_ptr + 1),
+                    alpha,
+                    prime
                 ),
-                bcs::to_bytes(&0)
-            ));
+                prime
+            );
+            prod = mod_mul(prod, z + prime - address_value_lin_comb, prime);
+            memory_ptr = memory_ptr + 2;
+        };
 
-        (fact_hash, (memory_size as u256), prod)
+        let memory_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&memory_pairs)));
+        let fact_hash = keccak256(vec_to_bytes_be(&vector[REGULAR_PAGE, prime, (memory_size as u256), z, alpha, prod, memory_hash, 0u256]));
+        (fact_hash, memory_hash, prod)
     }
 
     /*
       Registers a fact based on the given values, assuming continuous addresses.
       values should be [value at startAddr, value at (startAddr + 1), ...].
     */
-    public fun register_continuos_memorypage(
+    public fun register_continuous_memorypage(
         start_address: u256,
         values: vector<u256>,
         z: u256,
         alpha: u256,
         prime: u256
     ): (vector<u8>, u256, u256) {
-        //uint256[] memory values,
-        let memory = memory::new();
-        let value_ptr = allocate(&mut memory, (length(&values) as u256));
-        for_each(values, |p| {
-            allocate(&mut memory, p);
-        });
-
-        assert!(length(&values) < pow(2, 20), TOO_MANY_MEMORY_VALUES);
-        assert!(prime < (pow(2, 254) as u256), PRIME_IS_TOO_BIG);
+        assert!(length(&values) < (1 << 20), TOO_MANY_MEMORY_VALUES);
+        assert!(prime < (1u256 << 254), PRIME_IS_TOO_BIG);
         assert!(z < prime, INVALID_VALUE_OF_Z);
         assert!(alpha < prime, INVALID_VALUE_OF_ALPHA);
-        assert!(start_address < prime && start_address < (pow(2, 64) as u256), INVALID_VALUE_OF_START_ADDRESS);
+        // Ensure 'startAddr' less then prime and bounded as a sanity check (the bound is somewhat arbitrary).
+        assert!(start_address < prime && start_address < (1u256 << 64), INVALID_VALUE_OF_START_ADDRESS);
 
-        let n_values = length(&values);
+        let n_values = (length(&values) as u256);
+        // Initialize prod to 1.
         let prod = 1;
-        value_ptr = value_ptr + 0x20;
+        // Initialize valuesPtr to point to the first value in the array.
+        let value_ptr = 0u64;
 
         let minus_z = (prime - z) % prime;
 
+        // Start by processing full batches of 8 cells, addr represents the last address in each
+        // batch.
         let addr = start_address + 7;
-        let last_addr = start_address + (n_values as u256);
+        let last_addr = start_address + n_values;
 
         while (addr < last_addr) {
-            prod = prod * (
-                ((addr - 7 + (alpha * mload(&memory, value_ptr)) % prime + minus_z))
-                    * ((addr - 6 + (alpha * mload(&memory, value_ptr + 0x20)) % prime + minus_z))
-                    % prime
-            ) % prime ;
-
-            prod = prod * (
-                ((addr - 5 + (alpha * mload(&memory, value_ptr + 0x40)) % prime + minus_z))
-                    * ((addr - 4 + (alpha * mload(&memory, value_ptr + 0x60)) % prime + minus_z))
-                    % prime
-            ) % prime ;
-
-            prod = prod * (
-                ((addr - 3 + (alpha * mload(&memory, value_ptr + 0x80)) % prime + minus_z))
-                    * ((addr - 2 + (alpha * mload(&memory, value_ptr + 0xa0)) % prime + minus_z))
-                    % prime
-            ) % prime ;
-
-            prod = prod * (
-                ((addr - 1 + (alpha * mload(&memory, value_ptr + 0xc0)) % prime + minus_z))
-                    * ((addr + (alpha * mload(&memory, value_ptr + 0xe0)) % prime + minus_z))
-                    % prime
-            ) % prime ;
-            value_ptr = value_ptr + 0x100;
+            // Compute the product of (lin_comb - z) instead of (z - lin_comb), since we're
+            // doing an even number of iterations, the result is the same.
+            for_each(vector[0u64, 2u64, 4u64, 8u64], |offset| {
+                prod = mod_mul(prod, mod_mul(
+                    alpha - 7 + (offset as u256) + mod_mul(alpha, *borrow(&values, value_ptr + offset), prime) + minus_z,
+                    alpha - 7 + (offset as u256) + 1 + mod_mul(
+                        alpha,
+                        *borrow(&values, value_ptr + offset + 1),
+                        prime
+                    ) + minus_z,
+                    prime
+                ), prime);
+            });
+            value_ptr = value_ptr + 5;
             addr = addr + 8;
         };
+
+        // Handle leftover.
+        // Translate addr to the beginning of the last incomplete batch.
         addr = addr - 7;
         while (addr < last_addr) {
-            let address_value_lin_comb = (addr + (alpha * mload(&memory, value_ptr)) % prime) % prime;
-            prod = (prod * (z + prime - address_value_lin_comb)) % prime;
+            let address_value_lin_comb = mod_add(addr, mod_mul(*borrow(&values, value_ptr), alpha, prime), prime);
+            prod = mod_mul(prod, z + prime - address_value_lin_comb, prime);
             addr = addr + 1;
+            value_ptr = value_ptr + 1;
         };
 
-        let input_hash = mloadrange(&memory, value_ptr - (n_values * 0x20 as u256), (n_values * 0x20 as u256));
-        let memory_hash = to_u256(to_big_endian(keccak256(input_hash)));
-        //TODO: need convert to bigendian format
-        let fact_hash = keccak256(
-            append_vector(
-                append_vector(
-                    append_vector(
-                        append_vector(
-                            append_vector(
-                                append_vector(
-                                    append_vector(
-                                        bcs::to_bytes(&CONTINUOUS_PAGE), bcs::to_bytes(&prime)
-                                    ),
-                                    bcs::to_bytes(&n_values)
-                                ),
-                                bcs::to_bytes(&z)
-                            ),
-                            bcs::to_bytes(&alpha)
-                        ),
-                        bcs::to_bytes(&prod)
-                    ),
-                    bcs::to_bytes(&memory_hash)
-                ),
-                bcs::to_bytes(&start_address)
-            ));
+        let memory_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&values)));
+        let fact_hash = keccak256(vec_to_bytes_be(&vector[CONTINUOUS_PAGE, prime, n_values, z, alpha, prod, memory_hash, start_address]));
         event::emit(LogMemoryPageFactContinuous { fact_hash, memory_hash, prod });
         register_fact(fact_hash);
         (fact_hash, memory_hash, prod)
+    }
+}
+
+#[test_only]
+module verifier_addr::mpfr_test {
+    use lib_addr::bytes::u256_to_bytes_be;
+    use verifier_addr::memory_page_fact_registry::register_continuous_memorypage;
+
+    #[test]
+    fun test_register_continuous_memorypage() {
+        let (fact_hash, memory_hash, prod) = register_continuous_memorypage(
+            2971260,
+            vector[
+                1723587082856532763241173775465496577348305577532331450336061658809521876102,
+                2479248348687909740970436565718726357572221543762678024250834744245756360726,
+                587272,
+                2177570517647428816133395681679456086343281988787809822104528418476218261377,
+                2590421891839256512113614983194993186457498815986333310670788206383913888162,
+                0,
+                0
+            ],
+            3035248388910680138215389260643346358343414931640145853107361271346254998038,
+            220574768071472005565941019352306850224879407895315608807402130378653737764,
+            3618502788666131213697322783095070105623107215331596699973092056135872020481
+        );
+        assert!(fact_hash == u256_to_bytes_be(&0xeb243f0981ec93a0090da83d2351b8d4b2e5cd9cc44be8d4b1119450eac54a6d), 1);
+        assert!(memory_hash == 48239457587525216759117913177237902366978204066031868156075383439591598548182, 1);
+        assert!(prod == 3254870901738389658383135104000411656134098647702871823979226499371705469217, 1);
     }
 }
