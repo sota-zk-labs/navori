@@ -19,8 +19,6 @@ module verifier_addr::fri_statement_contract {
     use verifier_addr::fact_registry::{init_fact_registry, is_valid};
     use aptos_std::debug::print;
     #[test_only]
-    use std::vector::borrow;
-    #[test_only]
     use verifier_addr::fri_test::{
         get_evaluation_point_2,
         get_evaluation_point_3,
@@ -35,6 +33,7 @@ module verifier_addr::fri_statement_contract {
     };
 
     public fun verify_fri(
+        signer: &signer,
         proof: vector<u256>,
         fri_queue: vector<u256>,
         evaluation_point: u256,
@@ -113,7 +112,7 @@ module verifier_addr::fri_statement_contract {
 
         let keccak_input = mloadrange(&mut memory, data_to_hash, 0xa0);
         let fact_hash = keccak256(keccak_input);
-        register_fact(fact_hash);
+        register_fact(signer, fact_hash);
     }
 
     fun validate_fri_queue(fri_queue: vector<u256>) {
@@ -160,6 +159,7 @@ module verifier_addr::fri_statement_contract {
     fun test_verify_fri_3(signer : &signer){
         init_fact_registry(signer);
         verify_fri(
+            signer,
             get_proof_3(),
             get_fri_queue_3(),
             get_evaluation_point_3(),
@@ -175,6 +175,7 @@ module verifier_addr::fri_statement_contract {
     fun test_verify_fri_2(signer: &signer) {
         init_fact_registry(signer);
         verify_fri(
+            signer,
             get_proof_2(),
             get_fri_queue_2(),
             get_evaluation_point_2(),

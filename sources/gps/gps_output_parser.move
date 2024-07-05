@@ -86,6 +86,7 @@ module verifier_addr::gps_output_parser {
 
 
     fun register_gps_fact(
+        signer: &signer,
         task_metadata: vector<u256>,
         public_memory_pages: vector<u256>,
         output_start_address: u256
@@ -174,7 +175,7 @@ module verifier_addr::gps_output_parser {
             let program_output_fact = *vector::borrow(&node_stack, (NODE_STACK_OFFSET_HASH as u64));
             let fact = keccak256(bcs::to_bytes(&(program_hash + program_output_fact)));
             task_metadata_offset = task_metadata_offset + METADATA_TASK_HEADER_SIZE + 2 * n_tree_pairs;
-            register_fact(fact);
+            register_fact(signer, fact);
             cur_addr = cur_addr + 2;
         };
     }
