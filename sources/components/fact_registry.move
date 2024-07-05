@@ -6,8 +6,8 @@ module verifier_addr::fact_registry {
         any_fact_registered: bool
     }
 
-    public fun init_fact_registry(s: &signer) {
-        move_to(s, VerifierFact {
+    public fun init_fact_registry(signer: &signer) {
+        move_to(signer, VerifierFact {
             verified_fact: table::new<vector<u8>, bool>(),
             any_fact_registered: false
         });
@@ -24,16 +24,16 @@ module verifier_addr::fact_registry {
         *borrow(&borrow_global<VerifierFact>(@verifier_addr).verified_fact, fact)
     }
 
-    public fun register_fact(fact_hash: vector<u8>)  {
-        // if (exists<VerifierFact>(@verifier_addr) == false) {
-        //     init_fact_registry(&signer);
-        // };
-        // let verifier_fact = borrow_global_mut<VerifierFact>(@verifier_addr);
-        // upsert(&mut verifier_fact.verified_fact, fact_hash, true);
-        //
-        // if (verifier_fact.any_fact_registered == false) {
-        //     verifier_fact.any_fact_registered = true;
-        // }
+    public fun register_fact(signer: &signer, fact_hash: vector<u8>) acquires VerifierFact {
+        if (exists<VerifierFact>(@verifier_addr) == false) {
+            init_fact_registry(signer);
+        };
+        let verifier_fact = borrow_global_mut<VerifierFact>(@verifier_addr);
+        upsert(&mut verifier_fact.verified_fact, fact_hash, true);
+
+        if (verifier_fact.any_fact_registered == false) {
+            verifier_fact.any_fact_registered = true;
+        }
     }
 
     fun has_registered_fact(): bool acquires VerifierFact {

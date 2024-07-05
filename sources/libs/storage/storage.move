@@ -9,8 +9,8 @@ module lib_addr::storage {
         slots: Table<u256, u256>
     }
 
-    public fun init_storage(s: &signer) {
-        move_to(s, Storage {
+    public fun init_storage(signer: &signer) {
+        move_to(signer, Storage {
             slots: table::new()
         });
     }
@@ -23,11 +23,11 @@ module lib_addr::storage {
         return (part_index, part_offset)
     }
 
-    public fun sload(s: &signer, index: u256): u256 acquires Storage {
-        *table::borrow(&borrow_global_mut<Storage>(address_of(s)).slots, index)
+    public fun sload(signer: &signer, index: u256): u256 acquires Storage {
+        *table::borrow(&borrow_global_mut<Storage>(address_of(signer)).slots, index)
     }
 
-    public fun sstore(s: &signer, index: u256, value: u256) acquires Storage {
-        table::upsert(&mut borrow_global_mut<Storage>(address_of(s)).slots, index, value);
+    public fun sstore(signer: &signer, index: u256, value: u256) acquires Storage {
+        table::upsert(&mut borrow_global_mut<Storage>(address_of(signer)).slots, index, value);
     }
 }

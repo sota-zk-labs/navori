@@ -1,8 +1,11 @@
 module verifier_addr::memory_page_fact_registry {
+    use std::signer;
+    use std::signer::address_of;
+    use aptos_framework::account;
     use std::vector::{for_each, length, borrow};
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event;
-    use aptos_framework::event::emit;
+    use aptos_framework::event::{emit, destroy_handle};
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
 
     use lib_addr::math_mod::{mod_mul, mod_add};
@@ -35,6 +38,7 @@ module verifier_addr::memory_page_fact_registry {
     }
 
     public fun register_regular_memorypage(
+        signer: &signer,
         memory_pairs: vector<u256>,
         z: u256,
         alpha: u256,
@@ -48,7 +52,7 @@ module verifier_addr::memory_page_fact_registry {
         let (fact_hash, memory_hash, prod) = compute_fact_hash(memory_pairs, z, alpha, prime);
         emit(LogMemorypPageFactRegular { fact_hash, memory_hash, prod });
 
-        register_fact(fact_hash);
+        register_fact(signer, fact_hash);
         (fact_hash, memory_hash, prod)
     }
 
@@ -81,15 +85,19 @@ module verifier_addr::memory_page_fact_registry {
         };
 
         let memory_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&memory_pairs)));
-        let fact_hash = keccak256(vec_to_bytes_be(&vector[REGULAR_PAGE, prime, (memory_size as u256), z, alpha, prod, memory_hash, 0u256]));
+        let fact_hash = keccak256(
+            vec_to_bytes_be(&vector[REGULAR_PAGE, prime, (memory_size as u256), z, alpha, prod, memory_hash, 0u256])
+        );
         (fact_hash, memory_hash, prod)
     }
 
+    // TODO: mark as entry func
     /*
       Registers a fact based on the given values, assuming continuous addresses.
       values should be [value at startAddr, value at (startAddr + 1), ...].
     */
     public fun register_continuous_memorypage(
+        signer: &signer,
         start_address: u256,
         values: vector<u256>,
         z: u256,
@@ -121,7 +129,11 @@ module verifier_addr::memory_page_fact_registry {
             // doing an even number of iterations, the result is the same.
             for_each(vector[0u64, 2u64, 4u64, 8u64], |offset| {
                 prod = mod_mul(prod, mod_mul(
-                    alpha - 7 + (offset as u256) + mod_mul(alpha, *borrow(&values, value_ptr + offset), prime) + minus_z,
+                    alpha - 7 + (offset as u256) + mod_mul(
+                        alpha,
+                        *borrow(&values, value_ptr + offset),
+                        prime
+                    ) + minus_z,
                     alpha - 7 + (offset as u256) + 1 + mod_mul(
                         alpha,
                         *borrow(&values, value_ptr + offset + 1),
@@ -145,21 +157,29 @@ module verifier_addr::memory_page_fact_registry {
         };
 
         let memory_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&values)));
-        let fact_hash = keccak256(vec_to_bytes_be(&vector[CONTINUOUS_PAGE, prime, n_values, z, alpha, prod, memory_hash, start_address]));
-        event::emit(LogMemoryPageFactContinuous { fact_hash, memory_hash, prod });
-        register_fact(fact_hash);
+        let fact_hash = keccak256(
+            vec_to_bytes_be(&vector[CONTINUOUS_PAGE, prime, n_values, z, alpha, prod, memory_hash, start_address])
+        );
+        // TODO: enable emitting event
+        // let event_handler = account::new_event_handle<LogMemoryPageFactContinuous>(signer);
+        // event::emit_event(&mut event_handler, LogMemoryPageFactContinuous { fact_hash, memory_hash, prod });
+        // destroy_handle<LogMemoryPageFactContinuous>(event_handler);
+        register_fact(signer, fact_hash);
         (fact_hash, memory_hash, prod)
     }
 }
 
 #[test_only]
 module verifier_addr::mpfr_test {
+    use aptos_std::debug::print;
+    use aptos_framework::event::emitted_events;
     use lib_addr::bytes::u256_to_bytes_be;
-    use verifier_addr::memory_page_fact_registry::register_continuous_memorypage;
+    use verifier_addr::memory_page_fact_registry::{register_continuous_memorypage, LogMemoryPageFactContinuous};
 
-    #[test]
-    fun test_register_continuous_memorypage() {
+    #[test(signer = @verifier_addr)]
+    fun test_register_continuous_memorypage(signer: &signer) {
         let (fact_hash, memory_hash, prod) = register_continuous_memorypage(
+            signer,
             2971260,
             vector[
                 1723587082856532763241173775465496577348305577532331450336061658809521876102,
@@ -174,6 +194,8 @@ module verifier_addr::mpfr_test {
             220574768071472005565941019352306850224879407895315608807402130378653737764,
             3618502788666131213697322783095070105623107215331596699973092056135872020481
         );
+        // let g = emitted_events<LogMemoryPageFactContinuous>();
+        // print(&g);
         assert!(fact_hash == u256_to_bytes_be(&0xeb243f0981ec93a0090da83d2351b8d4b2e5cd9cc44be8d4b1119450eac54a6d), 1);
         assert!(memory_hash == 48239457587525216759117913177237902366978204066031868156075383439591598548182, 1);
         assert!(prod == 3254870901738389658383135104000411656134098647702871823979226499371705469217, 1);
