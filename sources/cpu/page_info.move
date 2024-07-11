@@ -20,7 +20,7 @@ module verifier_addr::page_info {
         return 2
     }
 
-    public fun MEMORY_PAGE_SIZE(): u256 {
+    public fun MEMORY_PAIR_SIZE(): u256 {
         return 2
     }
 }
