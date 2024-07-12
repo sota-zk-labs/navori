@@ -1,11 +1,7 @@
 module verifier_addr::memory_page_fact_registry {
-    use std::signer;
-    use std::signer::address_of;
-    use aptos_framework::account;
     use std::vector::{for_each, length, borrow};
     use aptos_std::aptos_hash::keccak256;
-    use aptos_framework::event;
-    use aptos_framework::event::{emit, destroy_handle};
+    use aptos_framework::event::{emit};
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
 
     use lib_addr::math_mod::{mod_mul, mod_add};
@@ -45,7 +41,7 @@ module verifier_addr::memory_page_fact_registry {
         prime: u256
     ): (vector<u8>, u256, u256) {
         assert!(length(&memory_pairs) < (1 << 20), TOO_MANY_MEMORY_VALUES);
-        assert!(length(&memory_pairs) & 2 == 0, SIZE_OF_MEMORYPAIRS_MUST_BE_EVEN);
+        assert!((length(&memory_pairs) & 1) == 0, SIZE_OF_MEMORYPAIRS_MUST_BE_EVEN);
         assert!(z < prime, INVALID_VALUE_OF_Z);
         assert!(alpha < prime, INVALID_VALUE_OF_ALPHA);
 
@@ -171,10 +167,8 @@ module verifier_addr::memory_page_fact_registry {
 
 #[test_only]
 module verifier_addr::mpfr_test {
-    use aptos_std::debug::print;
-    use aptos_framework::event::emitted_events;
     use lib_addr::bytes::u256_to_bytes_be;
-    use verifier_addr::memory_page_fact_registry::{register_continuous_memorypage, LogMemoryPageFactContinuous};
+    use verifier_addr::memory_page_fact_registry::{register_continuous_memorypage};
 
     #[test(signer = @verifier_addr)]
     fun test_register_continuous_memorypage(signer: &signer) {
