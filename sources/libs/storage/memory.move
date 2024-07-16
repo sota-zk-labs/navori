@@ -73,7 +73,6 @@ module lib_addr::memory {
         return (slot_index, slot_amount, first_slot_offset, last_slot_offset)
     }
 
-
     public fun mload(memory: &Memory, offset: u256): u256 {
         let result = mloadrange(memory, offset, SLOT_LENGTH);
         return to_u256(to_little_endian(result))

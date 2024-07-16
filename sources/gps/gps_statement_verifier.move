@@ -175,7 +175,7 @@ module verifier_addr::gps_statement_verifier {
             let bootloader_program = get_compiled_program();
             let n = length(&bootloader_program);
             for (i in 0..n) {
-                *borrow_mut(&mut public_memory, offset) = (i as u256) + INITIAL_PC();
+                *borrow_mut(&mut public_memory, offset) = (i + INITIAL_PC() as u256);
                 *borrow_mut(&mut public_memory, offset + 1) = *borrow(&bootloader_program, i);
                 offset = offset + 2;
             }
