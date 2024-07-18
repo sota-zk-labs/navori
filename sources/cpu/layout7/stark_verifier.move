@@ -4,9 +4,9 @@ module verifier_addr::stark_verifier_7 {
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::debug::print;
     use verifier_addr::merkle_verifier::COMMITMENT_MASK;
-    use verifier_addr::fri_layer::{FRI_QUEUE_SLOT_SIZE_IN_BYTES, FRI_QUEUE_SLOT_SIZE};
+    use verifier_addr::fri_layer::{FRI_QUEUE_SLOT_SIZE};
     use verifier_addr::memory_access_utils_7::get_fri_step_sizes;
-    use lib_addr::math_mod::mod_mul;
+    use lib_addr::math_mod::{mod_mul, mod_exp};
     use verifier_addr::fact_registry::is_valid;
     use verifier_addr::memory_page_fact_registry::{REGULAR_PAGE, CONTINUOUS_PAGE};
     use verifier_addr::verifier_channel::{init_channel, read_hash, send_field_elements, read_field_element,
@@ -95,7 +95,7 @@ module verifier_addr::stark_verifier_7 {
         let fri_queue = MM_FRI_QUEUE();
         let fri_queue_end = fri_queue + n_unique_queries * fri_queue_slot_size;
         let eval_points_ptr = MM_OODS_EVAL_POINTS();
-        let log_eval_domain_size = *borrow(ctx, MM_LOG_EVAL_DOMAIN_SIZE());
+        let log_eval_domain_size = (*borrow(ctx, MM_LOG_EVAL_DOMAIN_SIZE()) as u8);
         let eval_domain_size = *borrow(ctx, MM_EVAL_DOMAIN_SIZE());
         let eval_domain_generator = *borrow(ctx, MM_EVAL_DOMAIN_GENERATOR());
 
@@ -109,7 +109,7 @@ module verifier_addr::stark_verifier_7 {
             set_el(
                 ctx,
                 eval_points_ptr,
-                exp_mod(eval_domain_generator, bit_reverse(query_idx, log_eval_domain_size), k_modulus())
+                mod_exp(eval_domain_generator, bit_reverse(query_idx, log_eval_domain_size), k_modulus())
             );
             eval_points_ptr = eval_points_ptr + 1;
             fri_queue = fri_queue + fri_queue_slot_size;
@@ -352,7 +352,7 @@ module verifier_addr::stark_verifier_7 {
 
         // Read the answers to the Out of Domain Sampling.
         let lmm_oods_values = MM_OODS_VALUES();
-        for (i in lmm_oods_values..(lmm_oods_values + (N_OODS_VALUES() as u64))) {
+        for (i in lmm_oods_values..(lmm_oods_values + N_OODS_VALUES())) {
             let tmp = read_field_element(&mut ctx, &proof, channel_ptr, true);
             set_el(&mut ctx, i, tmp);
         };
@@ -793,14 +793,35 @@ module verifier_addr::stark_verifier_7 {
         get_n_columns_in_trace_1() > 0
     }
 
-    // todo
-    fun exp_mod(base: u256, exponent: u256, modulus: u256): u256 {
-        0
-    }
-
-    // todo
-    fun bit_reverse(value: u256, number_of_bits: u256): u256 {
-        0
+    fun bit_reverse(value: u256, number_of_bits: u8): u256 {
+        // Bit reverse value by swapping 1 bit chunks then 2 bit chunks and so forth.
+        // A swap can be done by masking the relevant chunks and shifting them to the
+        // correct location.
+        // However, to save some shift operations we shift only one of the chunks by twice
+        // the chunk size, and perform a single right shift at the end.
+        let res = value;
+        // Swap 1 bit chunks.
+        res = ((res & 0x5555555555555555) << 2) | (res & 0xaaaaaaaaaaaaaaaa);
+        // Swap 2 bit chunks.
+        res = ((res & 0x6666666666666666) << 4) | (res & 0x19999999999999998);
+        // Swap 4 bit chunks.
+        res = ((res & 0x7878787878787878) << 8) | (res & 0x78787878787878780);
+        // Swap 8 bit chunks.
+        res = ((res & 0x7f807f807f807f80) << 16) | (res & 0x7f807f807f807f8000);
+        // Swap 16 bit chunks.
+        res = ((res & 0x7fff80007fff8000) << 32) | (res & 0x7fff80007fff80000000);
+        // Swap 32 bit chunks.
+        res = ((res & 0x7fffffff80000000) << 64) | (res & 0x7fffffff8000000000000000);
+        // Shift right the result.
+        // Note that we combine two right shifts here:
+        // 1. On each swap above we skip a right shift and get a left shifted result.
+        //    Consequently, we need to right shift the final result by
+        //    1 + 2 + 4 + 8 + 16 + 32 = 63.
+        // 2. The step above computes the bit-reverse of a 64-bit input. If the goal is to
+        //    bit-reverse only numberOfBits then the result needs to be right shifted by
+        //    64 - numberOfBits.
+        res = res >> (127 - number_of_bits);
+        res
     }
 
     // assertion code
