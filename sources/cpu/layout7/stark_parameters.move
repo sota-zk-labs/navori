@@ -7,7 +7,7 @@ module verifier_addr::stark_parameters_7 {
         6
     }
 
-    public fun MASK_SIZE(): u256 {
+    public fun MASK_SIZE(): u64 {
         192
     }
 
@@ -15,27 +15,27 @@ module verifier_addr::stark_parameters_7 {
         98
     }
 
-    public fun N_COLUMNS_IN_MASK(): u256 {
+    public fun N_COLUMNS_IN_MASK(): u64 {
         12
     }
 
-    public fun N_COLUMNS_IN_TRACE0(): u256 {
+    public fun N_COLUMNS_IN_TRACE0(): u64 {
         9
     }
 
-    public fun N_COLUMNS_IN_TRACE1(): u256 {
+    public fun N_COLUMNS_IN_TRACE1(): u64 {
         3
     }
 
-    public fun CONSTRAINTS_DEGREE_BOUND(): u256 {
+    public fun CONSTRAINTS_DEGREE_BOUND(): u64 {
         2
     }
 
-    public fun N_OODS_VALUES(): u256 {
+    public fun N_OODS_VALUES(): u64 {
         MASK_SIZE() + CONSTRAINTS_DEGREE_BOUND()
     }
 
-    public fun N_OODS_COEFFICIENTS(): u256 {
+    public fun N_OODS_COEFFICIENTS(): u64 {
         N_OODS_VALUES()
     }
 

@@ -1,36 +1,36 @@
 module verifier_addr::prng {
+    use std::vector::borrow;
     use aptos_std::aptos_hash::keccak256;
+    use verifier_addr::vector::set_el;
+    use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
 
-    struct Prng has key {
-        prngPtr: u256,
-        digest: vector<u8>,
-        counter: u256
+    public fun store_prng(ctx: &mut vector<u256>, prng_ptr: u64, digest: u256, counter: u256) {
+        set_el(ctx, prng_ptr, digest);
+        set_el(ctx, prng_ptr + 1, counter);
     }
 
-    public fun store_prng(signer: &signer, prngPtr: u256, digest: vector<u8>, counter: u256) {
-        move_to(signer, Prng { prngPtr, digest, counter });
-    }
-
-    public fun load_prng(prngPtr : u256): (vector<u8>, u256) acquires Prng {
-        let counter = borrow_global<Prng>(@verifier_addr).counter;
-        let digest = borrow_global<Prng>(@verifier_addr).digest;
+    public fun load_prng(ctx: &vector<u256>, prng_ptr: u64): (u256, u256) {
+        let digest = *borrow(ctx, prng_ptr);
+        let counter = *borrow(ctx, prng_ptr + 1);
         (digest, counter)
     }
 
-    public fun init_prng(signer: &signer, prngPtr: u256, public_input_hash: vector<u8>) {
-        store_prng(signer, prngPtr, public_input_hash, 0);
+    public fun init_prng(ctx: &mut vector<u256>, prng_ptr: u64, public_input_hash: u256) {
+        store_prng(ctx, prng_ptr, public_input_hash, 0);
     }
 
-    //use digest instead of abi.encodePacked(digest, counter)
-    public fun get_random_bytes_inner(digest: vector<u8>, counter: u256): (vector<u8>, u256, vector<u8>) {
-        let random_bytes = keccak256(digest);
+    /*
+      Auxiliary function for getRandomBytes.
+    */
+    fun get_random_bytes_inner(digest: u256, counter: u256): (u256, u256, u256) {
+        let random_bytes = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&vector[digest, counter])));
         (digest, counter + 1, random_bytes)
     }
 
-    public fun get_random_bytes(signer: &signer, prngPtr: u256): vector<u8> acquires Prng {
-        let (digest, counter) = load_prng(prngPtr);
-        let (new_digest, new_counter, random_bytes) = get_random_bytes_inner(digest, counter);
-        store_prng(signer, prngPtr, new_digest, new_counter);
+    public fun get_random_bytes(ctx: &mut vector<u256>, prng_ptr: u64): u256 {
+        let (digest, counter) = load_prng(ctx, prng_ptr);
+        let (digest, counter, random_bytes) = get_random_bytes_inner(digest, counter);
+        store_prng(ctx, prng_ptr, digest, counter);
         random_bytes
     }
 }

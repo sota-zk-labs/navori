@@ -57,7 +57,7 @@ module verifier_addr::gps_statement_verifier {
          2. Program hash.
     */
     public entry fun verify_proof_and_register(
-        signer: &signer,
+        signer: signer,
         proof_params: vector<u256>,
         proof: vector<u256>,
         task_metadata: vector<u256>,
@@ -96,7 +96,7 @@ module verifier_addr::gps_statement_verifier {
 
         // Process public memory.
         let (public_memory_length, memory_hash, prod) = register_public_memory_main_page(
-            signer,
+            &signer,
             task_metadata,
             cairo_aux_input,
             selected_builtins
@@ -121,8 +121,8 @@ module verifier_addr::gps_statement_verifier {
         // NOLINTNEXTLINE: reentrancy-benign.
         verify_proof_external(proof_params, proof, cairo_public_input);
 
-        register_gps_facts(signer, task_metadata, public_memory_pages, *borrow(&cairo_aux_input,
-            (OFFSET_OUTPUT_BEGIN_ADDR() as u64)
+        register_gps_facts(&signer, task_metadata, public_memory_pages, *borrow(&cairo_aux_input,
+            OFFSET_OUTPUT_BEGIN_ADDR()
         ));
     }
 
@@ -186,7 +186,7 @@ module verifier_addr::gps_statement_verifier {
             // This is required for the safe call feature (that is, all call instructions will
             // return, even if the called function is malicious).
             // It guarantees that it's not possible to create a cycle in the call stack.
-            let initial_fp = *borrow(&cairo_aux_input, (OFFSET_EXECUTION_BEGIN_ADDR() as u64));
+            let initial_fp = *borrow(&cairo_aux_input, OFFSET_EXECUTION_BEGIN_ADDR());
             assert!(initial_fp >= 2, INVALID_EXECUTION_BEGIN_ADDRESS);
             *borrow_mut(&mut public_memory, offset + 0) = initial_fp - 2;
             *borrow_mut(&mut public_memory, offset + 1) = initial_fp;
@@ -198,7 +198,7 @@ module verifier_addr::gps_statement_verifier {
             // Execution segment: Enforce main's arguments and return values.
             // Note that the page hash depends on the order of the (address, value) pair in the
             // public_memory and consequently the arguments must be written before the return values.
-            let return_values_address = *borrow(&cairo_aux_input, (OFFSET_EXECUTION_STOP_PTR() as u64)) - N_BUILTINS;
+            let return_values_address = *borrow(&cairo_aux_input, OFFSET_EXECUTION_STOP_PTR()) - N_BUILTINS;
             let builtin_segment_info_offset = OFFSET_OUTPUT_BEGIN_ADDR();
 
             for (i in 0..N_BUILTINS) {
@@ -215,11 +215,11 @@ module verifier_addr::gps_statement_verifier {
                     set_el(
                         &mut public_memory,
                         offset + 1,
-                        *borrow(&cairo_aux_input, (builtin_segment_info_offset as u64))
+                        *borrow(&cairo_aux_input, builtin_segment_info_offset)
                     );
                     // Set the return value to the builtin stop pointer.
                     set_el(&mut public_memory, return_value_offset + 1, *borrow(&cairo_aux_input,
-                        (builtin_segment_info_offset + 1 as u64)
+                        builtin_segment_info_offset + 1
                     ));
                     builtin_segment_info_offset = builtin_segment_info_offset + 2;
                 } else {
@@ -242,7 +242,7 @@ module verifier_addr::gps_statement_verifier {
                     hashed_supported_cairo_verifiers,
                     simple_bootloader_program_hash
                 } = borrow_global<ConstructorConfig>(@verifier_addr);
-                let output_address = *borrow(&cairo_aux_input, (OFFSET_OUTPUT_BEGIN_ADDR() as u64));
+                let output_address = *borrow(&cairo_aux_input, OFFSET_OUTPUT_BEGIN_ADDR());
                 // Force that memory[outputAddress] and memory[outputAddress + 1] contain the
                 // bootloader config (which is 2 words size).
                 set_el(&mut public_memory, offset + 0, output_address);
@@ -286,7 +286,7 @@ module verifier_addr::gps_statement_verifier {
                 assert!(length(&task_metadata_slice) == 0, INVALID_LENGTH_OF_TASK_METADATA);
 
                 assert!(
-                    *borrow(&cairo_aux_input, (OFFSET_OUTPUT_STOP_PTR() as u64)) == output_address,
+                    *borrow(&cairo_aux_input, OFFSET_OUTPUT_STOP_PTR()) == output_address,
                     INCONSISTENT_PROGRAM_OUTPUT_LENGTH
                 );
             }
@@ -332,9 +332,9 @@ module verifier_addr::test_gps {
 
     // test data is taken from https://dashboard.tenderly.co/tx/mainnet/0x587790da89108585d1400d7156416b62ca3079f55fd71b873b50d2af39c03d75/debugger?trace=0.1.1
     #[test(signer = @verifier_addr)]
-    fun test_verify_proof_and_register(signer: &signer) {
+    fun test_verify_proof_and_register(signer: signer) {
         init_gps_statement_verifier(
-            signer,
+            &signer,
             2512868110374320373201527039528844198060791559490644211790716345994094747600,
             382450030162484995497251732956824096484321811411123989415157331925872358847
         );

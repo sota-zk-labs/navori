@@ -58,7 +58,7 @@ module lib_addr::bytes {
         bytes
     }
 
-    public fun u256_to_bytes_be(v: &u256): vector<u8> {
+    public fun num_to_bytes_be<Element>(v: &Element): vector<u8> {
         reverse(to_bytes(v))
     }
 

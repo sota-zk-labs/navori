@@ -7,4 +7,13 @@ module verifier_addr::memory_access_utils_7 {
     // }
     
     const OVERFLOW_PROTECTION_FAILED: u64 = 1;
+    
+    // public fun get_channel_ptr(ctx: &vector<u256>): u256 {
+    //    
+    // }
+    
+    // Todo
+    public fun get_fri_step_sizes(ctx: &vector<u256>): vector<u256> {
+        vector[]
+    }
 }

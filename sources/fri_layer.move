@@ -38,7 +38,7 @@ module verifier_addr::fri_layer {
         FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET() + (FRI_GROUP_SIZE() / 2)
     }
 
-    public fun FRI_QUEUE_SLOT_SIZE(): u256 {
+    public fun FRI_QUEUE_SLOT_SIZE(): u64 {
         3
     }
 
