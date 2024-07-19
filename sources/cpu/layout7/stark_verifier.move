@@ -3,6 +3,7 @@ module verifier_addr::stark_verifier_7 {
     use std::vector::{length, borrow, slice};
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::debug::print;
+    use verifier_addr::fri_statement_verifier_7;
     use verifier_addr::merkle_verifier::COMMITMENT_MASK;
     use verifier_addr::fri_layer::{FRI_QUEUE_SLOT_SIZE};
     use verifier_addr::memory_access_utils_7::get_fri_step_sizes;
@@ -309,7 +310,6 @@ module verifier_addr::stark_verifier_7 {
         set_el(ctx, MM_FRI_LAST_LAYER_PTR(), (last_layer_ptr as u256));
     }
 
-    // Todo 
     public fun verify_proof(
         proof_params: vector<u256>,
         proof: vector<u256>,
@@ -403,8 +403,7 @@ module verifier_addr::stark_verifier_7 {
 
         compute_first_fri_layer(&mut ctx, &proof);
         
-        // Todo
-        // friVerifyLayers(ctx);
+        fri_statement_verifier_7::fri_verify_layers(&mut ctx, &proof);
     }
 
     public fun init_verifier_params(

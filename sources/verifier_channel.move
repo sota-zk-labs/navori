@@ -1,8 +1,7 @@
 module verifier_addr::verifier_channel {
     friend verifier_addr::stark_verifier_7;
+    friend verifier_addr::fri_statement_verifier_7;
 
-    use std::hash;
-    use std::vector;
     use std::vector::{borrow, borrow_mut, append, length, enumerate_mut, enumerate_ref, slice};
     use aptos_std::aptos_hash::keccak256;
     use verifier_addr::prime_field_element_0::{k_montgomery_r_inv, k_modulus, from_montgomery};
@@ -166,7 +165,7 @@ module verifier_addr::verifier_channel {
         assert!(proof_of_work_digest < proof_of_work_threshold, PROOF_OF_WORK_CHECK_FAILED);
     }
 
-    fun read_bytes(ctx: &mut vector<u256>, proof: &vector<u256>, channel_ptr: u64, mix: bool): u256 {
+    public(friend) fun read_bytes(ctx: &mut vector<u256>, proof: &vector<u256>, channel_ptr: u64, mix: bool): u256 {
         let proof_ptr = *borrow(ctx, channel_ptr);
         let val = *borrow(proof, (proof_ptr as u64));
         set_el(ctx, channel_ptr, proof_ptr + 1);
