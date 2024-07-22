@@ -1,6 +1,6 @@
 module verifier_addr::stark_verifier_7 {
 
-    use std::vector::{length, borrow, slice};
+    use std::vector::{length, borrow, slice, append};
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::debug::print;
     use verifier_addr::fri_statement_verifier_7;
@@ -13,7 +13,7 @@ module verifier_addr::stark_verifier_7 {
     use verifier_addr::verifier_channel::{init_channel, read_hash, send_field_elements, read_field_element,
         verify_proof_of_work, send_random_queries
     };
-    use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
+    use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be, num_to_bytes_be};
     use verifier_addr::layout_specific_7::{layout_specific_init, safe_div, prepare_for_oods_check};
     use verifier_addr::public_memory_offsets_7::{get_offset_page_size, get_public_input_length, get_offset_page_prod,
         get_offset_page_hash, get_offset_page_addr
@@ -44,7 +44,7 @@ module verifier_addr::stark_verifier_7 {
         MM_FRI_LAST_LAYER_PTR
     };
     use verifier_addr::fri_transform::{FRI_MIN_STEP_SIZE, FRI_MAX_STEP_SIZE};
-    use verifier_addr::vector::{assign, set_el};
+    use verifier_addr::vector::{assign, set_el, append_vector};
 
     // constants
     const PROOF_PARAMS_N_QUERIES_OFFSET: u64 = 0;
@@ -117,6 +117,8 @@ module verifier_addr::stark_verifier_7 {
         }
     }
 
+    // Note: After the function verifier_channel::verify_proof_of_work, proof_ptr is incremented by 8 bytes. 
+    // Therefore, in this function, we must add 8 to proof_ptr.
     /*
       Reads query responses for n_columns from the channel with the corresponding authentication
       paths. Verifies the consistency of the authentication paths with respect to the given
@@ -158,12 +160,18 @@ module verifier_addr::stark_verifier_7 {
         let merkle_ptr = merkle_queue_ptr;
 
         while (fri_queue < fri_queue_end) {
+            // adding 8 bytes
+            let bytes = slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr)), 8, 32);
+            let proof_ptr_offset_val = u256_from_bytes_be(&append_vector(bytes, slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr + 1)), 0, 8)));
+            append(&mut bytes, vec_to_bytes_be(&slice(proof, proof_ptr + 1, proof_ptr + row_size)));
+            append(&mut bytes, slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr + row_size)), 0, 8));
+            assert!(length(&bytes) == row_size * 32, WRONG_BYTES_LENGTH);
             let merkle_leaf = u256_from_bytes_be(
-                &keccak256(vec_to_bytes_be(&slice(proof, proof_ptr, proof_ptr + row_size)))
+                &keccak256(bytes)
             ) & COMMITMENT_MASK();
             if (row_size == 1) {
                 // If a leaf contains only 1 field element we don't hash it.
-                merkle_leaf = *borrow(proof, proof_ptr);
+                merkle_leaf = proof_ptr_offset_val;
             };
 
             // push(queryIdx, hash(row)) to merkleQueue.
@@ -176,7 +184,7 @@ module verifier_addr::stark_verifier_7 {
             // This array will be sent to the OODS contract.
             let proof_data_chunk_end = proof_ptr + row_size;
             while (proof_ptr < proof_data_chunk_end) {
-                set_el(ctx, proof_data_ptr, *borrow(proof, proof_ptr));
+                set_el(ctx, proof_data_ptr, proof_ptr_offset_val);
                 proof_data_ptr = proof_data_ptr + 1;
                 proof_ptr = proof_ptr + 1;
             };
@@ -856,6 +864,7 @@ module verifier_addr::stark_verifier_7 {
     const CLAIMED_COMPOSITION_DOES_NOT_MATCH_TRACE: u64 = 30;
     const TOO_MANY_COLUMNS: u64 = 31;
     const INVALID_FIELD_ELEMENT: u64 = 32;
+    const WRONG_BYTES_LENGTH: u64 = 33;
 }
 
 #[test_only]

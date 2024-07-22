@@ -188,10 +188,11 @@ module verifier_addr::verifier_channel {
 
 #[test_only]
 module verifier_addr::test_verifier_channel {
-    use std::vector::{append, length, slice};
+    use std::vector::{append, length, slice, for_each_ref};
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::debug::print;
-    use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be};
+    use verifier_addr::vector::append_vector;
+    use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be, pad, vec_to_bytes_be};
     use verifier_addr::verifier_channel::verify_proof_of_work;
 
     #[test]
@@ -205,13 +206,35 @@ module verifier_addr::test_verifier_channel {
         append(&mut hash_input, num_to_bytes_be<u256>(&digest));
         append(&mut hash_input, num_to_bytes_be<u8>(&proof_of_work_bits));
         hash_input = keccak256(hash_input);
-        print(&u256_from_bytes_be(&hash_input));
-        // Todo: not cast proof[proof_ptr] to u64
+        assert!(u256_from_bytes_be(&hash_input) == 6838760435758358717748204741702738474564120725378941118720130852105265839032, 1);
         append(&mut hash_input, slice(&num_to_bytes_be<u256>(
             &(5122894908359966063365751743241561245605455810076508980447074811081u256)
         ), 0, 8));
         assert!(length(&hash_input) == 0x28, 1);
         let proof_of_work_digest = u256_from_bytes_be(&keccak256(hash_input));
-        print(&proof_of_work_digest);
+        assert!(proof_of_work_digest == 80016376160009073511093101787680069639582489071041857172706540200793300723443, 1);
+    }
+    
+    #[test]
+    fun test() {
+        let g = slice(&num_to_bytes_be<u256>(
+            &(5122894908359966063365751743241561245605455810076508980447074811081u256)
+        ), 8, 32);
+        for_each_ref(&g, |v| {
+            print(v);
+        });
+        // let g_pad = pad(g, 32, 0, true);
+        append(&mut g, slice(&num_to_bytes_be<u256>(
+            &(5122894908359966063365751743241561245605455810076508980447074811081u256)
+        ), 0, 8));
+        let val = u256_from_bytes_be(&g);
+        print(&val);
+        let bytes = append_vector(g, num_to_bytes_be(&5122894908359966063365751743241561245605455810076508980447074811081u256));
+        append(&mut bytes, slice(&num_to_bytes_be<u256>(
+            &(5122894908359966063365751743241561245605455810076508980447074811081u256)
+        ), 0, 8));
+        assert!(length(&bytes) == 32 + 32, 1);
+        let hash = u256_from_bytes_be(&keccak256(bytes));
+        print(&hash);
     }
 }

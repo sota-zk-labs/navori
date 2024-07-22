@@ -4,9 +4,9 @@ version = "1.0.0"
 authors = []
 
 [addresses]
-verifier_addr = "d06c57ca70caf62694b35bb5f318160e66787b3c87612dff4b81220cf6be67fc"
-lib_addr = "d06c57ca70caf62694b35bb5f318160e66787b3c87612dff4b81220cf6be67fc"
-err_addr = "d06c57ca70caf62694b35bb5f318160e66787b3c87612dff4b81220cf6be67fc"
+verifier_addr = "b99012fefb997ef2e4b4e7046c1f1c1c7af1f76fe2f391776fb8c363831d6953"
+lib_addr = "b99012fefb997ef2e4b4e7046c1f1c1c7af1f76fe2f391776fb8c363831d6953"
+err_addr = "b99012fefb997ef2e4b4e7046c1f1c1c7af1f76fe2f391776fb8c363831d6953"
 
 [dev-addresses]
 
