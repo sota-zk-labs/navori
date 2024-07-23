@@ -7,6 +7,7 @@ module verifier_addr::fri_layer {
     use aptos_framework::account;
     use aptos_framework::event::{emit_event, destroy_handle};
 
+
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::fri_transform::{fri_max_step_size, transform_coset};
     use verifier_addr::prime_field_element_0::{fmul, fpow, k_modulus};
@@ -40,6 +41,8 @@ module verifier_addr::fri_layer {
     struct NQueries has store, drop {
         n_queries: u256
     }
+
+
 
 
     public fun gather_coset_inputs(
@@ -255,6 +258,13 @@ module verifier_addr::fri_layer {
         destroy_handle<NQueries>(n_queries_handler);
     }
 
+    public entry fun reset_ptr(s: address) acquires Ptr {
+        //TODO: assert admin
+        if (exists<Ptr>(s)) {
+            move_from<Ptr>(s);
+        }
+    }
+
     #[view]
     public fun check_in_loop(s: address): bool acquires Ptr {
         if (exists<Ptr>(s)) {
@@ -263,4 +273,5 @@ module verifier_addr::fri_layer {
             false
         }
     }
+
 }
