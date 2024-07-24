@@ -1,0 +1,27 @@
+{
+  "function_id": "4edb83949a3146a3b75f7e6729ad35b201505ea4292aa01d80b1628af61fa5bd::fri_statement::verify_fri",
+  "type_args": [
+  ],
+  "args": [
+    {
+      "type": "u256",
+      "value": []
+    },
+    {
+      "type": "u256",
+      "value": []
+    },
+    {
+      "type": "u256",
+      "value": []
+    },
+    {
+      "type": "u256",
+      "value": []
+    },
+    {
+      "type": "u256",
+      "value": []
+    }
+  ]
+}
