@@ -328,16 +328,13 @@ module verifier_addr::gps_statement_verifier {
 #[test_only]
 module verifier_addr::test_gps {
 
-    use verifier_addr::gps_statement_verifier::{verify_proof_and_register, init_gps_statement_verifier};
+    use verifier_addr::constructor::init_all;
+    use verifier_addr::gps_statement_verifier::{verify_proof_and_register};
 
     // test data is taken from https://dashboard.tenderly.co/tx/mainnet/0x587790da89108585d1400d7156416b62ca3079f55fd71b873b50d2af39c03d75/debugger?trace=0.1.1
     #[test(signer = @verifier_addr)]
     fun test_verify_proof_and_register(signer: signer) {
-        init_gps_statement_verifier(
-            &signer,
-            2512868110374320373201527039528844198060791559490644211790716345994094747600,
-            382450030162484995497251732956824096484321811411123989415157331925872358847
-        );
+        init_all(&signer);
         verify_proof_and_register(
             signer,
             vector[

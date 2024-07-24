@@ -68,8 +68,8 @@ module verifier_addr::stark_verifier_7 {
         min_proof_of_work_bits: u256
     }
 
-    public entry fun init_stark_verifier(signer: signer, num_security_bits: u256, min_proof_of_work_bits: u256) {
-        move_to(&signer, ConstructorConfig {
+    public entry fun init_stark_verifier(signer: &signer, num_security_bits: u256, min_proof_of_work_bits: u256) {
+        move_to(signer, ConstructorConfig {
             num_security_bits,
             min_proof_of_work_bits
         });
@@ -776,7 +776,7 @@ module verifier_addr::stark_verifier_7 {
         (MM_OODS_VALUES() as u256)
     }
 
-    fun get_n_interaction_elements(): u256 {
+    fun get_n_interaction_elements(): u64 {
         N_INTERACTION_ELEMENTS()
     }
 

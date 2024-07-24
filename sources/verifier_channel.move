@@ -29,14 +29,14 @@ module verifier_addr::verifier_channel {
     public(friend) fun send_field_elements(
         ctx: &mut vector<u256>,
         channel_ptr: u64,
-        n_elements: u256,
+        n_elements: u64,
         target_ptr: u64
     ) {
         assert!(n_elements < 0x1000000, OVERFLOW_PROTECTION_FAILED);
         let bound = 0xf80000000000020f00000000000000000000000000000000000000000000001fu256;
         let digest = *borrow(ctx, channel_ptr + 1);
 
-        for (i in 0..n_elements) {
+        for (i in target_ptr..(target_ptr + n_elements)) {
             let field_element = bound;
             while (field_element >= bound) {
                 let counter = *borrow(ctx, channel_ptr + 2);
@@ -46,7 +46,7 @@ module verifier_addr::verifier_channel {
                 set_el(ctx, channel_ptr + 2, counter + 1);
             };
             // *targetPtr = fromMontgomery(fieldElement);
-            set_el(ctx, target_ptr, mod_mul(field_element, k_montgomery_r_inv(), k_modulus()));
+            set_el(ctx, i, mod_mul(field_element, k_montgomery_r_inv(), k_modulus()));
         }
     }
 
@@ -173,7 +173,7 @@ module verifier_addr::verifier_channel {
             let digest = borrow_mut(ctx, channel_ptr + 1);
 
             // prng.digest := keccak256(digest + 1||val), nonce was written earlier.
-            *digest = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&vector[*digest, val])));
+            *digest = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&vector[*digest + 1, val])));
             // prng.counter := 0.
             set_el(ctx, channel_ptr + 2, 0);
         };

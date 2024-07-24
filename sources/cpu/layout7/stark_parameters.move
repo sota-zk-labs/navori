@@ -3,7 +3,7 @@ module verifier_addr::stark_parameters_7 {
         124
     }
 
-    public fun N_INTERACTION_ELEMENTS(): u256 {
+    public fun N_INTERACTION_ELEMENTS(): u64 {
         6
     }
 
