@@ -2,7 +2,7 @@ module verifier_addr::verifier_channel {
     friend verifier_addr::stark_verifier_7;
     friend verifier_addr::fri_statement_verifier_7;
 
-    use std::vector::{borrow, borrow_mut, append, length, enumerate_mut, enumerate_ref, slice};
+    use std::vector::{borrow, borrow_mut, append, length, enumerate_ref, slice};
     use aptos_std::aptos_hash::keccak256;
     use verifier_addr::prime_field_element_0::{k_montgomery_r_inv, k_modulus, from_montgomery};
     use lib_addr::math_mod::mod_mul;
@@ -90,7 +90,7 @@ module verifier_addr::verifier_channel {
                 curr = *borrow(ctx, ptr - stride);
 
                 if (query_idx >= curr) {
-                    break;
+                    break
                 };
 
                 set_el(ctx, ptr, curr);
@@ -133,7 +133,7 @@ module verifier_addr::verifier_channel {
     
     public fun verify_proof_of_work(ctx: &mut vector<u256>, proof: &vector<u256>, channel_ptr: u64, proof_of_work_bits: u8) {
         if (proof_of_work_bits == 0) {
-            return;
+            return
         };
 
         // [0:0x29) := 0123456789abcded || digest     || workBits.
@@ -192,8 +192,7 @@ module verifier_addr::test_verifier_channel {
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::debug::print;
     use verifier_addr::vector::append_vector;
-    use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be, pad, vec_to_bytes_be};
-    use verifier_addr::verifier_channel::verify_proof_of_work;
+    use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be};
 
     #[test]
     fun test_verify_proof_of_work() {

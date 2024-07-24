@@ -34,7 +34,7 @@ module verifier_addr::fri_7 {
         }    
     }
     
-    public fun fri_verify_layers(ctx: &mut vector<u256>, proof: &vector<u256>) {
+    public fun fri_verify_layers(signer: &signer, ctx: &mut vector<u256>, proof: &vector<u256>, proof_params: &vector<u256>) {
         let fri_ctx = MM_FRI_CTX();
         assert!(
             MAX_SUPPORTED_FRI_STEP_SIZE() == (FRI_MAX_STEP_SIZE() as u64),
@@ -66,7 +66,7 @@ module verifier_addr::fri_7 {
 
         let fri_queue = MM_FRI_QUEUE();
 
-        let fri_step_sizes = get_fri_step_sizes(ctx);
+        let fri_step_sizes = get_fri_step_sizes(signer, proof_params);
         let n_fri_steps = length(&fri_step_sizes);
         while (fri_step < n_fri_steps) {
             let fri_coset_size = (1 << (*borrow(&fri_step_sizes, fri_step) as u8));

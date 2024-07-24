@@ -58,7 +58,7 @@ module verifier_addr::fri_statement_verifier_7 {
         u256_from_bytes_be(&keccak256(vec_to_bytes_be(&slice(ctx, fri_queue, fri_queue + cur_point_index * 3))))
     }
 
-    public fun fri_verify_layers(ctx: &mut vector<u256>, proof: &vector<u256>) {
+    public fun fri_verify_layers(signer: &signer, ctx: &mut vector<u256>, proof: &vector<u256>, proof_params: &vector<u256>) {
         let channel_ptr = MM_CHANNEL();
         let n_queries = (*borrow(ctx, MM_N_UNIQUE_QUERIES()) as u64);
 
@@ -78,7 +78,7 @@ module verifier_addr::fri_statement_verifier_7 {
             &keccak256(vec_to_bytes_be(&slice(ctx, fri_queue, fri_queue + n_queries * 3)))
         );
 
-        let fri_step_sizes = get_fri_step_sizes(ctx);
+        let fri_step_sizes = get_fri_step_sizes(signer, proof_params);
         let n_fri_inner_layers = length(&fri_step_sizes) - 1;
         let fri_step = 1;
         let sum_of_step_sizes = *borrow(&fri_step_sizes, 1);

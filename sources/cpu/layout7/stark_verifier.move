@@ -2,11 +2,12 @@ module verifier_addr::stark_verifier_7 {
 
     use std::vector::{length, borrow, slice, append};
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::debug::print;
     use verifier_addr::fri_statement_verifier_7;
     use verifier_addr::merkle_verifier::COMMITMENT_MASK;
     use verifier_addr::fri_layer::{FRI_QUEUE_SLOT_SIZE};
-    use verifier_addr::memory_access_utils_7::get_fri_step_sizes;
+    use verifier_addr::memory_access_utils_7::{get_fri_step_sizes, PROOF_PARAMS_FRI_STEPS_OFFSET,
+        PROOF_PARAMS_N_FRI_STEPS_OFFSET
+    };
     use lib_addr::math_mod::{mod_mul, mod_exp};
     use verifier_addr::fact_registry::is_valid;
     use verifier_addr::memory_page_fact_registry::{REGULAR_PAGE, CONTINUOUS_PAGE};
@@ -32,7 +33,7 @@ module verifier_addr::stark_verifier_7 {
     use verifier_addr::prime_field_element_0::{fpow, generator_val, k_modulus, fadd, fmul, fsub, inverse};
     use verifier_addr::memory_map_7::{MM_FRI_LAST_LAYER_DEG_BOUND, MM_TRACE_LENGTH, MM_PROOF_OF_WORK_BITS,
         MM_BLOW_UP_FACTOR, MAX_N_QUERIES, MM_N_UNIQUE_QUERIES, MM_LOG_EVAL_DOMAIN_SIZE, MM_EVAL_DOMAIN_SIZE,
-        MM_EVAL_DOMAIN_GENERATOR, MM_TRACE_GENERATOR, MM_FRI_STEP_SIZES_PTR, MM_CONTEXT_SIZE, MM_OFFSET_SIZE,
+        MM_EVAL_DOMAIN_GENERATOR, MM_TRACE_GENERATOR, MM_CONTEXT_SIZE, MM_OFFSET_SIZE,
         MM_HALF_OFFSET_SIZE, MM_LOG_N_STEPS, MM_RANGE_CHECK_MIN, MM_RANGE_CHECK_MAX, MM_INITIAL_PC, MM_FINAL_PC,
         MM_INITIAL_AP, MM_FINAL_AP, MM_N_PUBLIC_MEM_PAGES, MM_N_PUBLIC_MEM_ENTRIES, MM_PUBLIC_INPUT_PTR, MAX_FRI_STEPS,
         MM_TRACE_COMMITMENT, MM_CHANNEL, MM_COMPOSITION_ALPHA, MM_OODS_COMMITMENT, MM_OODS_POINT, MM_OODS_VALUES,
@@ -51,8 +52,6 @@ module verifier_addr::stark_verifier_7 {
     const PROOF_PARAMS_LOG_BLOWUP_FACTOR_OFFSET: u64 = 1;
     const PROOF_PARAMS_PROOF_OF_WORK_BITS_OFFSET: u64 = 2;
     const PROOF_PARAMS_FRI_LAST_LAYER_LOG_DEG_BOUND_OFFSET: u64 = 3;
-    const PROOF_PARAMS_N_FRI_STEPS_OFFSET: u64 = 4;
-    const PROOF_PARAMS_FRI_STEPS_OFFSET: u64 = 5;
 
     struct ConstructorConfig has key, copy {
         /*
@@ -162,7 +161,9 @@ module verifier_addr::stark_verifier_7 {
         while (fri_queue < fri_queue_end) {
             // adding 8 bytes
             let bytes = slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr)), 8, 32);
-            let proof_ptr_offset_val = u256_from_bytes_be(&append_vector(bytes, slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr + 1)), 0, 8)));
+            let proof_ptr_offset_val = u256_from_bytes_be(
+                &append_vector(bytes, slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr + 1)), 0, 8))
+            );
             append(&mut bytes, vec_to_bytes_be(&slice(proof, proof_ptr + 1, proof_ptr + row_size)));
             append(&mut bytes, slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr + row_size)), 0, 8));
             assert!(length(&bytes) == row_size * 32, WRONG_BYTES_LENGTH);
@@ -314,16 +315,17 @@ module verifier_addr::stark_verifier_7 {
 
         // Note: proof pointer is not incremented until this point.
         set_el(ctx, channel_ptr, (last_layer_end as u256));
-        
+
         set_el(ctx, MM_FRI_LAST_LAYER_PTR(), (last_layer_ptr as u256));
     }
 
     public fun verify_proof(
+        signer: &signer,
         proof_params: vector<u256>,
         proof: vector<u256>,
         public_input: vector<u256>
     ) acquires ConstructorConfig {
-        let ctx = init_verifier_params(&public_input, &proof_params);
+        let ctx = init_verifier_params(signer, &public_input, &proof_params);
         let channel_ptr = MM_CHANNEL();
 
         init_channel(&mut ctx, channel_ptr, get_public_input_hash(&public_input));
@@ -372,7 +374,7 @@ module verifier_addr::stark_verifier_7 {
         hash = read_hash(&mut ctx, &proof, channel_ptr, true);
         set_el(&mut ctx, MM_FRI_COMMITMENTS(), hash);
 
-        let n_fri_steps = length(&get_fri_step_sizes(&ctx));
+        let n_fri_steps = length(&get_fri_step_sizes(signer, &proof_params));
         let fri_eval_point_ptr = MM_FRI_EVAL_POINTS();
         for (i in 1..(n_fri_steps - 1)) {
             send_field_elements(&mut ctx, channel_ptr, 1, fri_eval_point_ptr + i);
@@ -410,11 +412,12 @@ module verifier_addr::stark_verifier_7 {
         // emit LogGas("Send queries", gasleft());
 
         compute_first_fri_layer(&mut ctx, &proof);
-        
-        fri_statement_verifier_7::fri_verify_layers(&mut ctx, &proof);
+
+        fri_statement_verifier_7::fri_verify_layers(signer, &mut ctx, &proof, &proof_params);
     }
 
     public fun init_verifier_params(
+        signer: &signer,
         public_input: &vector<u256>,
         proof_params: &vector<u256>
     ): vector<u256> acquires ConstructorConfig {
@@ -422,11 +425,11 @@ module verifier_addr::stark_verifier_7 {
             min_proof_of_work_bits,
             num_security_bits
         } = *borrow_global<ConstructorConfig>(@verifier_addr);
-        assert!(length(proof_params) > PROOF_PARAMS_FRI_STEPS_OFFSET, INVALID_PROOF_PARAMS);
+        assert!(length(proof_params) > PROOF_PARAMS_FRI_STEPS_OFFSET(), INVALID_PROOF_PARAMS);
         assert!(
-            length(proof_params) == PROOF_PARAMS_FRI_STEPS_OFFSET + (*borrow(
+            length(proof_params) == PROOF_PARAMS_FRI_STEPS_OFFSET() + (*borrow(
                 proof_params,
-                PROOF_PARAMS_N_FRI_STEPS_OFFSET
+                PROOF_PARAMS_N_FRI_STEPS_OFFSET()
             ) as u64),
             INVALID_PROOF_PARAMS
         );
@@ -444,22 +447,18 @@ module verifier_addr::stark_verifier_7 {
         let log_fri_last_layer_deg_bound = *borrow(proof_params, PROOF_PARAMS_FRI_LAST_LAYER_LOG_DEG_BOUND_OFFSET);
         assert!(log_fri_last_layer_deg_bound <= 10, LOG_FRI_LAST_LAYER_DEG_BOUND_MUST_BE_AT_MOST_10);
 
-        let n_fri_steps = *borrow(proof_params, PROOF_PARAMS_N_FRI_STEPS_OFFSET);
+        let n_fri_steps = *borrow(proof_params, PROOF_PARAMS_N_FRI_STEPS_OFFSET());
         assert!(n_fri_steps <= (MAX_FRI_STEPS() as u256), TOO_MANY_FRI_STEPS);
         assert!(n_fri_steps > 1, NOT_ENOUGH_FRI_STEPS);
 
-        let fri_step_sizes = assign(0u256, (n_fri_steps as u64));
-        for (i in 0..n_fri_steps) {
-            set_el(&mut fri_step_sizes, (i as u64), *borrow(proof_params, PROOF_PARAMS_FRI_STEPS_OFFSET + (i as u64)));
-        };
+        let fri_step_sizes = get_fri_step_sizes(signer, proof_params);
 
-        let (ctx, log_trace_length) = air_specific_nit(public_input);
-        print(&ctx);
+        let (ctx, log_trace_length) = air_specific_init(public_input);
 
         validate_fri_params(&fri_step_sizes, log_trace_length, log_fri_last_layer_deg_bound);
 
-        // Todo: consider the meaning of this commentted part
-        set_el(&mut ctx, MM_FRI_STEP_SIZES_PTR(), (length(&fri_step_sizes) as u256));
+        // This assignment is required for the function `getFriStepSizes` in original contract, but we don't need it here 
+        // set_el(&mut ctx, MM_FRI_STEP_SIZES_PTR(), (length(&fri_step_sizes) as u256));
 
         set_el(&mut ctx, MM_FRI_LAST_LAYER_DEG_BOUND(), (1u256 << (log_fri_last_layer_deg_bound as u8)));
         set_el(&mut ctx, MM_TRACE_LENGTH(), (1u256 << (log_trace_length as u8)));
@@ -520,7 +519,7 @@ module verifier_addr::stark_verifier_7 {
 
     // In Starknet's contracts, this function is implemented in `CpuVerifier.sol`
     // * The `ctx` returned is not the same as the `ctx` in the original contract.
-    fun air_specific_nit(public_input: &vector<u256>): (vector<u256>, u256) {
+    fun air_specific_init(public_input: &vector<u256>): (vector<u256>, u256) {
         assert!(length(public_input) >= OFFSET_PUBLIC_MEMORY(), PUBLIC_INPUT_IS_TOO_SHORT);
         let ctx = assign(0u256, MM_CONTEXT_SIZE());
 
