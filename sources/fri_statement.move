@@ -8,11 +8,11 @@ module verifier_addr::fri_statement {
     use aptos_framework::account;
     use aptos_framework::event::{destroy_handle, emit_event};
 
-    use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
     use verifier_addr::convert_memory::from_vector;
     use verifier_addr::fri::{get_fri, init_fri, update_fri};
     use verifier_addr::fri_layer::fri_ctx_size;
     use verifier_addr::prime_field_element_0::k_modulus;
+    use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
 
     //log-event
     #[event]

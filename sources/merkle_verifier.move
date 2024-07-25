@@ -4,9 +4,9 @@ module verifier_addr::merkle_verifier {
     use aptos_std::simple_map::{borrow, upsert};
     use aptos_framework::event;
 
+    use verifier_addr::fri::{get_fri, reset_memory_fri, update_fri};
     use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
     use verifier_addr::vector_helper::append_vector;
-    use verifier_addr::fri::{get_fri, reset_memory_fri, update_fri};
 
     const MAX_N_MERKLE_VERIFIER_QUERIES: u256 = 128;
     const MERKLE_SLOT_SIZE: u256 = 2;
@@ -24,7 +24,7 @@ module verifier_addr::merkle_verifier {
         hash: u256
     }
 
-    struct Ptr has key, store {
+    struct Ptr has key, store, drop {
         index: u256,
         proof_ptr: u256,
         rd_idx: u256,
@@ -47,7 +47,7 @@ module verifier_addr::merkle_verifier {
         if (!exists<Ptr>(address_of(s))) {
             move_to<Ptr>(s, Ptr {
                 index: *borrow(fri, &queue_ptr),
-                proof_ptr: 0, rd_idx: 0, wr_idx: 0, is_loop: false, looped: 5
+                proof_ptr: 0, rd_idx: 0, wr_idx: 0, is_loop: false, looped: 15
             });
         };
         let index;
@@ -139,11 +139,9 @@ module verifier_addr::merkle_verifier {
         if (index == 1 || index == 0) {
             borrow_global_mut<Ptr>(address_of(s)).is_loop = false;
             let hash = *borrow(fri, &(hashes_ptr + rd_idx));
-            upsert(fri, channel_ptr, proof_ptr);
-            event::emit<Hash>(Hash { hash });
-            assert!(hash == root, INVALID_MERKLE_PROOF);
-
             reset_memory_fri(s);
+            assert!(hash == root, INVALID_MERKLE_PROOF);
+            event::emit<Hash>(Hash { hash });
         };
     }
 

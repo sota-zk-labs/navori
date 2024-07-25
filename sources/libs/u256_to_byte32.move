@@ -1,14 +1,15 @@
 module verifier_addr::u256_to_byte32 {
     use std::vector;
     use std::vector::empty;
+
     #[test_only]
     use aptos_std::debug::print;
 
     public fun u256_to_bytes32(value: u256): vector<u8> {
-      let result : vector<u8> = empty<u8>();
+        let result: vector<u8> = empty<u8>();
         for (i in 0..32) {
-            let shift :u8 = 8 * (31 - i);
-             vector::insert(&mut result, (i as u64), ((value >> shift) & 0xFF as u8)) ;
+            let shift: u8 = 8 * (31 - i);
+            vector::insert(&mut result, (i as u64), ((value >> shift) & 0xFF as u8)) ;
         };
         result
     }
@@ -16,13 +17,13 @@ module verifier_addr::u256_to_byte32 {
     public fun bytes32_to_u256(bytes: vector<u8>): u256 {
         let result: u256 = 0;
         for (i in 0..32) {
-            let shift : u8 = 8 * (31 - i);
+            let shift: u8 = 8 * (31 - i);
             result = result | ((*vector::borrow(&mut bytes, (i as u64)) as u256) << shift);
         };
         result
     }
 
-    public fun compare_bytes32 (bytes1: vector<u8>, bytes2: vector<u8>): bool {
+    public fun compare_bytes32(bytes1: vector<u8>, bytes2: vector<u8>): bool {
         let res = true;
         for (i in 0..32) {
             if (*vector::borrow(&mut bytes1, (i as u64)) != *vector::borrow(&mut bytes2, (i as u64))) {

@@ -5,8 +5,7 @@ module verifier_addr::fri_layer {
     use aptos_std::math128::pow;
     use aptos_std::simple_map::{borrow, borrow_mut, SimpleMap, upsert};
     use aptos_framework::account;
-    use aptos_framework::event::{emit_event, destroy_handle};
-
+    use aptos_framework::event::{destroy_handle, emit_event};
 
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::fri_transform::{fri_max_step_size, transform_coset};
@@ -18,10 +17,10 @@ module verifier_addr::fri_layer {
     const FRI_GROUP_SIZE: u256 = 16;
     const FRI_CTX_TO_COSET_EVALUATIONS_OFFSET: u256 = 0;
     const FRI_CTX_TO_FRI_GROUP_OFFSET: u256 = 16;
-    const FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET: u256 = 16 + 16;
-    const FRI_CTX_SIZE: u256 = 32 + (16 / 2);
+    const FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET: u256 = 32;
+    const FRI_CTX_SIZE: u256 = 40;
     const FRI_QUEUE_SLOT_SIZE: u256 = 3;
-    const FRI_QUEUE_SLOT_SIZE_IN_BYTES: u256 = 3 * 32;
+    const FRI_QUEUE_SLOT_SIZE_IN_BYTES: u256 = 96;
     const NOT_NUM: u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     const COMMITMENT_MASK: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
 
@@ -41,8 +40,6 @@ module verifier_addr::fri_layer {
     struct NQueries has store, drop {
         n_queries: u256
     }
-
-
 
 
     public fun gather_coset_inputs(
@@ -178,7 +175,12 @@ module verifier_addr::fri_layer {
         if (!exists<Ptr>(address_of(s))) {
             move_to<Ptr>(
                 s,
-                Ptr { input_ptr: fri_queue_ptr, input_end: fri_queue_ptr + (FRI_QUEUE_SLOT_SIZE * n_queries), output_ptr: fri_queue_ptr, merkle_queue_ptr, in_loop: false }
+                Ptr {
+                    input_ptr: fri_queue_ptr,
+                    input_end: fri_queue_ptr + (FRI_QUEUE_SLOT_SIZE * n_queries),
+                    output_ptr: fri_queue_ptr, merkle_queue_ptr,
+                    in_loop: false
+                }
             );
         };
 
@@ -273,5 +275,4 @@ module verifier_addr::fri_layer {
             false
         }
     }
-
 }
