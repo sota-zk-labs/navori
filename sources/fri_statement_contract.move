@@ -17,6 +17,8 @@ module verifier_addr::fri_statement_contract {
 
     #[test_only]
     use verifier_addr::fact_registry::{init_fact_registry, is_valid};
+    use lib_addr::bytes::u256_from_bytes_be;
+    #[test_only]
     use aptos_std::debug::print;
     #[test_only]
     use verifier_addr::fri_test::{
@@ -111,7 +113,7 @@ module verifier_addr::fri_statement_contract {
         mstore(&mut memory, data_to_hash + 0x60, to_u256(to_big_endian(keccak256(keccak_input))));
 
         let keccak_input = mloadrange(&mut memory, data_to_hash, 0xa0);
-        let fact_hash = keccak256(keccak_input);
+        let fact_hash = u256_from_bytes_be(&keccak256(keccak_input));
         register_fact(signer, fact_hash);
     }
 
@@ -167,8 +169,7 @@ module verifier_addr::fri_statement_contract {
             get_expected_root_3()
         );
         let fact_hash: u256 = 0x81b6de7f72176840720dbf7460352c0a18342fd155c307bee6e384302b472179;
-        let res = to_big_endian(to_bytes(&fact_hash));
-        assert!(is_valid(res), 1);
+        assert!(is_valid(fact_hash), 1);
     }
 
     #[test(signer = @verifier_addr)]
@@ -183,9 +184,9 @@ module verifier_addr::fri_statement_contract {
             get_expected_root_2()
         );
         let fact_hash: u256 = 0xbc348fdab2b2e1f3564918265f0c0371e70078a8195897eb9a76687bbda53558;
-        let res = to_big_endian(to_bytes(&fact_hash));
-        assert!(is_valid(res), 1);
+        assert!(is_valid(fact_hash), 1);
     }
+    
     #[test]
     fun test_hash() {
         let memory = memory::new();

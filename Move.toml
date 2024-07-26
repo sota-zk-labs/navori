@@ -4,15 +4,15 @@ version = "1.0.0"
 authors = []
 
 [addresses]
-verifier_addr = "b99012fefb997ef2e4b4e7046c1f1c1c7af1f76fe2f391776fb8c363831d6953"
-lib_addr = "b99012fefb997ef2e4b4e7046c1f1c1c7af1f76fe2f391776fb8c363831d6953"
-err_addr = "b99012fefb997ef2e4b4e7046c1f1c1c7af1f76fe2f391776fb8c363831d6953"
+verifier_addr = "01a04014797f5bfca67396bd5fff0553acb9c179e81e84f23bd742774bbc5716"
+lib_addr = "01a04014797f5bfca67396bd5fff0553acb9c179e81e84f23bd742774bbc5716"
+err_addr = "01a04014797f5bfca67396bd5fff0553acb9c179e81e84f23bd742774bbc5716"
 
 [dev-addresses]
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
-rev = "main"
+rev = "mainnet"
 subdir = "aptos-move/framework/aptos-framework"
 
 [dev-dependencies]

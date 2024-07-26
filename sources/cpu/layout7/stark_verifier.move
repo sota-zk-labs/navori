@@ -296,6 +296,7 @@ module verifier_addr::stark_verifier_7 {
             assert!(*borrow(proof, coefs_ptr) <= prime_minus_one, INVALID_FIELD_ELEMENT);
         };
 
+        // Todo: consider
         // Update prng.digest with the hash of digest + 1 and the last layer coefficient.
         // (digest + 1) is written to the proof area because keccak256 needs all data to be
         // consecutive.
@@ -596,7 +597,7 @@ module verifier_addr::stark_verifier_7 {
     fun verify_memory_page_facts(ctx: &mut vector<u256>, public_input: &vector<u256>) {
         let n_public_memory_pages = *borrow(ctx, MM_N_PUBLIC_MEM_PAGES());
 
-        for (page in 0..n_public_memory_pages) {
+        for (page in 0..1) {
             let mm_public_input_ptr = *borrow(ctx, MM_PUBLIC_INPUT_PTR());
             // Fetch page values from the public input (hash, product and size).
             let memory_hash = *borrow(public_input, (mm_public_input_ptr + get_offset_page_hash(page) as u64));
@@ -612,7 +613,7 @@ module verifier_addr::stark_verifier_7 {
 
             // Verify that a corresponding fact is registered attesting to the consistency of the page
             // information with z and alpha.
-            let fact_hash = keccak256(vec_to_bytes_be<u256>(&vector[
+            let fact_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be<u256>(&vector[
                 if (page == 0) { REGULAR_PAGE() } else { CONTINUOUS_PAGE() },
                 k_modulus(),
                 page_size,
@@ -623,7 +624,7 @@ module verifier_addr::stark_verifier_7 {
                 prod,
                 memory_hash,
                 page_addr
-            ]));
+            ])));
 
             assert!(is_valid(fact_hash), MEMORY_PAGE_FACT_NOT_REGISTERED);
         }

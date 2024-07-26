@@ -93,7 +93,7 @@ module verifier_addr::fri_statement_verifier_7 {
 
             // Verify statement is registered.
             assert!(// NOLINT: calls-loop.
-                fact_registry::is_valid(keccak256(vec_to_bytes_be(&data_to_hash))),
+                fact_registry::is_valid(u256_from_bytes_be(&keccak256(vec_to_bytes_be(&data_to_hash)))),
                 INVALIDATED_FRI_STATEMENT
             );
 
@@ -110,7 +110,7 @@ module verifier_addr::fri_statement_verifier_7 {
         set_el(&mut data_to_hash, 4, *borrow(ctx, MM_FRI_COMMITMENTS() + fri_step - 1));
 
         assert!(
-            fact_registry::is_valid(keccak256(vec_to_bytes_be(&data_to_hash))),
+            fact_registry::is_valid(u256_from_bytes_be(&keccak256(vec_to_bytes_be(&data_to_hash)))),
             INVALIDATED_FRI_STATEMENT
         );
     }

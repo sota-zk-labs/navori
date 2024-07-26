@@ -57,7 +57,7 @@ module verifier_addr::gps_statement_verifier {
          2. Program hash.
     */
     public entry fun verify_proof_and_register(
-        signer: signer,
+        signer: &signer,
         proof_params: vector<u256>,
         proof: vector<u256>,
         task_metadata: vector<u256>,
@@ -96,7 +96,7 @@ module verifier_addr::gps_statement_verifier {
 
         // Process public memory.
         let (public_memory_length, memory_hash, prod) = register_public_memory_main_page(
-            &signer,
+            signer,
             task_metadata,
             cairo_aux_input,
             selected_builtins
@@ -119,9 +119,9 @@ module verifier_addr::gps_statement_verifier {
         );
 
         // NOLINTNEXTLINE: reentrancy-benign.
-        verify_proof_external(&signer, proof_params, proof, cairo_public_input);
+        verify_proof_external(signer, proof_params, proof, cairo_public_input);
 
-        register_gps_facts(&signer, task_metadata, public_memory_pages, *borrow(&cairo_aux_input,
+        register_gps_facts(signer, task_metadata, public_memory_pages, *borrow(&cairo_aux_input,
             OFFSET_OUTPUT_BEGIN_ADDR()
         ));
     }
@@ -336,7 +336,7 @@ module verifier_addr::test_gps {
     fun test_verify_proof_and_register(signer: signer) {
         init_all(&signer);
         verify_proof_and_register(
-            signer,
+            &signer,
             vector[
                 11,
                 6,
