@@ -17,7 +17,8 @@ module verifier_addr::merkle_verifier {
 
     //error
     const TOO_MANY_MERKLE_QUERIES: u64 = 1;
-    const INVALID_MERKLE_PROOF: u64 = 3;
+    const INVALID_MERKLE_PROOF: u64 = 2;
+    const VERIFY_SUCCESSFULLY: u64 = 3;
 
     #[event]
     struct Hash has drop, store {
@@ -29,8 +30,7 @@ module verifier_addr::merkle_verifier {
         proof_ptr: u256,
         rd_idx: u256,
         wr_idx: u256,
-        is_loop: bool,
-        looped: u256
+        is_loop: bool
     }
 
 
@@ -41,43 +41,42 @@ module verifier_addr::merkle_verifier {
         root: u256,
         n: u256
     ) acquires Ptr {
+        if (!exists<Ptr>(address_of(s))) {
+            move_to<Ptr>(s, Ptr {
+                index: 0,
+                proof_ptr: 0, rd_idx: 0, wr_idx: 0, is_loop: false
+            });
+        };
         assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES, TOO_MANY_MERKLE_QUERIES);
 
         let fri = &mut get_fri(address_of(s));
-        if (!exists<Ptr>(address_of(s))) {
-            move_to<Ptr>(s, Ptr {
-                index: *borrow(fri, &queue_ptr),
-                proof_ptr: 0, rd_idx: 0, wr_idx: 0, is_loop: false, looped: 15
-            });
-        };
+        let ptr = borrow_global_mut<Ptr>(address_of(s));
+
         let index;
         let proof_ptr;
         let rd_idx;
         let wr_idx;
-        let looped;
+        let looped=15;
 
-        if (borrow_global<Ptr>(address_of(s)).is_loop) {
-            index = borrow_global<Ptr>(address_of(s)).index;
-            proof_ptr = borrow_global<Ptr>(address_of(s)).proof_ptr;
-            rd_idx = borrow_global<Ptr>(address_of(s)).rd_idx;
-            wr_idx = borrow_global<Ptr>(address_of(s)).wr_idx;
-            looped = borrow_global<Ptr>(address_of(s)).looped;
+        if (ptr.is_loop) {
+            index = ptr.index;
+            proof_ptr = ptr.proof_ptr;
+            rd_idx = ptr.rd_idx;
+            wr_idx = ptr.wr_idx;
         } else {
             index = *borrow(fri, &queue_ptr);
             proof_ptr = *borrow(fri, &channel_ptr);
             rd_idx = 0;
             wr_idx = 0;
-            borrow_global_mut<Ptr>(address_of(s)).is_loop = true;
-            looped = borrow_global<Ptr>(address_of(s)).looped;
+            ptr.is_loop = true;
         };
-
 
         // queuePtr + i * MERKLE_SLOT_SIZE_IN_BYTES gives the i'th index in the queue.
         // hashesPtr + i * MERKLE_SLOT_SIZE_IN_BYTES gives the i'th hash in the queue.
         let hashes_ptr = queue_ptr + INDEX_SIZE;
         let queue_size = n * MERKLE_SLOT_SIZE;
 
-        while (index > 1 && check_in_mloop(address_of(s)) && looped > 0) {
+        while (index > 1 && ptr.is_loop && looped > 0) {
             let sibling_index = index ^ 1;
             // sibblingOffset := COMMITMENT_SIZE_IN_BYTES * lsb(siblingIndex).
             let sibling_offset = (sibling_index * COMMITMENT_SIZE) % TWO_COMMITMENTS_SIZE;
@@ -130,29 +129,22 @@ module verifier_addr::merkle_verifier {
             wr_idx = (wr_idx + MERKLE_SLOT_SIZE) % queue_size;
             looped = looped - 1;
 
-            borrow_global_mut<Ptr>(address_of(s)).index = index;
-            borrow_global_mut<Ptr>(address_of(s)).rd_idx = rd_idx;
-            borrow_global_mut<Ptr>(address_of(s)).wr_idx = wr_idx;
-            borrow_global_mut<Ptr>(address_of(s)).proof_ptr = proof_ptr;
+            ptr.index = index;
+            ptr.rd_idx = rd_idx;
+            ptr.wr_idx = wr_idx;
+            ptr.proof_ptr = proof_ptr;
         };
         update_fri(s, *freeze(fri));
         if (index == 1 || index == 0) {
-            borrow_global_mut<Ptr>(address_of(s)).is_loop = false;
+            ptr.is_loop = false;
             let hash = *borrow(fri, &(hashes_ptr + rd_idx));
             reset_memory_fri(s);
             assert!(hash == root, INVALID_MERKLE_PROOF);
             event::emit<Hash>(Hash { hash });
         };
-    }
-
-    #[view]
-    public fun check_in_mloop(s: address): bool acquires Ptr {
-        borrow_global<Ptr>(s).is_loop
-    }
-
-    public entry fun set_loop(s: address, looped: u256) acquires Ptr {
-        borrow_global_mut<Ptr>(s).looped = looped;
+        assert!(ptr.is_loop == true, VERIFY_SUCCESSFULLY);
     }
 }
+
 
 

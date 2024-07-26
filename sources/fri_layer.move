@@ -171,7 +171,7 @@ module verifier_addr::fri_layer {
         fri_eval_point: u256,
         fri_coset_size: u256,
     ) acquires Ptr {
-        //init
+
         if (!exists<Ptr>(address_of(s))) {
             move_to<Ptr>(
                 s,
@@ -189,17 +189,19 @@ module verifier_addr::fri_layer {
         let input_ptr;
         let input_end;
         let output_ptr;
-        if (borrow_global<Ptr>(address_of(s)).in_loop) {
-            input_ptr = borrow_global<Ptr>(address_of(s)).input_ptr;
-            input_end = borrow_global<Ptr>(address_of(s)).input_end;
-            output_ptr = borrow_global<Ptr>(address_of(s)).output_ptr;
-            merkle_queue_ptr = borrow_global<Ptr>(address_of(s)).merkle_queue_ptr;
+        let ptr = borrow_global_mut<Ptr>(address_of(s));
+
+        if (ptr.in_loop) {
+            input_ptr = ptr.input_ptr;
+            input_end = ptr.input_end;
+            output_ptr = ptr.output_ptr;
+            merkle_queue_ptr = ptr.merkle_queue_ptr;
         } else {
             input_ptr = fri_queue_ptr;
             input_end = input_ptr + (FRI_QUEUE_SLOT_SIZE * n_queries);
             output_ptr = fri_queue_ptr;
             merkle_queue_ptr = merkle_queue_ptr;
-            borrow_global_mut<Ptr>(address_of(s)).in_loop = true;
+            ptr.in_loop = true;
         };
 
         // while (input_ptr < input_end) {
@@ -214,7 +216,7 @@ module verifier_addr::fri_layer {
                 input_ptr,
                 fri_coset_size
             );
-            borrow_global_mut<Ptr>(address_of(s)).input_ptr = input_ptr;
+            ptr.input_ptr = input_ptr;
 
             index = index / fri_coset_size;
             upsert(fri, merkle_queue_ptr, index);
@@ -246,8 +248,8 @@ module verifier_addr::fri_layer {
             upsert(fri, output_ptr, index);
             upsert(fri, output_ptr + 1, fri_value);
             upsert(fri, output_ptr + 2, fri_inversed_point);
-            borrow_global_mut<Ptr>(address_of(s)).output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
-            borrow_global_mut<Ptr>(address_of(s)).merkle_queue_ptr = merkle_queue_ptr;
+            ptr.output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
+            ptr.merkle_queue_ptr = merkle_queue_ptr;
         } else {
             move_from<Ptr>(address_of(s));
         };
