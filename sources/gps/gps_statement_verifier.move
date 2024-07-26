@@ -172,7 +172,7 @@ module verifier_addr::gps_statement_verifier {
 
         // Write public memory, which is a list of pairs (address, value).
         {
-            let bootloader_program = get_compiled_program();
+            let bootloader_program = get_compiled_program(signer);
             let n = length(&bootloader_program);
             for (i in 0..n) {
                 *borrow_mut(&mut public_memory, offset) = (i + INITIAL_PC() as u256);
