@@ -17,12 +17,7 @@ module verifier_addr::fact_registry {
     #[view]
     public fun is_valid(address: address, fact: vector<u8>): bool acquires VerifierFact {
         let verifier_fact = borrow_global<VerifierFact>(address);
-        *table::borrow(&verifier_fact.verified_fact, fact)
-    }
-
-    #[view]
-    public fun fast_check(address: address,fact: vector<u8>): bool acquires VerifierFact {
-        *borrow(&borrow_global<VerifierFact>(address).verified_fact, fact)
+        *table::borrow_with_default(&verifier_fact.verified_fact, fact, &false)
     }
 
     public fun register_fact(s: &signer, fact_hash: vector<u8>) acquires VerifierFact {

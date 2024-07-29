@@ -162,13 +162,9 @@ module verifier_addr::fri_layer {
 
     public entry fun init_compute_next_layer(
         s: &signer,
-        channel_ptr: u256,
         fri_queue_ptr: u256,
         merkle_queue_ptr: u256,
-        n_queries: u256,
-        fri_ctx: u256,
-        fri_eval_point: u256,
-        fri_coset_size: u256,
+        n_queries: u256
     ) {
         if (!exists<Ptr>(address_of(s))) {
             move_to<Ptr>(
@@ -187,8 +183,6 @@ module verifier_addr::fri_layer {
         s: &signer,
         channel_ptr: u256,
         fri_queue_ptr: u256,
-        merkle_queue_ptr: u256,
-        n_queries: u256,
         fri_ctx: u256,
         fri_eval_point: u256,
         fri_coset_size: u256,
@@ -263,5 +257,71 @@ module verifier_addr::fri_layer {
         if (exists<Ptr>(s)) {
             move_from<Ptr>(s);
         }
+    }
+
+    #[view]
+    public fun get_count(
+        s: address,
+        channel_ptr: u256,
+        fri_queue_ptr: u256,
+        merkle_queue_ptr: u256,
+        n_queries: u256,
+        fri_ctx: u256,
+        fri_eval_point: u256,
+        fri_coset_size: u256,
+    ) : u256 {
+        let fri = &mut get_fri(s);
+        let evaluation_on_coset_ptr = fri_ctx + FRI_CTX_TO_COSET_EVALUATIONS_OFFSET;
+        let input_ptr = fri_queue_ptr;
+        let input_end = input_ptr + (FRI_QUEUE_SLOT_SIZE * n_queries);
+        let output_ptr = fri_queue_ptr;
+        let count= 0;
+        while ( input_ptr < input_end) {
+            count = count + 1;
+            let coset_offset;
+            let index;
+            (input_ptr,index, coset_offset) = gather_coset_inputs(
+                fri,channel_ptr, fri_ctx + FRI_CTX_TO_FRI_GROUP_OFFSET, evaluation_on_coset_ptr, input_ptr, fri_coset_size
+            );
+
+
+
+            index = index / fri_coset_size;
+            upsert(fri, merkle_queue_ptr, index);
+
+
+            let hash = *borrow(fri, &evaluation_on_coset_ptr);
+
+
+
+            let hash = u256_to_bytes32(hash);
+            for (i in (evaluation_on_coset_ptr+1)..(evaluation_on_coset_ptr + fri_coset_size )) {
+                vector::append(&mut hash, u256_to_bytes32(*borrow(fri, &i)));
+            };
+
+
+            upsert(fri, merkle_queue_ptr + 1,COMMITMENT_MASK & bytes32_to_u256(keccak256(hash)));
+
+            merkle_queue_ptr =  merkle_queue_ptr + 2;
+
+
+            let (fri_value, fri_inversed_point) = transform_coset(
+                fri,
+                fri_ctx + FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET,
+                evaluation_on_coset_ptr,
+                coset_offset,
+                fri_eval_point,
+                fri_coset_size
+            );
+            // print(&fri_value);
+            // print(&fri_inversed_point);
+
+            upsert(fri, output_ptr,index);
+            upsert(fri, output_ptr + 1, fri_value);
+            upsert(fri, output_ptr + 2, fri_inversed_point);
+            output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
+        };
+
+        count
     }
 }
