@@ -49,7 +49,6 @@ module verifier_addr::memory_page_fact_registry {
         (fact_hash, memory_hash, prod)
     }
 
-    // Todo: consider replacing u256 with u256
     fun compute_fact_hash(
         memory_pairs: vector<u256>,
         z: u256,

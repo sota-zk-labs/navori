@@ -296,7 +296,6 @@ module verifier_addr::stark_verifier_7 {
             assert!(*borrow(proof, coefs_ptr) <= prime_minus_one, INVALID_FIELD_ELEMENT);
         };
 
-        // Todo: consider
         // Update prng.digest with the hash of digest + 1 and the last layer coefficient.
         // (digest + 1) is written to the proof area because keccak256 needs all data to be
         // consecutive.
