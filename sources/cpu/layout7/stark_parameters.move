@@ -44,7 +44,7 @@ module verifier_addr::stark_parameters_7 {
         16
     }
 
-    public fun DILUTED_SPACING(): u256 {
+    public fun DILUTED_SPACING(): u8 {
         4
     }
 

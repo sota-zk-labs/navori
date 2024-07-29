@@ -1435,7 +1435,7 @@ module verifier_addr::test_fri_statement_verifier_7 {
             2,
         ]
     }
-    
+
     fun proof_(): vector<u256> {
         vector[
             114466098897597402921659719709029092930640158257605074943353303056672207405056,

@@ -707,7 +707,6 @@ module verifier_addr::stark_verifier_7 {
         res
     }
 
-    // Todo
     // In Starknet's contracts, this function is implemented in `CpuVerifier.sol`
     fun oods_consistency_check(ctx: &mut vector<u256>, public_input: &vector<u256>) {
         verify_memory_page_facts(ctx, public_input);
@@ -723,6 +722,7 @@ module verifier_addr::stark_verifier_7 {
         };
         prepare_for_oods_check(ctx);
 
+        // Todo
         // let composition_from_trace_value;
         // address
         // lconstraintPoly = address(constraintPoly);
