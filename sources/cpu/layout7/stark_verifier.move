@@ -55,13 +55,13 @@ module verifier_addr::stark_verifier_7 {
 
     struct ConstructorConfig has key, copy {
         /*
-          The work assert!d to generate an invalid proof is 2^numSecurityBits.
+          The work required to generate an invalid proof is 2^numSecurityBits.
           Typical values: 80-128.
         */
         num_security_bits: u256,
         /*
           The secuirty of a proof is a composition of bits obtained by PoW and bits obtained by FRI
-          queries. The verifier assert!s at least minProofOfWorkBits to be obtained by PoW.
+          queries. The verifier requires at least minProofOfWorkBits to be obtained by PoW.
           Typical values: 20-30.
         */
         min_proof_of_work_bits: u256
@@ -77,7 +77,7 @@ module verifier_addr::stark_verifier_7 {
     /*
       Adjusts the query indices and generates evaluation points for each query index.
       The operations above are independent but we can save gas by combining them as both
-      operations assert! us to iterate the queries array.
+      operations require us to iterate the queries array.
 
       Indices adjustment:
           The query indices adjustment is needed because both the Merkle verification and FRI

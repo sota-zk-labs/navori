@@ -5,7 +5,7 @@ module verifier_addr::horner_evaluator {
         a_0 = coefsStart[0], ..., a_{n-1} = coefsStart[n - 1]
       where n = n_coef = friLastLayerDegBound. Note that coefsStart is not actually an array but
       a direct pointer.
-      The function assert!s that n is divisible by 8.
+      The function requires that n is divisible by 8.
     */
     use std::vector::borrow;
     use lib_addr::math_mod::{mod_mul};
