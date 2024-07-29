@@ -245,7 +245,7 @@ module verifier_addr::fri_layer {
 
             mstore(memory, merkle_queue_ptr + 0x20, COMMITMENT_MASK() & to_u256(to_big_endian(
                 keccak256(keccak_input))));
-            merkle_queue_ptr = merkle_queue_ptr + MERKLE_SLOT_SIZE_IN_BYTES();
+            merkle_queue_ptr = merkle_queue_ptr + (MERKLE_SLOT_SIZE_IN_BYTES() as u256);
 
             let (fri_value, fri_inversed_point) = transform_coset(
                 memory,

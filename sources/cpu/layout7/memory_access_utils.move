@@ -1,12 +1,7 @@
 module verifier_addr::memory_access_utils_7 {
-    use std::signer::address_of;
     use std::vector::borrow;
     use verifier_addr::vector::{assign, set_el};
     use verifier_addr::memory_map_7::{MAX_FRI_STEPS};
-    
-    struct CacheFriStepSize has key {
-        inner: vector<u256>
-    }
     
     public fun PROOF_PARAMS_N_FRI_STEPS_OFFSET(): u64 {
         4
@@ -18,11 +13,7 @@ module verifier_addr::memory_access_utils_7 {
     
     const OVERFLOW_PROTECTION_FAILED: u64 = 1;
     
-    public fun get_fri_step_sizes(signer: &signer, proof_params: &vector<u256>): vector<u256> acquires CacheFriStepSize {
-        let addr = address_of(signer);
-        if (exists<CacheFriStepSize>(addr)) {
-            return borrow_global<CacheFriStepSize>(addr).inner
-        };
+    public fun get_fri_step_sizes(proof_params: &vector<u256>): vector<u256> {
         
         let n_fri_steps = (*borrow(proof_params, PROOF_PARAMS_N_FRI_STEPS_OFFSET()) as u64);
         assert!(n_fri_steps <= MAX_FRI_STEPS(), TOO_MANY_FRI_STEPS);
@@ -33,10 +24,6 @@ module verifier_addr::memory_access_utils_7 {
             set_el(&mut fri_step_sizes, i, *borrow(proof_params, PROOF_PARAMS_FRI_STEPS_OFFSET() + i));
         };
 
-        move_to(signer, CacheFriStepSize {
-            inner: fri_step_sizes
-        });
-        
         fri_step_sizes
     }
 

@@ -28,7 +28,7 @@ module verifier_addr::horner_evaluator {
             result = *borrow(proof, coefs_ptr + 4) + mod_mul(
                 *borrow(proof, coefs_ptr + 5) + mod_mul(
                     *borrow(proof, coefs_ptr + 6) + mod_mul(
-                        *borrow(proof, coefs_ptr + 7) + mod_mul(prime, point, prime),
+                        *borrow(proof, coefs_ptr + 7) + mod_mul(result, point, prime),
                         point,
                         prime
                     ),
@@ -43,7 +43,7 @@ module verifier_addr::horner_evaluator {
             result = *borrow(proof, coefs_ptr) + mod_mul(
                 *borrow(proof, coefs_ptr + 1) + mod_mul(
                     *borrow(proof, coefs_ptr + 2) + mod_mul(
-                        *borrow(proof, coefs_ptr + 3) + mod_mul(prime, point, prime),
+                        *borrow(proof, coefs_ptr + 3) + mod_mul(result, point, prime),
                         point,
                         prime
                     ),

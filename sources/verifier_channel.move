@@ -6,14 +6,14 @@ module verifier_addr::verifier_channel {
     use aptos_std::aptos_hash::keccak256;
     use verifier_addr::prime_field_element_0::{k_montgomery_r_inv, k_modulus, from_montgomery};
     use lib_addr::math_mod::mod_mul;
-    use verifier_addr::vector::set_el;
+    use verifier_addr::vector::{set_el, append_vector};
     use verifier_addr::prng::{init_prng, get_random_bytes};
     use lib_addr::bytes::{vec_to_bytes_be, u256_from_bytes_be, num_to_bytes_be};
 
     public(friend) fun get_prng_ptr(channel_ptr: u64): u64 {
         channel_ptr + 1
     }
-    
+
     public(friend) fun init_channel(ctx: &mut vector<u256>, channel_ptr: u64, public_input_hash: u256) {
         // set `ctx[channel_ptr]` as index 0 in `proof`
         set_el(ctx, channel_ptr, 0);
@@ -94,7 +94,7 @@ module verifier_addr::verifier_channel {
                 };
 
                 set_el(ctx, ptr, curr);
-                
+
                 ptr = ptr - stride;
             };
 
@@ -113,9 +113,9 @@ module verifier_addr::verifier_channel {
 
         ((end_ptr - queries_out_ptr) / stride as u256)
     }
-    
+
     public(friend) fun read_hash(ctx: &mut vector<u256>, proof: &vector<u256>, channel_ptr: u64, mix: bool): u256 {
-        read_bytes(ctx, proof, channel_ptr, mix)
+        read_bytes(ctx, proof, channel_ptr, mix, false)
     }
 
     /*
@@ -127,11 +127,21 @@ module verifier_addr::verifier_channel {
         Note that the logic of this function is inlined in many places throughout the code to reduce
         gas costs.
     */
-    public(friend) fun read_field_element(ctx: &mut vector<u256>, proof: &vector<u256>, channel_ptr: u64, mix: bool): u256 {
-        from_montgomery(read_bytes(ctx, proof, channel_ptr, mix))
+    public(friend) fun read_field_element(
+        ctx: &mut vector<u256>,
+        proof: &vector<u256>,
+        channel_ptr: u64,
+        mix: bool
+    ): u256 {
+        from_montgomery(read_bytes(ctx, proof, channel_ptr, mix, false))
     }
-    
-    public fun verify_proof_of_work(ctx: &mut vector<u256>, proof: &vector<u256>, channel_ptr: u64, proof_of_work_bits: u8) {
+
+    public fun verify_proof_of_work(
+        ctx: &mut vector<u256>,
+        proof: &vector<u256>,
+        channel_ptr: u64,
+        proof_of_work_bits: u8
+    ) {
         if (proof_of_work_bits == 0) {
             return
         };
@@ -152,7 +162,7 @@ module verifier_addr::verifier_channel {
 
         // prng.digest := keccak256(digest + 1||nonce), nonce was written earlier.
         enumerate_ref(&num_to_bytes_be(&(digest + 1)), |i, byte| {
-           set_el(&mut hash_input, i, *byte); 
+            set_el(&mut hash_input, i, *byte);
         });
         set_el(ctx, channel_ptr + 1, u256_from_bytes_be(&keccak256(hash_input)));
         // prng.counter := 0.
@@ -165,9 +175,18 @@ module verifier_addr::verifier_channel {
         assert!(proof_of_work_digest < proof_of_work_threshold, PROOF_OF_WORK_CHECK_FAILED);
     }
 
-    public(friend) fun read_bytes(ctx: &mut vector<u256>, proof: &vector<u256>, channel_ptr: u64, mix: bool): u256 {
+    public(friend) fun read_bytes(ctx: &mut vector<u256>, proof: &vector<u256>, channel_ptr: u64, mix: bool, should_add_8_bytes: bool): u256 {
         let proof_ptr = *borrow(ctx, channel_ptr);
-        let val = *borrow(proof, (proof_ptr as u64));
+        let val = (if (should_add_8_bytes) {
+            u256_from_bytes_be(
+                &append_vector(
+                    slice(&num_to_bytes_be(borrow(proof, (proof_ptr as u64))), 8, 32),
+                    slice(&num_to_bytes_be(borrow(proof, (proof_ptr + 1 as u64))), 0, 8)
+                )
+            )
+        } else {
+            *borrow(proof, (proof_ptr as u64))
+        });
         set_el(ctx, channel_ptr, proof_ptr + 1);
         if (mix) {
             let digest = borrow_mut(ctx, channel_ptr + 1);
@@ -205,15 +224,23 @@ module verifier_addr::test_verifier_channel {
         append(&mut hash_input, num_to_bytes_be<u256>(&digest));
         append(&mut hash_input, num_to_bytes_be<u8>(&proof_of_work_bits));
         hash_input = keccak256(hash_input);
-        assert!(u256_from_bytes_be(&hash_input) == 6838760435758358717748204741702738474564120725378941118720130852105265839032, 1);
+        assert!(
+            u256_from_bytes_be(
+                &hash_input
+            ) == 6838760435758358717748204741702738474564120725378941118720130852105265839032,
+            1
+        );
         append(&mut hash_input, slice(&num_to_bytes_be<u256>(
             &(5122894908359966063365751743241561245605455810076508980447074811081u256)
         ), 0, 8));
         assert!(length(&hash_input) == 0x28, 1);
         let proof_of_work_digest = u256_from_bytes_be(&keccak256(hash_input));
-        assert!(proof_of_work_digest == 80016376160009073511093101787680069639582489071041857172706540200793300723443, 1);
+        assert!(
+            proof_of_work_digest == 80016376160009073511093101787680069639582489071041857172706540200793300723443,
+            1
+        );
     }
-    
+
     #[test]
     fun test() {
         let g = slice(&num_to_bytes_be<u256>(
@@ -228,7 +255,10 @@ module verifier_addr::test_verifier_channel {
         ), 0, 8));
         let val = u256_from_bytes_be(&g);
         print(&val);
-        let bytes = append_vector(g, num_to_bytes_be(&5122894908359966063365751743241561245605455810076508980447074811081u256));
+        let bytes = append_vector(
+            g,
+            num_to_bytes_be(&5122894908359966063365751743241561245605455810076508980447074811081u256)
+        );
         append(&mut bytes, slice(&num_to_bytes_be<u256>(
             &(5122894908359966063365751743241561245605455810076508980447074811081u256)
         ), 0, 8));

@@ -2,6 +2,7 @@ module verifier_addr::stark_verifier_7 {
 
     use std::vector::{length, borrow, slice, append};
     use aptos_std::aptos_hash::keccak256;
+    use verifier_addr::merkle_statement_verifier;
     use verifier_addr::fri_statement_verifier_7;
     use verifier_addr::merkle_verifier::COMMITMENT_MASK;
     use verifier_addr::fri_layer::{FRI_QUEUE_SLOT_SIZE};
@@ -195,8 +196,7 @@ module verifier_addr::stark_verifier_7 {
 
         set_el(ctx, channel_ptr, (proof_ptr as u256));
 
-        // todo: verify_merkle
-        // verifyMerkle(channel_ptr, merkle_queue_ptr, merkleRoot, n_unique_queries);
+        merkle_statement_verifier::verify_merkle(ctx, channel_ptr, merkle_queue_ptr, merkle_root, n_unique_queries);
     }
 
     /*
@@ -321,12 +321,11 @@ module verifier_addr::stark_verifier_7 {
     }
 
     public fun verify_proof(
-        signer: &signer,
         proof_params: vector<u256>,
         proof: vector<u256>,
         public_input: vector<u256>
     ) acquires ConstructorConfig {
-        let ctx = init_verifier_params(signer, &public_input, &proof_params);
+        let ctx = init_verifier_params(&public_input, &proof_params);
         let channel_ptr = MM_CHANNEL();
 
         init_channel(&mut ctx, channel_ptr, get_public_input_hash(&public_input));
@@ -375,7 +374,7 @@ module verifier_addr::stark_verifier_7 {
         hash = read_hash(&mut ctx, &proof, channel_ptr, true);
         set_el(&mut ctx, MM_FRI_COMMITMENTS(), hash);
 
-        let n_fri_steps = length(&get_fri_step_sizes(signer, &proof_params));
+        let n_fri_steps = length(&get_fri_step_sizes(&proof_params));
         let fri_eval_point_ptr = MM_FRI_EVAL_POINTS();
         for (i in 1..(n_fri_steps - 1)) {
             send_field_elements(&mut ctx, channel_ptr, 1, fri_eval_point_ptr + i);
@@ -414,11 +413,10 @@ module verifier_addr::stark_verifier_7 {
 
         compute_first_fri_layer(&mut ctx, &proof);
 
-        fri_statement_verifier_7::fri_verify_layers(signer, &mut ctx, &proof, &proof_params);
+        fri_statement_verifier_7::fri_verify_layers(&mut ctx, &proof, &proof_params);
     }
 
     public fun init_verifier_params(
-        signer: &signer,
         public_input: &vector<u256>,
         proof_params: &vector<u256>
     ): vector<u256> acquires ConstructorConfig {
@@ -452,7 +450,7 @@ module verifier_addr::stark_verifier_7 {
         assert!(n_fri_steps <= (MAX_FRI_STEPS() as u256), TOO_MANY_FRI_STEPS);
         assert!(n_fri_steps > 1, NOT_ENOUGH_FRI_STEPS);
 
-        let fri_step_sizes = get_fri_step_sizes(signer, proof_params);
+        let fri_step_sizes = get_fri_step_sizes(proof_params);
 
         let (ctx, log_trace_length) = air_specific_init(public_input);
 
@@ -872,8 +870,8 @@ module verifier_addr::test_stark_verifier_7 {
     use std::vector::length;
     use aptos_std::debug::print;
 
-    #[test(signer = @verifier_addr)]
-    fun test_init_verifier_params(signer: signer) {
+    #[test]
+    fun test_init_verifier_params() {
         // init_stark_verifier(signer, 96, 30);
         // let ctx = init_verifier_params(&public_input_(), &proof_params_());
         // assert!(ctx == ctx_(), 1);

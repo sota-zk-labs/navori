@@ -119,7 +119,7 @@ module verifier_addr::gps_statement_verifier {
         );
 
         // NOLINTNEXTLINE: reentrancy-benign.
-        verify_proof_external(signer, proof_params, proof, cairo_public_input);
+        verify_proof_external(proof_params, proof, cairo_public_input);
 
         register_gps_facts(signer, task_metadata, public_memory_pages, *borrow(&cairo_aux_input,
             OFFSET_OUTPUT_BEGIN_ADDR()

@@ -66,7 +66,7 @@ module verifier_addr::fri_7 {
 
         let fri_queue = MM_FRI_QUEUE();
 
-        let fri_step_sizes = get_fri_step_sizes(signer, proof_params);
+        let fri_step_sizes = get_fri_step_sizes(proof_params);
         let n_fri_steps = length(&fri_step_sizes);
         while (fri_step < n_fri_steps) {
             let fri_coset_size = (1 << (*borrow(&fri_step_sizes, fri_step) as u8));

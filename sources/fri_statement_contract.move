@@ -107,7 +107,8 @@ module verifier_addr::fri_statement_contract {
             fri_coset_size,
         );
 
-        verify_merkle(&mut memory, channel_ptr, merkle_queue_ptr, to_big_endian(to_bytes(&expected_root)), n_queries);
+        // Todo
+        // verify_merkle(&mut memory, channel_ptr, merkle_queue_ptr, to_big_endian(to_bytes(&expected_root)), n_queries);
 
         let keccak_input = mloadrange(&mut memory, fri_queue_ptr, 0x60 * n_queries);
         mstore(&mut memory, data_to_hash + 0x60, to_u256(to_big_endian(keccak256(keccak_input))));
