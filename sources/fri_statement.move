@@ -5,8 +5,7 @@ module verifier_addr::fri_statement {
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math128::pow;
     use aptos_std::simple_map::{borrow, upsert};
-    use aptos_framework::account;
-    use aptos_framework::event::{destroy_handle, emit_event};
+    use aptos_framework::event::emit;
 
     use verifier_addr::convert_memory::from_vector;
     use verifier_addr::fri::{get_fri, init_fri, update_fri};
@@ -20,6 +19,7 @@ module verifier_addr::fri_statement {
         fri_ctx: u256
     }
 
+    #[event]
     struct ComputeNextLayer has drop, store {
         channel_ptr: u256,
         fri_queue_ptr: u256,
@@ -76,15 +76,9 @@ module verifier_addr::fri_statement {
         let fri_coset_size = (pow(2, (fri_step_size as u128)) as u256);
         update_fri(signer, *freeze(fri));
 
+        emit(FriCtx { fri_ctx });
 
-        //Log fri_ctx
-        let fri_ctx_handler = account::new_event_handle<FriCtx>(signer);
-        emit_event<FriCtx>(&mut fri_ctx_handler, FriCtx { fri_ctx });
-        destroy_handle<FriCtx>(fri_ctx_handler);
-
-
-        let compute_next_next_layer_handler = account::new_event_handle<ComputeNextLayer>(signer);
-        emit_event<ComputeNextLayer>(&mut compute_next_next_layer_handler, ComputeNextLayer {
+        emit(ComputeNextLayer {
             channel_ptr,
             fri_queue_ptr,
             merkle_queue_ptr,
@@ -93,7 +87,6 @@ module verifier_addr::fri_statement {
             evaluation_point,
             fri_coset_size,
         });
-        destroy_handle<ComputeNextLayer>(compute_next_next_layer_handler);
     }
 
     fun validate_fri_queue(fri_queue: vector<u256>) {

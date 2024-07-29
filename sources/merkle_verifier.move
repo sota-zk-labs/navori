@@ -3,6 +3,7 @@ module verifier_addr::merkle_verifier {
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::simple_map::{borrow, upsert};
     use aptos_framework::event;
+    use verifier_addr::fact_registry::register_fact;
 
     use verifier_addr::fri::{get_fri, reset_memory_fri, update_fri};
     use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
@@ -16,13 +17,13 @@ module verifier_addr::merkle_verifier {
     const INDEX_SIZE: u256 = 1;
 
     //error
-    const TOO_MANY_MERKLE_QUERIES: u64 = 1;
-    const INVALID_MERKLE_PROOF: u64 = 2;
-    const VERIFY_SUCCESSFULLY: u64 = 3;
+    const ETOO_MANY_MERKLE_QUERIES: u64 = 1;
+    const EINVALID_MERKLE_PROOF: u64 = 2;
+    const EOUT_OF_NOOB: u64 = 3;
 
     #[event]
     struct Hash has drop, store {
-        hash: u256
+        hash: vector<u8>
     }
 
     struct Ptr has key, store, drop {
@@ -41,41 +42,30 @@ module verifier_addr::merkle_verifier {
         root: u256,
         n: u256
     ) acquires Ptr {
+        let fri = &mut get_fri(address_of(s));
         if (!exists<Ptr>(address_of(s))) {
             move_to<Ptr>(s, Ptr {
-                index: 0,
-                proof_ptr: 0, rd_idx: 0, wr_idx: 0, is_loop: false
+                index: *borrow(fri, &queue_ptr),
+                proof_ptr: *borrow(fri, &channel_ptr),
+                rd_idx: 0,
+                wr_idx: 0,
+                is_loop: true
             });
         };
-        assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES, TOO_MANY_MERKLE_QUERIES);
-
-        let fri = &mut get_fri(address_of(s));
+        assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES, ETOO_MANY_MERKLE_QUERIES);
         let ptr = borrow_global_mut<Ptr>(address_of(s));
 
-        let index;
-        let proof_ptr;
-        let rd_idx;
-        let wr_idx;
-        let looped=15;
+        let index = ptr.index;
+        let proof_ptr = ptr.proof_ptr;
+        let rd_idx = ptr.rd_idx;
+        let wr_idx = ptr.wr_idx;
 
-        if (ptr.is_loop) {
-            index = ptr.index;
-            proof_ptr = ptr.proof_ptr;
-            rd_idx = ptr.rd_idx;
-            wr_idx = ptr.wr_idx;
-        } else {
-            index = *borrow(fri, &queue_ptr);
-            proof_ptr = *borrow(fri, &channel_ptr);
-            rd_idx = 0;
-            wr_idx = 0;
-            ptr.is_loop = true;
-        };
-
+        assert!(ptr.is_loop == true, EOUT_OF_NOOB);
         // queuePtr + i * MERKLE_SLOT_SIZE_IN_BYTES gives the i'th index in the queue.
         // hashesPtr + i * MERKLE_SLOT_SIZE_IN_BYTES gives the i'th hash in the queue.
         let hashes_ptr = queue_ptr + INDEX_SIZE;
         let queue_size = n * MERKLE_SLOT_SIZE;
-
+        let looped = 15;
         while (index > 1 && ptr.is_loop && looped > 0) {
             let sibling_index = index ^ 1;
             // sibblingOffset := COMMITMENT_SIZE_IN_BYTES * lsb(siblingIndex).
@@ -138,11 +128,13 @@ module verifier_addr::merkle_verifier {
         if (index == 1 || index == 0) {
             ptr.is_loop = false;
             let hash = *borrow(fri, &(hashes_ptr + rd_idx));
+            assert!(hash == root, EINVALID_MERKLE_PROOF);
+            let byte_hash = u256_to_bytes32(hash);
+            event::emit<Hash>(Hash { hash: byte_hash });
+            register_fact(s, byte_hash);
             reset_memory_fri(s);
-            assert!(hash == root, INVALID_MERKLE_PROOF);
-            event::emit<Hash>(Hash { hash });
+            move_from<Ptr>(address_of(s));
         };
-        assert!(ptr.is_loop == true, VERIFY_SUCCESSFULLY);
     }
 }
 

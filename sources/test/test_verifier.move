@@ -2,7 +2,7 @@ module verifier_addr::test_verifier {
     #[test_only]
     use std::signer::address_of;
     #[test_only]
-    use verifier_addr::fri_layer::{check_in_loop, compute_next_layer, init_fri_group};
+    use verifier_addr::fri_layer::{ compute_next_layer, init_fri_group, init_compute_next_layer};
     #[test_only]
     use verifier_addr::fri_statement::verify_fri;
     #[test_only]
@@ -12,8 +12,9 @@ module verifier_addr::test_verifier {
         get_fri_step_size_3,
         get_proof_3
     };
+
     #[test_only]
-    use verifier_addr::merkle_verifier::{check_in_mloop, verify_merkle};
+    use verifier_addr::merkle_verifier::{ verify_merkle};
 
     #[test(a = @verifier_addr)]
     fun test_verify_fri_3(a: &signer) {
@@ -26,9 +27,9 @@ module verifier_addr::test_verifier {
             get_expected_root_3()
         );
         init_fri_group(a, 275);
-
-        let i = true;
-        while (i) {
+        init_compute_next_layer(a, 248, 208, 249, 13, 275, 1127319757609087129328200675198280716580310204088624481346247862057464086751, 8);
+        let i = 0;
+        while (i < 14) {
             compute_next_layer(
                 a,
                 248,
@@ -39,10 +40,11 @@ module verifier_addr::test_verifier {
                 1127319757609087129328200675198280716580310204088624481346247862057464086751,
                 8,
             );
-            i = check_in_loop(address_of(a));
+            i = i+1;
+
         };
-        i = true;
-        while (i) {
+        i = 0;
+        while (i < 9) {
             verify_merkle(
                 a,
                 248,
@@ -50,7 +52,7 @@ module verifier_addr::test_verifier {
                 9390404794146759926609078012164974184924937654759657766410025620812402262016,
                 13
             );
-            i = check_in_mloop(address_of(a));
+            i = i+1;
         };
     }
 }

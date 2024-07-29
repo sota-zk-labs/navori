@@ -1,5 +1,4 @@
 module verifier_addr::convert_memory {
-
     use std::vector;
     use aptos_std::simple_map::{SimpleMap, upsert};
 

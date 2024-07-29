@@ -4,8 +4,7 @@ module verifier_addr::fri_layer {
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math128::pow;
     use aptos_std::simple_map::{borrow, borrow_mut, SimpleMap, upsert};
-    use aptos_framework::account;
-    use aptos_framework::event::{destroy_handle, emit_event};
+    use aptos_framework::event::emit;
 
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::fri_transform::{fri_max_step_size, transform_coset};
@@ -32,8 +31,7 @@ module verifier_addr::fri_layer {
         input_ptr: u256,
         input_end: u256,
         output_ptr: u256,
-        merkle_queue_ptr: u256,
-        in_loop: bool,
+        merkle_queue_ptr: u256
     }
 
     #[event]
@@ -161,6 +159,30 @@ module verifier_addr::fri_layer {
       As the function computes the next layer it also collects that data from
       the previous layer for Merkle verification.
     */
+
+    public entry fun init_compute_next_layer(
+        s: &signer,
+        channel_ptr: u256,
+        fri_queue_ptr: u256,
+        merkle_queue_ptr: u256,
+        n_queries: u256,
+        fri_ctx: u256,
+        fri_eval_point: u256,
+        fri_coset_size: u256,
+    ) {
+        if (!exists<Ptr>(address_of(s))) {
+            move_to<Ptr>(
+                s,
+                Ptr {
+                    input_ptr: fri_queue_ptr,
+                    input_end: fri_queue_ptr + (FRI_QUEUE_SLOT_SIZE * n_queries),
+                    output_ptr: fri_queue_ptr,
+                    merkle_queue_ptr,
+                }
+            );
+        };
+    }
+
     public entry fun compute_next_layer(
         s: &signer,
         channel_ptr: u256,
@@ -171,38 +193,14 @@ module verifier_addr::fri_layer {
         fri_eval_point: u256,
         fri_coset_size: u256,
     ) acquires Ptr {
-
-        if (!exists<Ptr>(address_of(s))) {
-            move_to<Ptr>(
-                s,
-                Ptr {
-                    input_ptr: fri_queue_ptr,
-                    input_end: fri_queue_ptr + (FRI_QUEUE_SLOT_SIZE * n_queries),
-                    output_ptr: fri_queue_ptr, merkle_queue_ptr,
-                    in_loop: false
-                }
-            );
-        };
-
         let fri = &mut get_fri(address_of(s));
-        let evaluation_on_coset_ptr = fri_ctx + FRI_CTX_TO_COSET_EVALUATIONS_OFFSET;
-        let input_ptr;
-        let input_end;
-        let output_ptr;
         let ptr = borrow_global_mut<Ptr>(address_of(s));
+        let evaluation_on_coset_ptr = fri_ctx + FRI_CTX_TO_COSET_EVALUATIONS_OFFSET;
 
-        if (ptr.in_loop) {
-            input_ptr = ptr.input_ptr;
-            input_end = ptr.input_end;
-            output_ptr = ptr.output_ptr;
-            merkle_queue_ptr = ptr.merkle_queue_ptr;
-        } else {
-            input_ptr = fri_queue_ptr;
-            input_end = input_ptr + (FRI_QUEUE_SLOT_SIZE * n_queries);
-            output_ptr = fri_queue_ptr;
-            merkle_queue_ptr = merkle_queue_ptr;
-            ptr.in_loop = true;
-        };
+        let input_ptr = ptr.input_ptr;
+        let input_end = ptr.input_end;
+        let output_ptr = ptr.output_ptr;
+        let merkle_queue_ptr = ptr.merkle_queue_ptr;
 
         // while (input_ptr < input_end) {
         if (input_ptr < input_end) {
@@ -251,30 +249,19 @@ module verifier_addr::fri_layer {
             ptr.output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
             ptr.merkle_queue_ptr = merkle_queue_ptr;
         } else {
+            // destroy handle
             move_from<Ptr>(address_of(s));
         };
-        update_fri(s, *freeze(fri));
         let n_queries = (output_ptr - fri_queue_ptr) / FRI_QUEUE_SLOT_SIZE;
-
         // emit event
-        let n_queries_handler = account::new_event_handle<NQueries>(s);
-        emit_event<NQueries>(&mut n_queries_handler, NQueries { n_queries });
-        destroy_handle<NQueries>(n_queries_handler);
+        emit(NQueries { n_queries });
+        update_fri(s, *freeze(fri));
     }
 
     public entry fun reset_ptr(s: address) acquires Ptr {
         //TODO: assert admin
         if (exists<Ptr>(s)) {
             move_from<Ptr>(s);
-        }
-    }
-
-    #[view]
-    public fun check_in_loop(s: address): bool acquires Ptr {
-        if (exists<Ptr>(s)) {
-            borrow_global<Ptr>(s).in_loop
-        } else {
-            false
         }
     }
 }

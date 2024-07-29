@@ -10,6 +10,8 @@ module verifier_addr::fri {
         fri: SimpleMap<u256, u256>
     }
 
+    const END_FRI_VERIFIY: u64 = 0x3;
+
     public(friend) fun init_fri(account: &signer) {
         if (!exists<Fri>(address_of(account))) {
             let fri = new<u256, u256>();
@@ -18,6 +20,7 @@ module verifier_addr::fri {
     }
 
     public(friend) fun get_fri(signer: address): SimpleMap<u256, u256> acquires Fri {
+        assert!(exists<Fri>(signer), END_FRI_VERIFIY);
         borrow_global_mut<Fri>(signer).fri
     }
 
