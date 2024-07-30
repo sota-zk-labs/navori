@@ -4,7 +4,7 @@ module verifier_addr::fri_statement {
     use std::vector::length;
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math128::pow;
-    use aptos_std::simple_map::{borrow, upsert};
+    use aptos_std::smart_table::{borrow, upsert};
     use aptos_framework::event::emit;
 
     use verifier_addr::convert_memory::from_vector;
@@ -41,7 +41,8 @@ module verifier_addr::fri_statement {
     ) {
         init_fri(signer);
         // must <= FRI_MAX_STEPS_SIZE
-        let fri = &mut get_fri(address_of(signer));
+        let ffri = get_fri(address_of(signer));
+        let fri = &mut ffri;
         // let fri = fri_storage;
         assert!(fri_step_size <= 4, 1);
         assert!(evaluation_point < k_modulus(), 1);
@@ -66,15 +67,15 @@ module verifier_addr::fri_statement {
         upsert(fri, data_to_hash + 1, fri_step_size);
         upsert(fri, data_to_hash + 4, expected_root);
 
-        let hash = *borrow(fri, &fri_queue_ptr);
+        let hash = *borrow(fri, fri_queue_ptr);
 
         let hash = u256_to_bytes32(hash);
         for (i in (fri_queue_ptr + 1)..(fri_queue_ptr + n_queries * 3)) {
-            vector::append(&mut hash, u256_to_bytes32(*borrow(fri, &i)));
+            vector::append(&mut hash, u256_to_bytes32(*borrow(fri, i)));
         };
         upsert(fri, data_to_hash + 2, bytes32_to_u256(keccak256(hash)));
         let fri_coset_size = (pow(2, (fri_step_size as u128)) as u256);
-        update_fri(signer, *freeze(fri));
+        update_fri(signer, ffri);
 
         emit(FriCtx { fri_ctx });
 

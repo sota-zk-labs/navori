@@ -1,6 +1,6 @@
 module verifier_addr::fact_registry {
     use std::signer::address_of;
-    use aptos_std::table::{Self, borrow, Table, upsert};
+    use aptos_std::table::{Self, Table, upsert};
 
     struct VerifierFact has key, store {
         verified_fact: Table<vector<u8>, bool>,

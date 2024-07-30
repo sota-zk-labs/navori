@@ -1,13 +1,13 @@
 module verifier_addr::fri {
     use std::signer::address_of;
-    use aptos_std::simple_map::{new, SimpleMap};
+    use aptos_std::smart_table::{SmartTable, new};
 
     friend verifier_addr::fri_statement;
     friend verifier_addr::fri_layer;
     friend verifier_addr::merkle_verifier;
 
-    struct Fri has key, store, drop {
-        fri: SimpleMap<u256, u256>
+    struct Fri has key, store {
+        fri: SmartTable<u256, u256>
     }
 
     const END_FRI_VERIFIY: u64 = 0x3;
@@ -19,23 +19,18 @@ module verifier_addr::fri {
         }
     }
 
-    public(friend) fun get_fri(signer: address): SimpleMap<u256, u256> acquires Fri {
-        assert!(exists<Fri>(signer), END_FRI_VERIFIY);
-        borrow_global_mut<Fri>(signer).fri
+    public(friend) fun get_fri(signer: address): SmartTable<u256, u256> acquires Fri {
+        let Fri { fri } = move_from<Fri>(signer);
+        fri
     }
 
-    public(friend) fun update_fri(signer: &signer, fri: SimpleMap<u256, u256>) acquires Fri {
-        borrow_global_mut<Fri>(address_of(signer)).fri = fri;
-    }
-
-    public entry fun reset_memory_fri(signer: &signer) acquires Fri {
-        //TODO: assert admin
-        move_from<Fri>(address_of(signer));
+    public(friend) fun update_fri(signer: &signer, fri: SmartTable<u256, u256>) {
+        move_to(signer, Fri { fri });
     }
 
     #[view]
-    public fun view_fri(signer: address): SimpleMap<u256, u256> acquires Fri {
-        let fri = borrow_global<Fri>(signer).fri;
+    public fun view_fri(signer: address): SmartTable<u256, u256> acquires Fri {
+        let Fri { fri } = move_from<Fri>(signer);
         fri
     }
 }
