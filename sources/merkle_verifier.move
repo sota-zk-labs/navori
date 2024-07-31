@@ -22,7 +22,7 @@ module verifier_addr::merkle_verifier {
     const ETOO_MANY_MERKLE_QUERIES: u64 = 1;
     const EINVALID_MERKLE_PROOF: u64 = 2;
     const EOUT_OF_NOOB: u64 = 3;
-    const MAX_CYCLES: u64 = 20;
+    const MAX_CYCLES: u64 = 110;
     const EVERIFY_MERKLE_NOT_INITIATED: u64 = 4;
 
     #[event]
