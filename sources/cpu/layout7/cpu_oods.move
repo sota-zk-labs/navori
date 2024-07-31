@@ -1,6 +1,6 @@
 module verifier_addr::cpu_oods_7 {
 
-    use std::vector::{borrow, length, slice, for_each_ref};
+    use std::vector::{borrow, length, for_each_ref};
     use lib_addr::math_mod::{mod_mul, mod_add, mod_exp};
     use verifier_addr::fri_layer::FRI_QUEUE_SLOT_SIZE;
     use verifier_addr::prime_field_element_0::{k_montgomery_r_inv, k_modulus, generator_val};
@@ -60,7 +60,7 @@ module verifier_addr::cpu_oods_7 {
             d is the degree of the composition polynomial.
             c is the evaluation sent by the prover.
     */
-    public fun fallback(ctx: &mut vector<u256>): vector<u256> {
+    public fun fallback(ctx: &mut vector<u256>) {
         let cnt = 0;
         for_each_ref(&DENOMINATORS_PTR_OFFSET, |v| {
             cnt = cnt + length(v);
@@ -160,7 +160,7 @@ module verifier_addr::cpu_oods_7 {
             // Append the friValue, which is the sum of the out-of-domain-sampling boundary
             // constraints for the trace and composition polynomials, to the fri_queue array.
             set_el(ctx, fri_queue + 1, res % prime);
-            
+
             // print(&(res % prime));
 
             // Append the friInvPoint of the current query to the fri_queue array.
@@ -171,8 +171,6 @@ module verifier_addr::cpu_oods_7 {
 
             fri_queue = fri_queue + 3;
         };
-
-        slice(ctx, 109, 109 + 144)
     }
 
     /*

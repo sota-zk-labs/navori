@@ -2,6 +2,7 @@ module verifier_addr::stark_verifier_7 {
 
     use std::vector::{length, borrow, slice, append};
     use aptos_std::aptos_hash::keccak256;
+    use verifier_addr::cpu_oods_7;
     use verifier_addr::merkle_statement_verifier;
     use verifier_addr::fri_statement_verifier_7;
     use verifier_addr::merkle_verifier::COMMITMENT_MASK;
@@ -248,26 +249,7 @@ module verifier_addr::stark_verifier_7 {
 
         // emit LogGas("Read and decommit composition", gasleft());
 
-        // todo: call oods contract
-        // address oodsAddress = oodsContractAddress;
-        // let friQueue = getPtr(ctx, MM_FRI_QUEUE);
-        // let returnDataSize = MAX_N_QUERIES * FRI_QUEUE_SLOT_SIZE_IN_BYTES;
-        // assembly {
-        //     // Call the OODS contract.
-        //     if iszero(
-        //     staticcall(
-        //     not(0),
-        //     oodsAddress,
-        //     ctx,
-        //     mul(add(mload(ctx), 1), 0x20), /*sizeof(ctx)*/
-        //     friQueue,
-        //     returnDataSize
-        //     )
-        //     ) {
-        //     returndatacopy(0, 0, returndatasize())
-        //     revert(0, returndatasize())
-        //     }
-        // }
+        cpu_oods_7::fallback(ctx);
         // emit LogGas("OODS virtual oracle", gasleft());
     }
 
