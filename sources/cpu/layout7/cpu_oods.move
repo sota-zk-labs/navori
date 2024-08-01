@@ -1,6 +1,6 @@
 module verifier_addr::cpu_oods_7 {
 
-    use std::vector::{borrow, length, for_each_ref};
+    use std::vector::{borrow, length, for_each_ref, push_back};
     use lib_addr::math_mod::{mod_mul, mod_add, mod_exp};
     use verifier_addr::fri_layer::FRI_QUEUE_SLOT_SIZE;
     use verifier_addr::prime_field_element_0::{k_montgomery_r_inv, k_modulus, generator_val};
@@ -61,10 +61,6 @@ module verifier_addr::cpu_oods_7 {
             c is the evaluation sent by the prover.
     */
     public fun fallback(ctx: &mut vector<u256>) {
-        let cnt = 0;
-        for_each_ref(&DENOMINATORS_PTR_OFFSET, |v| {
-            cnt = cnt + length(v);
-        });
         let n_queries = (*borrow(ctx, MM_N_UNIQUE_QUERIES()) as u64);
         let batch_inverse_array = assign(0u256, 2 * n_queries * BATCH_INVERSE_CHUNK);
 
@@ -193,7 +189,7 @@ module verifier_addr::cpu_oods_7 {
         // The array is segmented as follows:
         //    expmods_and_points[0:13] (.expmods) expmods used during calculations of the points below.
         //    expmods_and_points[13:111] (.points) points used during the denominators calculation.
-        let expmods_and_points = &mut assign(0u256, 111);
+        let expmods_and_points = &mut vector[];
         {
             let trace_generator = /*trace_generator*/ *borrow(ctx, MM_TRACE_GENERATOR());
             let prime = k_modulus();
@@ -215,43 +211,43 @@ module verifier_addr::cpu_oods_7 {
             let tg1010 = mod_mul(tg2, mod_mul(tg48, mod_exp(tg320, 3, prime), prime), prime);
 
             // expmods_and_points.expmods[0] = trace_generator^2.
-            set_el(expmods_and_points, 0, tg2);
+            push_back(expmods_and_points, tg2);
 
             // expmods_and_points.expmods[1] = trace_generator^3.
-            set_el(expmods_and_points, 1, tg3);
+            push_back(expmods_and_points, tg3);
 
             // expmods_and_points.expmods[2] = trace_generator^4.
-            set_el(expmods_and_points, 2, tg4);
+            push_back(expmods_and_points, tg4);
 
             // expmods_and_points.expmods[3] = trace_generator^5.
-            set_el(expmods_and_points, 3, tg5);
+            push_back(expmods_and_points, tg5);
 
             // expmods_and_points.expmods[4] = trace_generator^7.
-            set_el(expmods_and_points, 4, tg7);
+            push_back(expmods_and_points, tg7);
 
             // expmods_and_points.expmods[5] = trace_generator^12.
-            set_el(expmods_and_points, 5, tg12);
+            push_back(expmods_and_points, tg12);
 
             // expmods_and_points.expmods[6] = trace_generator^13.
-            set_el(expmods_and_points, 6, tg13);
+            push_back(expmods_and_points, tg13);
 
             // expmods_and_points.expmods[7] = trace_generator^28.
-            set_el(expmods_and_points, 7, tg28);
+            push_back(expmods_and_points, tg28);
 
             // expmods_and_points.expmods[8] = trace_generator^48.
-            set_el(expmods_and_points, 8, tg48);
+            push_back(expmods_and_points, tg48);
 
             // expmods_and_points.expmods[9] = trace_generator^216.
-            set_el(expmods_and_points, 9, tg216);
+            push_back(expmods_and_points, tg216);
 
             // expmods_and_points.expmods[10] = trace_generator^245.
-            set_el(expmods_and_points, 10, tg245);
+            push_back(expmods_and_points, tg245);
 
             // expmods_and_points.expmods[11] = trace_generator^320.
-            set_el(expmods_and_points, 11, tg320);
+            push_back(expmods_and_points, tg320);
 
             // expmods_and_points.expmods[12] = trace_generator^1010.
-            set_el(expmods_and_points, 12, tg1010);
+            push_back(expmods_and_points, tg1010);
 
             let oods_point = /*oods_point*/ *borrow(ctx, MM_OODS_POINT());
             {
@@ -263,491 +259,491 @@ module verifier_addr::cpu_oods_7 {
                 // Compute denominators for rows with const mask expression.
 
                 // expmods_and_points.points[0] = -z.
-                set_el(expmods_and_points, 13, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[1] = -(g * z).
-                set_el(expmods_and_points, 14, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[2] = -(g^2 * z).
-                set_el(expmods_and_points, 15, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[3] = -(g^3 * z).
-                set_el(expmods_and_points, 16, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[4] = -(g^4 * z).
-                set_el(expmods_and_points, 17, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[5] = -(g^5 * z).
-                set_el(expmods_and_points, 18, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[6] = -(g^6 * z).
-                set_el(expmods_and_points, 19, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[7] = -(g^7 * z).
-                set_el(expmods_and_points, 20, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[8] = -(g^8 * z).
-                set_el(expmods_and_points, 21, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[9] = -(g^9 * z).
-                set_el(expmods_and_points, 22, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[10] = -(g^10 * z).
-                set_el(expmods_and_points, 23, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[11] = -(g^11 * z).
-                set_el(expmods_and_points, 24, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[12] = -(g^12 * z).
-                set_el(expmods_and_points, 25, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[13] = -(g^13 * z).
-                set_el(expmods_and_points, 26, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[14] = -(g^14 * z).
-                set_el(expmods_and_points, 27, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[15] = -(g^15 * z).
-                set_el(expmods_and_points, 28, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[16] = -(g^16 * z).
-                set_el(expmods_and_points, 29, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[17] = -(g^17 * z).
-                set_el(expmods_and_points, 30, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[18] = -(g^18 * z).
-                set_el(expmods_and_points, 31, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[19] = -(g^20 * z).
-                set_el(expmods_and_points, 32, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[20] = -(g^22 * z).
-                set_el(expmods_and_points, 33, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[21] = -(g^23 * z).
-                set_el(expmods_and_points, 34, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[22] = -(g^24 * z).
-                set_el(expmods_and_points, 35, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[23] = -(g^26 * z).
-                set_el(expmods_and_points, 36, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[24] = -(g^27 * z).
-                set_el(expmods_and_points, 37, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[25] = -(g^28 * z).
-                set_el(expmods_and_points, 38, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[26] = -(g^30 * z).
-                set_el(expmods_and_points, 39, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[27] = -(g^32 * z).
-                set_el(expmods_and_points, 40, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[28] = -(g^33 * z).
-                set_el(expmods_and_points, 41, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^5.
                 point = mod_mul(point, tg5, prime);
                 // expmods_and_points.points[29] = -(g^38 * z).
-                set_el(expmods_and_points, 42, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[30] = -(g^39 * z).
-                set_el(expmods_and_points, 43, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^3.
                 point = mod_mul(point, tg3, prime);
                 // expmods_and_points.points[31] = -(g^42 * z).
-                set_el(expmods_and_points, 44, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[32] = -(g^43 * z).
-                set_el(expmods_and_points, 45, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[33] = -(g^44 * z).
-                set_el(expmods_and_points, 46, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^5.
                 point = mod_mul(point, tg5, prime);
                 // expmods_and_points.points[34] = -(g^49 * z).
-                set_el(expmods_and_points, 47, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^4.
                 point = mod_mul(point, tg4, prime);
                 // expmods_and_points.points[35] = -(g^53 * z).
-                set_el(expmods_and_points, 48, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[36] = -(g^54 * z).
-                set_el(expmods_and_points, 49, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^3.
                 point = mod_mul(point, tg3, prime);
                 // expmods_and_points.points[37] = -(g^57 * z).
-                set_el(expmods_and_points, 50, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[38] = -(g^58 * z).
-                set_el(expmods_and_points, 51, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
-                set_el(expmods_and_points, 52, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[40] = -(g^61 * z).
-                set_el(expmods_and_points, 53, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[41] = -(g^62 * z).
-                set_el(expmods_and_points, 54, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[42] = -(g^64 * z).
-                set_el(expmods_and_points, 55, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[43] = -(g^65 * z).
-                set_el(expmods_and_points, 56, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^5.
                 point = mod_mul(point, tg5, prime);
                 // expmods_and_points.points[44] = -(g^70 * z).
-                set_el(expmods_and_points, 57, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[45] = -(g^71 * z).
-                set_el(expmods_and_points, 58, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^3.
                 point = mod_mul(point, tg3, prime);
                 // expmods_and_points.points[46] = -(g^74 * z).
-                set_el(expmods_and_points, 59, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[47] = -(g^75 * z).
-                set_el(expmods_and_points, 60, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[48] = -(g^76 * z).
-                set_el(expmods_and_points, 61, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[49] = -(g^77 * z).
-                set_el(expmods_and_points, 62, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[50] = -(g^78 * z).
-                set_el(expmods_and_points, 63, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[51] = -(g^79 * z).
-                set_el(expmods_and_points, 64, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[52] = -(g^81 * z).
-                set_el(expmods_and_points, 65, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[53] = -(g^83 * z).
-                set_el(expmods_and_points, 66, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[54] = -(g^85 * z).
-                set_el(expmods_and_points, 67, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[55] = -(g^86 * z).
-                set_el(expmods_and_points, 68, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[56] = -(g^87 * z).
-                set_el(expmods_and_points, 69, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[57] = -(g^88 * z).
-                set_el(expmods_and_points, 70, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[58] = -(g^89 * z).
-                set_el(expmods_and_points, 71, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[59] = -(g^90 * z).
-                set_el(expmods_and_points, 72, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[60] = -(g^91 * z).
-                set_el(expmods_and_points, 73, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[61] = -(g^92 * z).
-                set_el(expmods_and_points, 74, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[62] = -(g^94 * z).
-                set_el(expmods_and_points, 75, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[63] = -(g^96 * z).
-                set_el(expmods_and_points, 76, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[64] = -(g^97 * z).
-                set_el(expmods_and_points, 77, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^5.
                 point = mod_mul(point, tg5, prime);
                 // expmods_and_points.points[65] = -(g^102 * z).
-                set_el(expmods_and_points, 78, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[66] = -(g^103 * z).
-                set_el(expmods_and_points, 79, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^5.
                 point = mod_mul(point, tg5, prime);
                 // expmods_and_points.points[67] = -(g^108 * z).
-                set_el(expmods_and_points, 80, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^5.
                 point = mod_mul(point, tg5, prime);
                 // expmods_and_points.points[68] = -(g^113 * z).
-                set_el(expmods_and_points, 81, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^4.
                 point = mod_mul(point, tg4, prime);
                     // expmods_and_points.points[69] = -(g^117 * z).
-                set_el(expmods_and_points, 82, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[70] = -(g^118 * z).
-                set_el(expmods_and_points, 83, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[71] = -(g^120 * z).
-                set_el(expmods_and_points, 84, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[72] = -(g^121 * z).
-                set_el(expmods_and_points, 85, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[73] = -(g^122 * z).
-                set_el(expmods_and_points, 86, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[74] = -(g^123 * z).
-                set_el(expmods_and_points, 87, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[75] = -(g^124 * z).
-                set_el(expmods_and_points, 88, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[76] = -(g^125 * z).
-                set_el(expmods_and_points, 89, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[77] = -(g^126 * z).
-                set_el(expmods_and_points, 90, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^28.
                 point = mod_mul(point, tg28, prime);
                 // expmods_and_points.points[78] = -(g^154 * z).
-                set_el(expmods_and_points, 91, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^48.
                 point = mod_mul(point, tg48, prime);
                 // expmods_and_points.points[79] = -(g^202 * z).
-                set_el(expmods_and_points, 92, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^320.
                 point = mod_mul(point, tg320, prime);
                 // expmods_and_points.points[80] = -(g^522 * z).
-                set_el(expmods_and_points, 93, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[81] = -(g^523 * z).
-                set_el(expmods_and_points, 94, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^245.
                 point = mod_mul(point, tg245, prime);
                 // expmods_and_points.points[82] = -(g^768 * z).
-                set_el(expmods_and_points, 95, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^4.
                 point = mod_mul(point, tg4, prime);
                 // expmods_and_points.points[83] = -(g^772 * z).
-                set_el(expmods_and_points, 96, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^12.
                 point = mod_mul(point, tg12, prime);
                 // expmods_and_points.points[84] = -(g^784 * z).
-                set_el(expmods_and_points, 97, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^4.
                 point = mod_mul(point, tg4, prime);
                 // expmods_and_points.points[85] = -(g^788 * z).
-                set_el(expmods_and_points, 98, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^216.
                 point = mod_mul(point, tg216, prime);
                 // expmods_and_points.points[86] = -(g^1004 * z).
-                set_el(expmods_and_points, 99, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^4.
                 point = mod_mul(point, tg4, prime);
                 // expmods_and_points.points[87] = -(g^1008 * z).
-                set_el(expmods_and_points, 100, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^13.
                 point = mod_mul(point, tg13, prime);
                 // expmods_and_points.points[88] = -(g^1021 * z).
-                set_el(expmods_and_points, 101, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[89] = -(g^1022 * z).
-                set_el(expmods_and_points, 102, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[90] = -(g^1023 * z).
-                set_el(expmods_and_points, 103, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[91] = -(g^1024 * z).
-                set_el(expmods_and_points, 104, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[92] = -(g^1025 * z).
-                set_el(expmods_and_points, 105, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^2.
                 point = mod_mul(point, tg2, prime);
                 // expmods_and_points.points[93] = -(g^1027 * z).
-                set_el(expmods_and_points, 106, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^7.
                 point = mod_mul(point, tg7, prime);
                 // expmods_and_points.points[94] = -(g^1034 * z).
-                set_el(expmods_and_points, 107, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g.
                 point = mod_mul(point, trace_generator, prime);
                 // expmods_and_points.points[95] = -(g^1035 * z).
-                set_el(expmods_and_points, 108, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^1010.
                 point = mod_mul(point, tg1010, prime);
                 // expmods_and_points.points[96] = -(g^2045 * z).
-                set_el(expmods_and_points, 109, point);
+                push_back(expmods_and_points, point);
 
                 // point *= g^13.
                 point = mod_mul(point, tg13, prime);
                 // expmods_and_points.points[97] = -(g^2058 * z).
-                set_el(expmods_and_points, 110, point);
+                push_back(expmods_and_points, point);
             };
 
             let eval_points_ptr = /*oodseval_points*/ MM_OODS_EVAL_POINTS();
