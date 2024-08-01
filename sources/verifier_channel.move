@@ -168,9 +168,6 @@ module verifier_addr::verifier_channel {
         // prng.counter := 0.
         set_el(ctx, channel_ptr + 2, 0);
 
-        // Todo: consider converting mstore(channelPtr, add(proofPtr, 0x8))
-        // mstore(channelPtr, add(proofPtr, 0x8))
-
         let proof_of_work_threshold = 1u256 << ((256 - (proof_of_work_bits as u16)) as u8);
         assert!(proof_of_work_digest < proof_of_work_threshold, PROOF_OF_WORK_CHECK_FAILED);
     }
