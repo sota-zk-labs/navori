@@ -185,8 +185,6 @@ module verifier_addr::fri_test {
     // 3
     // Transaction hash for the proof :
     // 0xbd08177f737a822005498caa19eee1ce60e6e5f10027cb455bdcb938270a84a6
-
-
     public fun get_proof_3(): vector<u256> {
         vector[
             732760739612308100049906584047157783110714348888046202826270876912749598168,

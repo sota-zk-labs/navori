@@ -1,4 +1,9 @@
 module verifier_addr::horner_evaluator {
+     // This line is used for generating constants DO NOT REMOVE!
+	// 0x800000000000011000000000000000000000000000000000000000000000001
+	const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // End of generating constants!
+
     /*
       Computes the evaluation of a polynomial f(x) = sum(a_i * x^i) on the given point.
       The coefficients of the polynomial are given in
@@ -8,12 +13,11 @@ module verifier_addr::horner_evaluator {
       The function requires that n is divisible by 8.
     */
     use std::vector::borrow;
-    use lib_addr::math_mod::{mod_mul};
-    use verifier_addr::prime_field_element_0::k_modulus;
 
+    use lib_addr::math_mod::mod_mul;
     public fun horner_eval(proof: &vector<u256>, coefs_start: u64, point: u256, n_coef: u64): u256 {
         let result = 0;
-        let prime = k_modulus();
+        let prime = K_MODULUS;
 
         assert!(n_coef % 8 == 0, NUMBER_OF_POLYNOMIAL_COEFFICIENTS_MUST_BE_DIVISIBLE_BY_8);
         // Ensure 'n_coef' is bounded as a sanity check (the bound is somewhat arbitrary).
@@ -23,7 +27,7 @@ module verifier_addr::horner_evaluator {
         while (coefs_ptr > coefs_start) {
             // Reduce coefs_ptr by 8 field elements.
             coefs_ptr = coefs_ptr - 8;
-            
+
             // Apply 4 Horner steps (result = result * point + coef).
             result = *borrow(proof, coefs_ptr + 4) + mod_mul(
                 *borrow(proof, coefs_ptr + 5) + mod_mul(

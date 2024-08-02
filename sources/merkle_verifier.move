@@ -1,42 +1,32 @@
 module verifier_addr::merkle_verifier {
     use std::vector::borrow;
     use aptos_std::aptos_hash::keccak256;
+
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
     use verifier_addr::vector::{assign, set_el};
 
-    public fun MAX_N_MERKLE_VERIFIER_QUERIES(): u64 {
-        128
-    }
+    // This line is used for generating constants DO NOT REMOVE!
+	// 128
+	const MAX_N_MERKLE_VERIFIER_QUERIES: u64 = 0x80;
+	// 0x40
+	const MERKLE_SLOT_SIZE_IN_BYTES: u64 = 0x40;
+	// 0x20
+	const INDEX_SIZE_IN_BYTES: u64 = 0x20;
+	// 0x20
+	const COMMITMENT_SIZE_IN_BYTES: u64 = 0x20;
+	// 0x40
+	const TWO_COMMITMENTS_SIZE_IN_BYTES: u64 = 0x40;
+	// 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
+	const COMMITMENT_MASK: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
+    // End of generating constants!
 
     // The size of a SLOT in the verifyMerkle queue.
     // Every slot holds a (index, hash) pair.
-    public fun MERKLE_SLOT_SIZE_IN_BYTES(): u64 {
-        0x40
-    }
-
     // Commitments are masked to 160bit using the following mask to save gas costs.
-    public fun COMMITMENT_MASK(): u256 {
-        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
-    }
-
     // The size of a commitment. We use 32 bytes (rather than 20 bytes) per commitment as it
     // simplifies the code.
-
-    public fun COMMITMENT_SIZE_IN_BYTES(): u64 {
-        0x20
-    }
-
     // The size of two commitments.
-    public fun TWO_COMMITMENTS_SIZE_IN_BYTES(): u64 {
-        0x40
-    }
-
     // The size of and index in the verifyMerkle queue.
-    public fun INDEX_SIZE_IN_BYTES(): u64 {
-        0x20
-    }
-
-
     /*
       Verifies a Merkle tree decommitment for n leaves in a Merkle tree with N leaves.
 
@@ -54,13 +44,13 @@ module verifier_addr::merkle_verifier {
         root: u256,
         n: u64,
     ): u256 {
-        assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES(), TOO_MANY_MERKLE_QUERIES);
+        assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES, TOO_MANY_MERKLE_QUERIES);
         let hash = 0;
 
         // queue_ptr + i * MERKLE_SLOT_SIZE_IN_BYTES gives the i'th index in the queue.
         // hashes_ptr + i * MERKLE_SLOT_SIZE_IN_BYTES gives the i'th hash in the queue.
-        let hashes_ptr = queue_ptr + INDEX_SIZE_IN_BYTES() / 32;
-        let queue_size = n * MERKLE_SLOT_SIZE_IN_BYTES() / 32;
+        let hashes_ptr = queue_ptr + INDEX_SIZE_IN_BYTES / 32;
+        let queue_size = n * MERKLE_SLOT_SIZE_IN_BYTES / 32;
 
         // The items are in slots [0, n-1].
         let rd_idx = 0;
@@ -76,19 +66,19 @@ module verifier_addr::merkle_verifier {
         while (index > 1) {
             let sibling_index = index ^ 1;
             // sibbling_offset = COMMITMENT_SIZE_IN_BYTES * lsb(sibling_index).
-            let sibbling_offset = (sibling_index * COMMITMENT_SIZE_IN_BYTES() % TWO_COMMITMENTS_SIZE_IN_BYTES()) / 32;
+            let sibbling_offset = (sibling_index * COMMITMENT_SIZE_IN_BYTES % TWO_COMMITMENTS_SIZE_IN_BYTES) / 32;
 
             // Store the hash corresponding to index in the correct slot.
             // 0 if index is even and 0x20 if index is odd.
             // The hash of the sibling will be written to the other slot.
             set_el(&mut mem_to_hash, sibbling_offset ^ 1, *borrow(ctx, rd_idx + hashes_ptr));
-            rd_idx = (rd_idx + MERKLE_SLOT_SIZE_IN_BYTES() / 32) % queue_size;
+            rd_idx = (rd_idx + MERKLE_SLOT_SIZE_IN_BYTES / 32) % queue_size;
 
             // Inline channel operation:
             // Assume we are going to read a new hash from the proof.
             // If this is not the case add(proof_ptr, COMMITMENT_SIZE_IN_BYTES) will be reverted.
             let new_hash_ptr = proof_ptr;
-            proof_ptr = proof_ptr + COMMITMENT_SIZE_IN_BYTES() / 32;
+            proof_ptr = proof_ptr + COMMITMENT_SIZE_IN_BYTES / 32;
 
             // Push index/2 into the queue, before reading the next index.
             // The order is important, as otherwise we may try to read from an empty queue (in
@@ -103,8 +93,8 @@ module verifier_addr::merkle_verifier {
 
                 new_hash_ptr = rd_idx + hashes_ptr;
                 // Revert reading from proof.
-                proof_ptr = proof_ptr - COMMITMENT_SIZE_IN_BYTES() / 32;
-                rd_idx = (rd_idx + MERKLE_SLOT_SIZE_IN_BYTES() / 32) % queue_size;
+                proof_ptr = proof_ptr - COMMITMENT_SIZE_IN_BYTES / 32;
+                rd_idx = (rd_idx + MERKLE_SLOT_SIZE_IN_BYTES / 32) % queue_size;
 
                 // Index was consumed, read the next one.
                 // Note that the queue can't be empty at this point.
@@ -119,9 +109,9 @@ module verifier_addr::merkle_verifier {
             set_el(
                 ctx,
                 wr_idx + hashes_ptr,
-                COMMITMENT_MASK() & u256_from_bytes_be(&keccak256(vec_to_bytes_be(&mem_to_hash)))
+                COMMITMENT_MASK & u256_from_bytes_be(&keccak256(vec_to_bytes_be(&mem_to_hash)))
             );
-            wr_idx = (wr_idx + MERKLE_SLOT_SIZE_IN_BYTES() / 32) % queue_size;
+            wr_idx = (wr_idx + MERKLE_SLOT_SIZE_IN_BYTES / 32) % queue_size;
         };
         hash = *borrow(ctx, rd_idx + hashes_ptr);
 
@@ -129,7 +119,7 @@ module verifier_addr::merkle_verifier {
         set_el(ctx, channel_ptr, (proof_ptr as u256));
         // emit LogBool(hash == root);
         assert!(hash == root, INVALID_MERKLE_PROOF);
-        
+
         hash
     }
 

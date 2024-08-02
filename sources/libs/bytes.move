@@ -1,7 +1,7 @@
 module lib_addr::bytes {
     use std::bcs::to_bytes;
     use std::vector;
-    use std::vector::{for_each_ref, append};
+    use std::vector::{append, for_each_ref};
     use aptos_std::from_bcs::to_u256;
 
     // Pads a vector<u8> with a specified byte value up to the desired length
@@ -72,6 +72,7 @@ module lib_addr::bytes_test {
     use std::bcs::to_bytes;
     use std::vector;
     use aptos_std::debug::print;
+
     use lib_addr::bytes::{pad, vec_to_bytes_be};
 
     #[test]

@@ -1,14 +1,22 @@
 module verifier_addr::verifier_channel {
+     // This line is used for generating constants DO NOT REMOVE!
+	// 0x800000000000011000000000000000000000000000000000000000000000001
+	const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+	// 0x40000000000001100000000000012100000000000000000000000000000000
+	const K_MONTGOMERY_R_INV: u256 = 0x40000000000001100000000000012100000000000000000000000000000000;
+    // End of generating constants!
+
+    use std::vector::{append, borrow, borrow_mut, enumerate_ref, length, slice};
+    use aptos_std::aptos_hash::keccak256;
+
+    use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be, vec_to_bytes_be};
+    use lib_addr::math_mod::mod_mul;
+    use verifier_addr::prime_field_element_0::{from_montgomery};
+    use verifier_addr::prng::{get_random_bytes, init_prng};
+    use verifier_addr::vector::{append_vector, set_el};
+
     friend verifier_addr::stark_verifier_7;
     friend verifier_addr::fri_statement_verifier_7;
-
-    use std::vector::{borrow, borrow_mut, append, length, enumerate_ref, slice};
-    use aptos_std::aptos_hash::keccak256;
-    use verifier_addr::prime_field_element_0::{k_montgomery_r_inv, k_modulus, from_montgomery};
-    use lib_addr::math_mod::mod_mul;
-    use verifier_addr::vector::{set_el, append_vector};
-    use verifier_addr::prng::{init_prng, get_random_bytes};
-    use lib_addr::bytes::{vec_to_bytes_be, u256_from_bytes_be, num_to_bytes_be};
 
     public(friend) fun get_prng_ptr(channel_ptr: u64): u64 {
         channel_ptr + 1
@@ -46,7 +54,7 @@ module verifier_addr::verifier_channel {
                 set_el(ctx, channel_ptr + 2, counter + 1);
             };
             // *targetPtr = fromMontgomery(fieldElement);
-            set_el(ctx, i, mod_mul(field_element, k_montgomery_r_inv(), k_modulus()));
+            set_el(ctx, i, mod_mul(field_element, K_MONTGOMERY_R_INV, K_MODULUS));
         }
     }
 
@@ -172,7 +180,13 @@ module verifier_addr::verifier_channel {
         assert!(proof_of_work_digest < proof_of_work_threshold, PROOF_OF_WORK_CHECK_FAILED);
     }
 
-    public(friend) fun read_bytes(ctx: &mut vector<u256>, proof: &vector<u256>, channel_ptr: u64, mix: bool, should_add_8_bytes: bool): u256 {
+    public(friend) fun read_bytes(
+        ctx: &mut vector<u256>,
+        proof: &vector<u256>,
+        channel_ptr: u64,
+        mix: bool,
+        should_add_8_bytes: bool
+    ): u256 {
         let proof_ptr = *borrow(ctx, channel_ptr);
         let val = (if (should_add_8_bytes) {
             u256_from_bytes_be(
@@ -204,11 +218,12 @@ module verifier_addr::verifier_channel {
 
 #[test_only]
 module verifier_addr::test_verifier_channel {
-    use std::vector::{append, length, slice, for_each_ref};
+    use std::vector::{append, for_each_ref, length, slice};
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::debug::print;
-    use verifier_addr::vector::append_vector;
+
     use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be};
+    use verifier_addr::vector::append_vector;
 
     #[test]
     fun test_verify_proof_of_work() {

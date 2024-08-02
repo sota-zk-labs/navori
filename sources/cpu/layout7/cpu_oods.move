@@ -1,15 +1,37 @@
 module verifier_addr::cpu_oods_7 {
+    use std::vector::{borrow, for_each_ref, length, push_back};
 
-    use std::vector::{borrow, length, for_each_ref, push_back};
-    use lib_addr::math_mod::{mod_mul, mod_add, mod_exp};
-    use verifier_addr::fri_layer::FRI_QUEUE_SLOT_SIZE;
-    use verifier_addr::prime_field_element_0::{k_montgomery_r_inv, k_modulus, generator_val};
+    use lib_addr::math_mod::{mod_add, mod_exp, mod_mul};
     use verifier_addr::vector::{assign, set_el};
-    use verifier_addr::memory_map_7::{MM_N_UNIQUE_QUERIES, MM_FRI_QUEUE, MM_TRACE_QUERY_RESPONSES,
-        MM_COMPOSITION_QUERY_RESPONSES, MM_OODS_ALPHA, MM_TRACE_GENERATOR, MM_OODS_POINT,
-        MM_OODS_EVAL_POINTS
-    };
 
+    // This line is used for generating constants DO NOT REMOVE!
+	// 3
+	const GENERATOR_VAL: u256 = 0x3;
+	// 0x800000000000011000000000000000000000000000000000000000000000001
+	const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+	// 0x40000000000001100000000000012100000000000000000000000000000000
+	const K_MONTGOMERY_R_INV: u256 = 0x40000000000001100000000000012100000000000000000000000000000000;
+	// 3
+	const FRI_QUEUE_SLOT_SIZE: u64 = 0x3;
+	// 0x9
+	const MM_N_UNIQUE_QUERIES: u64 = 0x9;
+	// 0x6d
+	const MM_FRI_QUEUE: u64 = 0x6d;
+	// 0x25a
+	const MM_TRACE_QUERY_RESPONSES: u64 = 0x25a;
+	// 0x49a
+	const MM_COMPOSITION_QUERY_RESPONSES: u64 = 0x49a;
+	// 0x259
+	const MM_OODS_ALPHA: u64 = 0x259;
+	// 0x15e
+	const MM_TRACE_GENERATOR: u64 = 0x15e;
+	// 0x15f
+	const MM_OODS_POINT: u64 = 0x15f;
+	// 0x229
+	const MM_OODS_EVAL_POINTS: u64 = 0x229;
+	// 98
+	const N_ROWS_IN_MASK: u256 = 0x62;
+    // End of generating constants!
     const DENOMINATORS_PTR_OFFSET: vector<vector<u64>> = vector[
         vector[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
         vector[0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 19, 20, 22, 23, 25, 26, 27, 28, 42, 43, 57, 59, 61, 62, 63, 64, 71, 73, 75, 77],
@@ -61,18 +83,17 @@ module verifier_addr::cpu_oods_7 {
             c is the evaluation sent by the prover.
     */
     public fun fallback(ctx: &mut vector<u256>) {
-        let n_queries = (*borrow(ctx, MM_N_UNIQUE_QUERIES()) as u64);
+        let n_queries = (*borrow(ctx, MM_N_UNIQUE_QUERIES) as u64);
         let batch_inverse_array = assign(0u256, 2 * n_queries * BATCH_INVERSE_CHUNK);
 
         oods_prepare_inverses(ctx, &mut batch_inverse_array);
 
-        let k_montgomery_r_inv = k_montgomery_r_inv();
-        let prime = k_modulus();
-        let fri_queue = /*fri_queue*/ MM_FRI_QUEUE();
-        let fri_queue_end = fri_queue + n_queries * FRI_QUEUE_SLOT_SIZE();
-        let trace_query_responses = /*traceQueryQesponses*/ MM_TRACE_QUERY_RESPONSES();
+        let prime = K_MODULUS;
+        let fri_queue = /*fri_queue*/ MM_FRI_QUEUE;
+        let fri_queue_end = fri_queue + n_queries * FRI_QUEUE_SLOT_SIZE;
+        let trace_query_responses = /*traceQueryQesponses*/ MM_TRACE_QUERY_RESPONSES;
 
-        let composition_query_responses = /*composition_query_responses*/ MM_COMPOSITION_QUERY_RESPONSES();
+        let composition_query_responses = /*composition_query_responses*/ MM_COMPOSITION_QUERY_RESPONSES;
 
         // Set denominators_ptr to point to the batchInverseOut array.
         // The content of batchInverseOut is described in oodsPrepareInverses.
@@ -85,14 +106,14 @@ module verifier_addr::cpu_oods_7 {
 
             // Trace constraints.
             let oods_alpha_pow = 1;
-            let oods_alpha = /*oods_alpha*/ *borrow(ctx, MM_OODS_ALPHA());
+            let oods_alpha = /*oods_alpha*/ *borrow(ctx, MM_OODS_ALPHA);
 
             let odds_values_offset = 0;
             for (trace_query_responses_offset in 0..12) {
                 // Read the next element.
                 let column_value = mod_mul(
                     *borrow(ctx, trace_query_responses + trace_query_responses_offset),
-                    k_montgomery_r_inv,
+                    K_MONTGOMERY_R_INV,
                     prime
                 );
 
@@ -122,7 +143,7 @@ module verifier_addr::cpu_oods_7 {
 
             {
                 // Read the next element.
-                let column_value = mod_mul(*borrow(ctx, composition_query_responses), k_montgomery_r_inv, prime);
+                let column_value = mod_mul(*borrow(ctx, composition_query_responses), K_MONTGOMERY_R_INV, prime);
                 // res += c_192*(h_0(x) - C_0(z^2)) / (x - z^2).
                 res = add(
                     res,
@@ -137,7 +158,7 @@ module verifier_addr::cpu_oods_7 {
 
             {
                 // Read the next element.
-                let column_value = mod_mul(*borrow(ctx, composition_query_responses + 1), k_montgomery_r_inv, prime);
+                let column_value = mod_mul(*borrow(ctx, composition_query_responses + 1), K_MONTGOMERY_R_INV, prime);
                 // res += c_193*(h_1(x) - C_1(z^2)) / (x - z^2).
                 res = add(
                     res,
@@ -183,7 +204,7 @@ module verifier_addr::cpu_oods_7 {
           N_ROWS_IN_MASK+1:        frieval_pointInv.
     */
     fun oods_prepare_inverses(ctx: &mut vector<u256>, batch_inverse_array: &mut vector<u256>) {
-        let eval_coset_offset_ = generator_val();
+        let eval_coset_offset_ = GENERATOR_VAL;
         // The array expmods_and_points stores subexpressions that are needed
         // for the denominators computation.
         // The array is segmented as follows:
@@ -191,8 +212,8 @@ module verifier_addr::cpu_oods_7 {
         //    expmods_and_points[13:111] (.points) points used during the denominators calculation.
         let expmods_and_points = &mut vector[];
         {
-            let trace_generator = /*trace_generator*/ *borrow(ctx, MM_TRACE_GENERATOR());
-            let prime = k_modulus();
+            let trace_generator = /*trace_generator*/ *borrow(ctx, MM_TRACE_GENERATOR);
+            let prime = K_MODULUS;
 
             // Prepare expmods for computations of trace generator powers.
 
@@ -249,7 +270,7 @@ module verifier_addr::cpu_oods_7 {
             // expmods_and_points.expmods[12] = trace_generator^1010.
             push_back(expmods_and_points, tg1010);
 
-            let oods_point = /*oods_point*/ *borrow(ctx, MM_OODS_POINT());
+            let oods_point = /*oods_point*/ *borrow(ctx, MM_OODS_POINT);
             {
                 // point = -z.
                 let point = sub(prime, oods_point);
@@ -602,7 +623,7 @@ module verifier_addr::cpu_oods_7 {
 
                 // point *= g^4.
                 point = mod_mul(point, tg4, prime);
-                    // expmods_and_points.points[69] = -(g^117 * z).
+                // expmods_and_points.points[69] = -(g^117 * z).
                 push_back(expmods_and_points, point);
 
                 // point *= g.
@@ -746,8 +767,8 @@ module verifier_addr::cpu_oods_7 {
                 push_back(expmods_and_points, point);
             };
 
-            let eval_points_ptr = /*oodseval_points*/ MM_OODS_EVAL_POINTS();
-            let eval_points_end_ptr = eval_points_ptr + (*borrow(ctx, MM_N_UNIQUE_QUERIES()) as u64);
+            let eval_points_ptr = /*oodseval_points*/ MM_OODS_EVAL_POINTS;
+            let eval_points_end_ptr = eval_points_ptr + (*borrow(ctx, MM_N_UNIQUE_QUERIES) as u64);
 
             // The batchInverseArray is split into two halves.
             // The first half is used for cumulative products and the second half for values to invert.

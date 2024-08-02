@@ -85,7 +85,7 @@ module lib_addr::memory {
         let index = 0;
         if (slot_amount == 1) {
             let slot_value = load_slot(memory, slot_index);
-            return vector::slice(&slot_value, (first_slot_offset as u64), (last_slot_offset as u64));
+            return vector::slice(&slot_value, (first_slot_offset as u64), (last_slot_offset as u64))
         };
         while (index < slot_amount) {
             let slot_value = load_slot(memory, slot_index + index);

@@ -1,6 +1,11 @@
 module verifier_addr::poseidon_poseidon_full_round_key_0_column_7 {
+     // This line is used for generating constants DO NOT REMOVE!
+	// 0x800000000000011000000000000000000000000000000000000000000000001
+	const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // End of generating constants!
+
     use lib_addr::math_mod::mod_mul;
-    use verifier_addr::prime_field_element_0::k_modulus;
+    
 
     #[view]
     fun add(x: u256, y: u256): u256 {
@@ -9,7 +14,7 @@ module verifier_addr::poseidon_poseidon_full_round_key_0_column_7 {
 
     #[view]
     public fun compute(x: u256): u256 {
-        let prime = k_modulus();
+        let prime = K_MODULUS;
         let result = 0;
         // Use Horner's method to compute f(x).
         // The idea is that
@@ -45,7 +50,7 @@ module verifier_addr::poseidon_poseidon_full_round_key_0_column_7 {
             add(0x47da67f078d657e777a79423be81a5d41f445f9455b207ec9768858cfd134f1, mod_mul(
                 result,
                 x, prime));
-        
+
         result % prime
     }
 }

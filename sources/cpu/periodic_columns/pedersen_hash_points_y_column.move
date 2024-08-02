@@ -1,7 +1,10 @@
 module verifier_addr::pedersen_hash_points_y_column {
-    use lib_addr::math_mod::mod_mul;
-    use verifier_addr::prime_field_element_0::k_modulus;
+     // This line is used for generating constants DO NOT REMOVE!
+	// 0x800000000000011000000000000000000000000000000000000000000000001
+	const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // End of generating constants!
 
+    use lib_addr::math_mod::mod_mul;
     #[view]
     fun add(x: u256, y: u256): u256 {
         x + y
@@ -9,22 +12,22 @@ module verifier_addr::pedersen_hash_points_y_column {
 
     #[view]
     public fun compute(x: u256): u256 {
-        let prime = k_modulus();
+        let prime = K_MODULUS;
         let result = 0;
-            // Use Horner's method to compute f(x).
-            // The idea is that
-            //   a_0 + a_1 * x + a_2 * x^2 + ... + a_n * x^n =
-            //   (...(((a_n * x) + a_{n-1}) * x + a_{n-2}) * x + ...) + a_0.
-            // Consequently we need to do deg(f) horner iterations that consist of:
-            //   1. Multiply the last result by x
-            //   2. Add the next coefficient (starting from the highest coefficient)
-            //
-            //  We slightly diverge from the algorithm above by updating the result only once
-            //  every 7 horner iterations.
-            //  We do this because variable assignment in solidity's functional-style assembly results in
-            //  a swap followed by a pop.
-            //  7 is the highest batch we can do due to the 16 slots limit in evm.
-            result =
+        // Use Horner's method to compute f(x).
+        // The idea is that
+        //   a_0 + a_1 * x + a_2 * x^2 + ... + a_n * x^n =
+        //   (...(((a_n * x) + a_{n-1}) * x + a_{n-2}) * x + ...) + a_0.
+        // Consequently we need to do deg(f) horner iterations that consist of:
+        //   1. Multiply the last result by x
+        //   2. Add the next coefficient (starting from the highest coefficient)
+        //
+        //  We slightly diverge from the algorithm above by updating the result only once
+        //  every 7 horner iterations.
+        //  We do this because variable assignment in solidity's functional-style assembly results in
+        //  a swap followed by a pop.
+        //  7 is the highest batch we can do due to the 16 slots limit in evm.
+        result =
             add(0x7e08f9d222cc0764fb5ca69e51ad4cdb7f1b612058568a142bc7a4cdd0e39c4, mod_mul(
                 add(0x29f6aa5fc92eab8b8b9871c8449c1f617b808ea9860717f3e5e1678672ec565, mod_mul(
                     add(0x5115ade709c058be5dc6f406794062642086e431bab03c9a86d53c79aa83db4, mod_mul(
@@ -41,7 +44,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x55e928ba557ed7fe0ecde6d1fbb83d112e6b06a087b4013b9c425fa36eb0415, mod_mul(
                 add(0x7492aa940f34a027f8fb3700f29cf628c1d05d1675cb7865509f20617a90b2f, mod_mul(
                     add(0x2cd9a093ece61e554b2bdde3ec474900e4412775ad25456e5be6e11df7b9fff, mod_mul(
@@ -58,7 +61,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0xd21afb1901f1b3ad66587a7fb97ee06662edc3bc8c8d32b48625a135ba23a9, mod_mul(
                 add(0x7b056cb6f172b25e3555d6b1422ff769fd4c07258fa16b03609f0e374012ed4, mod_mul(
                     add(0x60ac57e328ff6938a17d43e6137a55399b95459be60fe980ed8960edaeee10d, mod_mul(
@@ -75,7 +78,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x58ccfd44df4e339c65e1423eaad47210f2e16aa6530d3d51f38b70e5eb3a623, mod_mul(
                 add(0x47275cd67ff3b7637ed55ced299a6142a821ab466a897f1eecfc8bca557269, mod_mul(
                     add(0x709be747b0a69a9523680ff69e6bfea4637bd570ce5c45256b39ff695557da6, mod_mul(
@@ -92,7 +95,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0xe4d1f1f1f9b379bea473f76bc8f3c4d530335e2d6bd782b42324872767b628, mod_mul(
                 add(0x66c5222dc133e37dfa0566c49d107852d978eb7454489d3b2ada8de022125d8, mod_mul(
                     add(0x62ad4d764ed0072a7649425270e2b210421c77d3ce98e2587ea5440a591ecc0, mod_mul(
@@ -109,7 +112,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x31eb3b57e6844e3efc1e3975ea393476d8aace5f43ca62b09314c90b8ae9688, mod_mul(
                 add(0x539cd2c1a28df263709cf0eadef73a600f563ab3d82c27692b1424814cc3e15, mod_mul(
                     add(0x45970c86c25bc9a68f2e2a34969faa2134c95b19230fcfe7436c98f537539eb, mod_mul(
@@ -126,7 +129,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x75971517855ffbc9657dab30657ed1e3797307bbec1ffe136cb0d8a64ed6eea, mod_mul(
                 add(0x5b02adb78afd4e219642a1fc38b2ef9f63926841ccfda072ac17326d3d50f3c, mod_mul(
                     add(0x3132d42e4a928c08a972e17b2c3b500dbcadbe6190b2e7f5b58300a0c8a38c6, mod_mul(
@@ -143,7 +146,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x628226c46fe0bfa8aa36074ed0785cb16461ee2945ecee9deaa6399bba2742c, mod_mul(
                 add(0x78c7b0512cae47833eb6bf01c1075aafca19eef9b32e37f4f9a9eff315637c7, mod_mul(
                     add(0x218da336adf8608530fdf8320c4edc00631d36c8726430732038a369548cf56, mod_mul(
@@ -160,7 +163,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x76ea16625d0cf0c04f096ac7d6eacafd00809ef1d1a3cf5e37dc2a13a02d303, mod_mul(
                 add(0x21706619a453a544bee0ccaceda9fe69f860c894b36bc9cb7ea4455dd88a9ca, mod_mul(
                     add(0x55ee57d4096ccf0260baa2a1a2639978d965a786e4fc917cb2426f8a99591d2, mod_mul(
@@ -177,7 +180,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x27e3cfc87448bc0392a0d6c1b1aa06626636fc703bbcf3717fbe6f0759c4855, mod_mul(
                 add(0x2a45de0b79a4e9c53d47f6126d35b1d050775d5fb17f3c3dc22c7b6476608c0, mod_mul(
                     add(0x519de0df91b17442a8f60b512297d69a1b516f70f67d76eb9c287f06e37c55c, mod_mul(
@@ -194,7 +197,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x7ce49a9b8d374e1174ae6ccea7cae8d743404552253f7ec854317722a5efffe, mod_mul(
                 add(0x2c11fa8c0ba68518942f1c686dafd32aa26545886d28cdedae00071360df674, mod_mul(
                     add(0x6a39a27be962632e0bfb245f65a4d70912d1572e39003d63def5f45bbcc8f7, mod_mul(
@@ -211,7 +214,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x154a5ad294d41caedd8d927eac226dea1e2b78f6ed0a6901a00e45ae0ad78f6, mod_mul(
                 add(0x1cc7ec07c4e1e6626b5263044071687d0ad34ad4d08996a213380e9b728585b, mod_mul(
                     add(0x648c35904fdb8bbf9c0bc9288319c248e17974fbb6616a70acdac004878bb9, mod_mul(
@@ -228,7 +231,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x61b210c04a0899fe2a3dc53348507d6f53d4cd3831644e4630eb40564ee5b47, mod_mul(
                 add(0x6dbd918c7623bb07b05ca515146ddd7193373250e0836062fd1c430e2b7894a, mod_mul(
                     add(0xe2acacfba8f832e4e3cffb6ecf4675df678403610fe91363172229444ac0c0, mod_mul(
@@ -245,7 +248,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x1f3e3e61713ab64544b28dfcaf4da25b64e625048ca55cc783dff614f5796d0, mod_mul(
                 add(0x2b6a2e9d453e19e3d766f24cb7c6753f84adca0f75f7a871092688bb5ba0d37, mod_mul(
                     add(0x43aeb91e6f453d372353d9814a85c21617e6c934c694a0b06100e1e9aec4087, mod_mul(
@@ -262,7 +265,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x787a6c80d5a23f91cb91d2508633cce6125da76e797ed460256933a4e6a24b7, mod_mul(
                 add(0x3085800be446839854dfb7bd9ea67ff139267fb5268faaf153db26b00368630, mod_mul(
                     add(0x4e28bfd662fc5e09399fc49a49a622a7e845631244b9472df8c91c4a703321a, mod_mul(
@@ -279,7 +282,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x41052d90f803f015bee5bd1a5f6e2f78f30439ecbe39861cdaebaa8f7c56371, mod_mul(
                 add(0x1e836012f5509ea2f3dfdd474e9e4a96f6924e6619924ee4c6870a5294e26a9, mod_mul(
                     add(0x43fa3aa05db6331941265719fc1ee057d9f3dc81704f81c2ce7faece0fe86c6, mod_mul(
@@ -296,7 +299,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x7e31ce22d2a3d776ad90e008ce82c594dab9ff2c42708f4f0676000cd86891a, mod_mul(
                 add(0x64fecb621f4dc18fa1b66152f28bdd15b7b12d495c496e77016bf3b979e4b1b, mod_mul(
                     add(0x17a1bf17777a3b56a76df412810d05c9e222027aca604791694d3b020ea40cc, mod_mul(
@@ -313,7 +316,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x14714592154025f15704e279d2db4c70f545137269ccbd82c11fba275bacc85, mod_mul(
                 add(0x22cf3cd9fc0103158f7de369046ac0cff77c44c3f9c6ca942616fe7d59d6231, mod_mul(
                     add(0x51443fc9bbe11d787df4afc59f4366629cfb3a14c80cda1caa1ce6107fd063f, mod_mul(
@@ -330,7 +333,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x203ddf8cbfae2898d2d2f183cd0efd1c3f7db1b84b8e96e38f2b87b4bdad1bb, mod_mul(
                 add(0x4ce9244cd3966ce1a6fd7f8b85fb1c8751e35aa53032f8063535665ac3a69f6, mod_mul(
                     add(0x20d846afc1a11dae8646d542770f294b9c9f21f1196fba567f2f74d058ebc25, mod_mul(
@@ -347,7 +350,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0xa6117e45c1c561307d63895569d34fd7e3f2b2ea088dec37dc3a5527deffd4, mod_mul(
                 add(0x41d785e118be2d27a159ed5216de66a84873e1f62088726d9607c6443a14090, mod_mul(
                     add(0x5486125e0ed23fdc42a4f8c96cb08d934b6f3b429c4af5f8396618e978e9811, mod_mul(
@@ -364,7 +367,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x4e1cdd107e3116b4ff22720938a201eed2ea0b499bfde301562f5e39a42b066, mod_mul(
                 add(0x77bdb42e999e93273fa3cbb7ae7160522231680eccc4d38c1b8a83d2a0420a7, mod_mul(
                     add(0x4f4cd7f9fd5b694cc5ea6154d0738cdbac3978ce74a7314bcafea3dbc1da61d, mod_mul(
@@ -381,7 +384,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x11a9029a5c07557ec347592ba7181acafbaf0f0c5c9e81d7e995a4de57fe566, mod_mul(
                 add(0x7ea13011e0dce5c917be4cd36c8931f5969852109a16d7c5142e8fb3c8b7650, mod_mul(
                     add(0x2bc791bd7e68342116218ed9bb657b8b54e550022e39af11ce55b29ae49218b, mod_mul(
@@ -398,7 +401,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0xb04ac19a9f1483b8ee3b763be73814c9621fb3d23e6d874d9093d999d3d4eb, mod_mul(
                 add(0x2b7f9df93ba787a9a5a7a0a3b5daba02e2ce65df16ada37575735697eda6c1d, mod_mul(
                     add(0x3ab952be650de0c679ddc0a35bac2907a6e58303059d4edb914e74c67d05226, mod_mul(
@@ -415,7 +418,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x6ae2e00f7827692b0d20f483d3c71594f61d50846b52abfee39f6697513c0d0, mod_mul(
                 add(0x625a1fce22a9fb7717107b137a0f5ea4ca059008f5cc6fdfb5cb5bb1734bd17, mod_mul(
                     add(0x309bca858a0f9fc5a468a57981c9c6b7c79636b1f31284938d1c6a21f006a33, mod_mul(
@@ -432,7 +435,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x5c01501e6a113ccca7cc9c723b1fad6ba60ec5b0a85b7d09c72120d3f733bd5, mod_mul(
                 add(0x411556b9c89186a2f9f79e55d045295790b28af97fab64e77777e3828532be5, mod_mul(
                     add(0x67801dffe217a1a64e0b12f405157af52025266fcc391fddaebf3b6c7ab79a9, mod_mul(
@@ -449,7 +452,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x1c867fa9ae031469be012c4f201ed3ad56573a22891351012ad1f7d300361f0, mod_mul(
                 add(0x6caac68bec6ce4eff4f74c1f33dbc027165cc02cec8f69e9470ff99c0b132c3, mod_mul(
                     add(0x4e0a6e0c26f85c74373782bd2924f3bc0f6b4a2914c4f7f8850a79eab580566, mod_mul(
@@ -466,7 +469,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x65c04013accf25a2cd1d9eb98689d71694ffb20dced009df5b9af167602b4c2, mod_mul(
                 add(0x7352e8793ed3f6283e492544b2944d6fea715980d8884f6821574d36868b0c7, mod_mul(
                     add(0x9be8b219ca1684dfbef720a3e9f034b319e2d233aed85063924fc60aedf20e, mod_mul(
@@ -483,7 +486,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x400330fb079fb4cc8671ea9a996de8f5442f20b9b9a3bc9df8b81e01506c5ad, mod_mul(
                 add(0x2512f776d1b3d212be7c2adce1cfa083d1b2b9af1c6f3cc424b266bfa19aa06, mod_mul(
                     add(0x6f6131c193cd7b3fdb4d0848df70474ba9e80529097311cd7c13e322205a1c0, mod_mul(
@@ -500,7 +503,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x152c16cce8c1c782287b8908a790014fe3c51c57cefaef63e2c8dae5a7a5daa, mod_mul(
                 add(0x74a39339d1d708a9ea407f03d8b0e5ab103c3251596258b78be1bd97ad06915, mod_mul(
                     add(0x37f1342e071f8a087c1405692443305d28d4c11b84d92bd7dedc563fc3ad329, mod_mul(
@@ -517,7 +520,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x4f847058896f8e2727ef3b4577e62d5f6a729696b8705fe217b97c73fd1afee, mod_mul(
                 add(0x614509129cebd380f416c4c9c7127ee7b53d878860905f047ad722a82147236, mod_mul(
                     add(0x6235547369b594514d2fa1ca9b06fd25f9d2764fe8b099c7d9671f542a01d46, mod_mul(
@@ -534,7 +537,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x75f781602ada44803c0ca4bc8c1bd5064700762d18c309a2b9059dcd8c3dcca, mod_mul(
                 add(0x1e149d42cd477212ab7f01fe40f76858f09ce2bdfc397df635ed8a453714e7e, mod_mul(
                     add(0x528d041bf152aa3a0205430412a196619b68c81d7a706fea0fc090e0cc6a105, mod_mul(
@@ -551,7 +554,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x4cbae4979c7a1313c2d0f68b21f5734ec83f9e1a88c78b3976a6ef84a1b6dbd, mod_mul(
                 add(0x76594f29261e2aa9cf4a90b58b0f79c2aaa99d63c4ff64b4806cb8cfb0df316, mod_mul(
                     add(0x43e371660fff35e52cd5dc08c9c347d8f7c64a116375d0e6e3ad3512d85a99a, mod_mul(
@@ -568,7 +571,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x719df2a50d9c3f2eb3f0336665f2980e432191e21fc49f488854b8352fd94fe, mod_mul(
                 add(0x19412ccd078bf5665579cbd16035a251e08f40722eca4452eedb31732488468, mod_mul(
                     add(0xb3dd17f46d6b12bf4e5db184d6962c156bef94f9f73861e34d88503fbc517a, mod_mul(
@@ -585,7 +588,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x2b51d7f94ec71f3a8e3e20d766a4a7f13d08d758a686ff86dbda48026c7ec3d, mod_mul(
                 add(0x6232d26f420f9b4f119e64762927b5e8a21192575b200081b0545ad4e9a2c25, mod_mul(
                     add(0x298215f335fb63a11d31958d950d95c909bb94e144c113cc4ecc08488469097, mod_mul(
@@ -602,7 +605,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x65f4a97d2b1c90582859966540e839ac2d62ad2ea960aa2af36776b2d07ce34, mod_mul(
                 add(0x184ee38f80fa532983fa248c14c0220c2a5691836e899a5c9b83c975b03608f, mod_mul(
                     add(0x13ed29a84c4875ac188521bc40e9258e03d83c9ceb8716c6fbeed065a5df73b, mod_mul(
@@ -619,7 +622,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x3c835256339330b1c94cad78cfefda36a949b9c8553d918f3d8547cd1805ac5, mod_mul(
                 add(0x325f10662fc8bd38e591b0e8caa47b3fff46703656b2c5863d39c150d298fc8, mod_mul(
                     add(0x77434256511acfd027b41e03a571a9f56b0442dc675c139a2e1476fe716102c, mod_mul(
@@ -636,7 +639,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x7caaf4f7b073af26c036d8bab5c74fc3f752f9ecc01041787e9ddf773596189, mod_mul(
                 add(0x6321e76192ba31cc63bf7c526c8ebbf4df5b705f01e4151068ee3dd658aa674, mod_mul(
                     add(0x72bafd4641e6928ca65cb48e8001ee077944201f70d5bed524c69b709410d3e, mod_mul(
@@ -653,7 +656,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x2f2f5447e274a20d9d60615f83a18b2a4db300d5e199d7c8c6c6cfb754e8cbf, mod_mul(
                 add(0x687aac173963fe1e01f9e0d50eba0e95e1e8783eb21c0f6c1f45cd42408198d, mod_mul(
                     add(0x1c933d3449f6241d0f9d547db9e708fc2ee3e0598be5f87b675fb6736a15c39, mod_mul(
@@ -670,7 +673,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x4fefb86cfccbbea031f15d85033f10f92f2b6b689153e305bfa8821935979c3, mod_mul(
                 add(0x3cbf28927ecbda443555c9d51f40c294fb6688a17812cb0c85fb6501cdc0709, mod_mul(
                     add(0x33d4fbf9dae7a87cc13db3c95ed3976b50113f072e56a13e675e4af241bb864, mod_mul(
@@ -687,7 +690,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x160d7d587f3a17673bf04189e0062c7bab764fb54ebd0f042fec72f953a91da, mod_mul(
                 add(0x25446fd382a1b0f5350b91290b2dc35a6dabaf215d53cbb32d1732fc6ebfffb, mod_mul(
                     add(0x123f50f65a68168d6b43c464270479801376ff6979b94f60252a47d9d7d34d2, mod_mul(
@@ -704,7 +707,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x3d368784067d457e43cb63b3f526e721fab153949b090a99a128c5744fab4a2, mod_mul(
                 add(0x6da4d6fb1e6b2f1b42910a9dcc4702912002d7d36ac7100e19c7f298c7948a8, mod_mul(
                     add(0x31563499de399383464854a8679e0b073513c5bc46cdcc2a2107f00677e6356, mod_mul(
@@ -721,7 +724,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x1fefe6ebd886640df863e5f5c25e9b42fbc10adfa7ef07d1fda0eabafa60a6e, mod_mul(
                 add(0x3129daa367a01a45fe3f0ccde215371f59c5643bfad33f4269a6478c8c8b7f8, mod_mul(
                     add(0x41d1ca4f756c80f197ba1635314a3dc756f9d8d9406af16538643d3e1021bd7, mod_mul(
@@ -738,7 +741,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x41354bad5cbef57b0e7eacebef8f0176f3b70992ea5a418f502242acbc4a1ff, mod_mul(
                 add(0x690c8328ca161c48f3f8f37570e42095d1a0d9e101b3ec0ddc91426fc22facb, mod_mul(
                     add(0x7393709fd08807a84ca44526a2b8ec97bce5aad1adf00560d04110de6d9eda8, mod_mul(
@@ -755,7 +758,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x5f4fd7854cf7b89a3983da1a39839d85c7331c3353b0a8cd218f7f4e1f780c, mod_mul(
                 add(0x378113f110b2404e7d185e920249519ded728cb1027fa8cc2843a588886a7ed, mod_mul(
                     add(0x64028a3945aa2866db68b304dd0d83d75ed0ba5c2f9d0b47e80d11d8da6526d, mod_mul(
@@ -772,7 +775,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x4dc27c76881bb820eb74814d1b69825e9048b1a3b064e603cca4bd4814b2243, mod_mul(
                 add(0x5761ff2e0a250691a66dc36d372afbd6a8016726efe0c418d7899d60d26bde6, mod_mul(
                     add(0x62dae59d425684ef78c1829e0454cd5e76f5d322ea8cb5ae5e911f545beeee1, mod_mul(
@@ -789,7 +792,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x3348152349370ec1c4d753735ef255b50e54aa9a432f48a121c39b8887827e0, mod_mul(
                 add(0x66d91bcc591c880303ee4695475e8a8e402926f0c01ade8880c7b03c76998ee, mod_mul(
                     add(0x43394095e27ddb7825c0671833a6ac9784f31626914c902c225f05ce42bbd9f, mod_mul(
@@ -806,7 +809,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x72fb3298da88c470a2f93a391063810be01078c8375183b57a024c223f2f428, mod_mul(
                 add(0x2850977abc89355540e8abb804da7805ef88b12f40cbd9158ef330b767901eb, mod_mul(
                     add(0x3e35aebb590266ea1fdd8198cf3c23c77731dddd95d488a9d9f9837e3bd0f6f, mod_mul(
@@ -823,7 +826,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x208f0c2f5a114b2342f51e919e4fe44c2a42cd06382d9edc4ef58939b249bab, mod_mul(
                 add(0x414215fbcef7f5af60f320e67a845e4a17b0a0eca39b4e18ba89fbe8a189491, mod_mul(
                     add(0x287fed27ab81e5f721d2bd5aab0e69f53e94ce5dccc35c2dcc88e12465fadc2, mod_mul(
@@ -840,7 +843,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x2adfa41f72ba3b61b9dfa6f017b19682b0b0f8cd86be3d37374aba3ce990a55, mod_mul(
                 add(0x75e9c821cdd2e754759306283aa4af8bdbb0ed31f4e978dc550141fd10da6be, mod_mul(
                     add(0x709a47e72cda4fdf428bb9784f02f77c700086755d4bdb5b229d1b80a2ea4e5, mod_mul(
@@ -857,7 +860,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x46cbc37eff4616daaa86160d5690f5473e24171441e29705ae564223a351c23, mod_mul(
                 add(0x78f890541865c12169233143f47a056a91dbd18222c5d31bfb2db19162c204c, mod_mul(
                     add(0x7c84837e6872bea4f0448183cecd6bb24a8574456ab91173b04b9423be8a64b, mod_mul(
@@ -874,7 +877,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x38cb4f77410e9a33306f8a4b92b6f76bf239ba44e0ef45dab0bfcb75dfe4141, mod_mul(
                 add(0x7239c3b89513196e3cae91f8df8bd79f08033061ba63c089bd764644907479e, mod_mul(
                     add(0x57f7a737e643bd859d8a53e1b621c09be89fcca7b96f8e42333e46426f26a20, mod_mul(
@@ -891,7 +894,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x2103ea7ff918748c4325a992c561b551b70fa9d97e48a52b3c157799d213693, mod_mul(
                 add(0x1b3104591a23f262051182209c0f73caa30e8631fc4413a5bf97c9d51a70abb, mod_mul(
                     add(0x4640cb2cbc73d7c9fd2a1783122cb5ee8c68e7c04b0b647d43a35cd4961e4ca, mod_mul(
@@ -908,7 +911,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x3dee84f905f6a06940783bc3f322a0fc22a984dd244d00a85ea3a4295558377, mod_mul(
                 add(0x9b419422a2083bf174263351640e009b56d6e2278552f9e7ee6a6004d45524, mod_mul(
                     add(0x6f2a9f716b1fa27c35675a57273feb79ffce02286bcb1e253a8e126c2cea357, mod_mul(
@@ -925,7 +928,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x3e44a162d501fc521774c75994f4b55eb85878f5e867cacb75c7ff0b7efe941, mod_mul(
                 add(0x64035ce25716c9c7675ecce40d3cfb65ce3121439e10367fe29f2742cc02d85, mod_mul(
                     add(0x6d5a755e91ed732dcf8afd32eac3b4875843bb116430a966ef88f17aad54c16, mod_mul(
@@ -942,7 +945,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x77f62cb2f9db71ba7a9913be0a434ca045a26704681af5353b7c7860be6e774, mod_mul(
                 add(0x6ba0329f670df105c31eb665f3b6f243ab5de7ed8aa59ce9b0683e6bdfd9019, mod_mul(
                     add(0x6a226b1dabca8ff2fbb52f0adcf4267a47e0eed089774157f318b507361a0b8, mod_mul(
@@ -959,7 +962,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x4ab0da9c66ca2588350bdb85cc745b4c5e7226cf7c4fb69708cddf6e8145f29, mod_mul(
                 add(0x209866f9b8d946508db2df8eb9d30f65ede2c99ec8deb2e5a1b7093e9a62416, mod_mul(
                     add(0x79708fbce6bbe1c862e988648dd25347d60c9e0981540dd81ccaf78054a12f8, mod_mul(
@@ -976,7 +979,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x6337d741eb226911e37cc48087126cdd89f00941523cda2fa5e965dc4fa25e4, mod_mul(
                 add(0x40e394412097f7c06183ae2997707604273b0a4ec1add0030bd7e115c20ca70, mod_mul(
                     add(0x43e49d0d9bfd165776eeab9118ea672c24a055a700e35a04426abe1b236506b, mod_mul(
@@ -993,7 +996,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x4835c753d4b5059c1b4186516851f562e63e348f8810714cc393be9810a1de8, mod_mul(
                 add(0x62cea6c83442875da8b98083d8bb18bce5d3d431a3301afc635600578b33506, mod_mul(
                     add(0x3fa0ff20cc486bd0b43f96826c66b070a6f6e3df3359ebd2970661f9c679e2e, mod_mul(
@@ -1010,7 +1013,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x54600ac31d014f7241c14e5aedefdc72b839cb0e98b84aa13f031316af48648, mod_mul(
                 add(0xead9e7eac2f6c388de28561955e6009f9f1ed098f70516f2bda28597c9ee03, mod_mul(
                     add(0x59daeadc724e9c227258a56b000c6a613db617da41bbeb694521c86323c93b, mod_mul(
@@ -1027,7 +1030,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x51778c6b175ce13e994dc1604dac3b901990cbae0246b2cec2aecbe96dd2006, mod_mul(
                 add(0x3f1908469233dcf5c433790cb3574261ed6debca41fb55b912be7cf34adc187, mod_mul(
                     add(0x4dbc9ceabbf1c8d5c679cf80d9bfc26ab696135792e83061e98b9c36ae6a4a0, mod_mul(
@@ -1044,7 +1047,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x39007630deec4a6eaf806518c109f4aff9cbfb8826d86f301e562ec560ff89, mod_mul(
                 add(0x3d7587a79c4ae9c24934a10a9c1398c04f3915fb6889b72b361505a85db2b69, mod_mul(
                     add(0x6d4bd8c4aa4a530d965180c18062d6bc440e6e70cbf0836d6af11235c7fde2d, mod_mul(
@@ -1061,7 +1064,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x53bad76d22e1525dcec248b73438d6f444caf75794c26144e26803fe2bc7736, mod_mul(
                 add(0x373a1f2fbe36dae9a5f2c2b35febe59b53869e1678c8da23bd9e92c3c2ac0a7, mod_mul(
                     add(0x4b5e107dbcd02c0dbef4d3a77d66386a864d31109d0d0392847c8919d926fbe, mod_mul(
@@ -1078,7 +1081,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x3c3ea2cbc8ce544c6c98ad9053cb2c35326f4e502214e5f72c7951474b5a84c, mod_mul(
                 add(0xcb3220da969b95193a25d1d4d76d1cd1ec596040a7b31da7f64164809bdc4, mod_mul(
                     add(0x929eaf221c110efdaa57970581428d66d5866fb9547aab76e89e8971efc91b, mod_mul(
@@ -1095,7 +1098,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x57ad5370b26ea1478f3fa0346d2e390e90feda8022c9820813d9ddd0f36e7ba, mod_mul(
                 add(0x1489d6012d4c9701b63f3610034fb5bfca185c7b01222907781eb104e031097, mod_mul(
                     add(0x1668b919fcdf512b5683880ed048853e00f456adde728427fcde63ac9f59611, mod_mul(
@@ -1112,7 +1115,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x73e8c35fa646fce6bf10c33168dcf3d2e40af17ced70b1929826d0ca4ba2e99, mod_mul(
                 add(0x243a084aa8c82348102320b0ad19ede41b6bd7ffb3a7041339a13f34f6b5671, mod_mul(
                     add(0x614a280377b9dc732773d969da5ddd8cc125262313eb7b2bd38b7668cdf00b4, mod_mul(
@@ -1129,7 +1132,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x575b929bc0caa43939bfae95a6d5cd8d4082be7fe0934be4c08f7fd3cbe89c5, mod_mul(
                 add(0x3b74f537f03a28e72bae3bf1810f1a2fde1711eacd6bc64bf55f37b3bd9940b, mod_mul(
                     add(0x2d32dd179cf74693057ede607e0054fbc3e4194efd6415156f3ec909c37ead2, mod_mul(
@@ -1146,7 +1149,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x1b18b73effab8a483156d16e87be4dfce1250333eafc784d76c6ee145978c48, mod_mul(
                 add(0x3f22422d66d77bda123b47b7f5bffe5527f95d331346f6a545c66887ad75ab9, mod_mul(
                     add(0x653405343098520984b06f707cee84ea765ecc932783cca87058b88d0f2bbe9, mod_mul(
@@ -1163,7 +1166,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x422c03b47f25f698d3dfbb02556367c97b7d8e2657af2e45ebc61845aa2c52b, mod_mul(
                 add(0x3a2c1769a49e0632c149dc9d3f30306f9d9cc00cdb426d58b2741c804c51af4, mod_mul(
                     add(0x43b4be816239e45b4d22123c840717fe3e8f6ce53238fad4ad56e27c85f3e9, mod_mul(
@@ -1180,7 +1183,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x48876d457eaebe03383add02eb4c0c49a09923757428595a4f3ad6299d69cba, mod_mul(
                 add(0x4de104ea20937d5d6cb02c4ab4d7c4d03ab2eb16d1b837ccf0c2a05ea2873b1, mod_mul(
                     add(0x4245e03d0378593b2d4230b945a2a147b36ebfdf368f0dd5fc22e3b31ac1186, mod_mul(
@@ -1197,7 +1200,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x40cbcae9364d8af8b767a72b260793922cf1ba2a03fedfc60d4eab1d5f00042, mod_mul(
                 add(0x771fefe011becb392f5c379dc9e902c41be8f1069ae3c5e0bf6016b7b1b3f55, mod_mul(
                     add(0x6d9c76938c974418e62166285ade6564712e6a263357e11d70f3e1f2ae531e8, mod_mul(
@@ -1214,7 +1217,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x754535ea8702292678b57fbde36c97454994bed59e0d0e13cf8a6c3ef7a0324, mod_mul(
                 add(0x6581a70ec64b4268a4741b4f7de866050d31b69005c782630f4bdc51a1650b2, mod_mul(
                     add(0x4195cb2f46ca4e1ef5d93ab3a5decbdc9e74d0bb81d56abcf59304ecf79863c, mod_mul(
@@ -1231,7 +1234,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x7fe75f49544ac3cf237a17e58179851f5b3e7420330e5861ec505291d9a0380, mod_mul(
                 add(0x3b591c6de6700576abbe4b4544de71cd3266a5dbb70740762d0c16a863bead8, mod_mul(
                     add(0x5bdc50def36283e003e9ccf2f1bed188326bec8bed554815f9e49062ed6da4a, mod_mul(
@@ -1248,7 +1251,7 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x688dbf5c443560c219afd8c54a0b26bdc9284925f2cc0adc889c1de024d6ecd, mod_mul(
                 add(0x6c647f1e5e8e93fda4bc0ae5d513cb60558e2b44bf885484161bbfb5e093969, mod_mul(
                     add(0x3fdf21da099da6c005b076001c5a95f2fe26aeff47e2cb9e8e52166a22b643e, mod_mul(
@@ -1265,11 +1268,11 @@ module verifier_addr::pedersen_hash_points_y_column {
                     x, prime)),
                 x, prime));
 
-            result =
+        result =
             add(0x3c782f4a1a6d94adf1448fd7feef975f47af9c79bbf7e2d74940673704b828a, mod_mul(
                 result,
                 x, prime));
-            
+
         result % prime
     }
 }

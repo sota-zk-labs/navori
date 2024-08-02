@@ -8,7 +8,7 @@ module verifier_addr::constructor {
     // test data is taken from https://dashboard.tenderly.co/tx/mainnet/0x587790da89108585d1400d7156416b62ca3079f55fd71b873b50d2af39c03d75/debugger?trace=0.1.1
     public fun init_all(signer: &signer) {
         init_fact_registry(signer);
-        init_stark_verifier(signer, 96,30);
+        init_stark_verifier(signer, 96, 30);
         init_gps_statement_verifier(
             signer,
             2512868110374320373201527039528844198060791559490644211790716345994094747600,

@@ -1,6 +1,10 @@
 module verifier_addr::poseidon_poseidon_partial_round_key_0_column_7 {
+     // This line is used for generating constants DO NOT REMOVE!
+	// 0x800000000000011000000000000000000000000000000000000000000000001
+	const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // End of generating constants!
+
     use lib_addr::math_mod::mod_mul;
-    use verifier_addr::prime_field_element_0::k_modulus;
 
     #[view]
     fun add(x: u256, y: u256): u256 {
@@ -9,7 +13,7 @@ module verifier_addr::poseidon_poseidon_partial_round_key_0_column_7 {
 
     #[view]
     public fun compute(x: u256): u256 {
-        let prime = k_modulus();
+        let prime = K_MODULUS;
         let result = 0;
         result = add(0x52208d8264d42061c7107f7945857541692a87bb1b4b4307c17d43193be3ad, mod_mul(
             add(0x641cd514114aa297433e1ebb6f6fe8cf4c5b3816df09b39b38bf3851328781b, mod_mul(

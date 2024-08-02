@@ -1,13 +1,16 @@
 module lib_addr::math_mod {
 
+    #[test_only]
+    use aptos_std::debug::print;
+
     public fun mod_add(a: u256, b: u256, k: u256): u256 {
         let res = a % k + b % k;
-        return if (res < k) {res} else {res - k}
+        return if (res < k) { res } else { res - k }
     }
 
     public fun mod_sub(a: u256, b: u256, k: u256): u256 {
         let res = a % k - b % k;
-        return if (res < 0) {res + k} else {res}
+        return if (res < 0) { res + k } else { res }
     }
 
     public fun mod_mul(a: u256, b: u256, k: u256): u256 {
@@ -42,9 +45,6 @@ module lib_addr::math_mod {
         };
         res
     }
-
-    #[test_only]
-    use aptos_std::debug::print;
 
     #[test]
     fun test_mod_add_max() {

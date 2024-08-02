@@ -1,9 +1,14 @@
 module verifier_addr::merkle_statement_verifier {
-    use std::vector::{slice, push_back};
+    use std::vector::{push_back, slice};
     use aptos_std::aptos_hash::keccak256;
-    use verifier_addr::fact_registry::is_valid;
+
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
-    use verifier_addr::merkle_verifier::MAX_N_MERKLE_VERIFIER_QUERIES;
+    use verifier_addr::fact_registry::is_valid;
+
+    // This line is used for generating constants DO NOT REMOVE!
+	// 128
+	const MAX_N_MERKLE_VERIFIER_QUERIES: u64 = 0x80;
+    // End of generating constants!
 
     // Computes the hash of the Merkle statement, and verifies that it is registered in the
     // Merkle Fact Registry. Receives as input the queuePtr (as address), its length
@@ -15,7 +20,7 @@ module verifier_addr::merkle_statement_verifier {
         root: u256,
         n: u64
     ): u256 {
-        assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES(), TOO_MANY_MERKLE_QUERIES);
+        assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES, TOO_MANY_MERKLE_QUERIES);
         let data_to_hash = slice(ctx, queuePtr, queuePtr + 2 * n);
         push_back(&mut data_to_hash, root);
         let statement = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&data_to_hash)));
@@ -59,7 +64,7 @@ module verifier_addr::test_merkle_statement_verifier {
             6178236124115166430304790233901489418872596551248981266332469856327415365632
         ];
         verify_merkle(
-          &ctx,
+            &ctx,
             0,
             0,
             0xf4c7667e4a555bf0d24b3e7be87185bfe784b96f000000000000000000000000,

@@ -1,6 +1,6 @@
 module verifier_addr::vector {
     use std::vector;
-    use std::vector::{push_back, borrow_mut};
+    use std::vector::{borrow_mut, push_back};
 
     public fun append_vector(
         vec1: vector<u8>,
@@ -18,7 +18,7 @@ module verifier_addr::vector {
         };
         return v
     }
-    
+
     public fun set_el<Element: drop>(v: &mut vector<Element>, i: u64, new_el: Element) {
         *borrow_mut(v, i) = new_el;
     }

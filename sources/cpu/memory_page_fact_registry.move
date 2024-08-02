@@ -1,11 +1,18 @@
 module verifier_addr::memory_page_fact_registry {
-    use std::vector::{for_each, length, borrow};
+    use std::vector::{borrow, for_each, length};
     use aptos_std::aptos_hash::keccak256;
-    use aptos_framework::event::{emit};
-    use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
+    use aptos_framework::event::emit;
 
-    use lib_addr::math_mod::{mod_mul, mod_add};
+    use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
+    use lib_addr::math_mod::{mod_add, mod_mul};
     use verifier_addr::fact_registry::register_fact;
+
+    // This line is used for generating constants DO NOT REMOVE!
+	// 0
+	const REGULAR_PAGE: u256 = 0x0;
+	// 1
+	const CONTINUOUS_PAGE: u256 = 0x1;
+    // End of generating constants!
 
     //Errors
     const TOO_MANY_MEMORY_VALUES: u64 = 1;
@@ -14,8 +21,6 @@ module verifier_addr::memory_page_fact_registry {
     const INVALID_VALUE_OF_ALPHA: u64 = 4;
     const PRIME_IS_TOO_BIG: u64 = 5;
     const INVALID_VALUE_OF_START_ADDRESS: u64 = 6;
-
-
     #[event]
     struct LogMemorypPageFactRegular has store, drop {
         fact_hash: u256,
@@ -79,7 +84,7 @@ module verifier_addr::memory_page_fact_registry {
 
         let memory_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&memory_pairs)));
         let fact_hash = u256_from_bytes_be(&keccak256(
-            vec_to_bytes_be(&vector[REGULAR_PAGE(), prime, (memory_size as u256), z, alpha, prod, memory_hash, 0u256])
+            vec_to_bytes_be(&vector[REGULAR_PAGE, prime, (memory_size as u256), z, alpha, prod, memory_hash, 0u256])
         ));
         (fact_hash, memory_hash, prod)
     }
@@ -151,7 +156,7 @@ module verifier_addr::memory_page_fact_registry {
 
         let memory_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&values)));
         let fact_hash = u256_from_bytes_be(&keccak256(
-            vec_to_bytes_be(&vector[CONTINUOUS_PAGE(), prime, n_values, z, alpha, prod, memory_hash, start_address])
+            vec_to_bytes_be(&vector[CONTINUOUS_PAGE, prime, n_values, z, alpha, prod, memory_hash, start_address])
         ));
         // TODO: enable emitting event
         // let event_handler = account::new_event_handle<LogMemoryPageFactContinuous>(signer);
@@ -163,20 +168,13 @@ module verifier_addr::memory_page_fact_registry {
 
     // A page based on a list of pairs (address, value).
     // In this case, memoryHash = hash(address, value, address, value, address, value, ...).
-    public fun REGULAR_PAGE(): u256 {
-        0
-    }
-
     // A page based on adjacent memory cells, starting from a given address.
     // In this case, memoryHash = hash(value, value, value, ...).
-    public fun CONTINUOUS_PAGE(): u256 {
-        1
-    }
 }
 
 #[test_only]
 module verifier_addr::mpfr_test {
-    use verifier_addr::memory_page_fact_registry::{register_continuous_memorypage};
+    use verifier_addr::memory_page_fact_registry::register_continuous_memorypage;
 
     #[test(signer = @verifier_addr)]
     fun test_register_continuous_memorypage(signer: &signer) {
