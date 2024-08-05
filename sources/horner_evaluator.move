@@ -1,7 +1,10 @@
 module verifier_addr::horner_evaluator {
-     // This line is used for generating constants DO NOT REMOVE!
-	// 0x800000000000011000000000000000000000000000000000000000000000001
-	const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    use std::vector::borrow;
+    use lib_addr::math_mod::mod_mul;
+
+    // This line is used for generating constants DO NOT REMOVE!
+    // 0x800000000000011000000000000000000000000000000000000000000000001
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
     // End of generating constants!
 
     /*
@@ -12,9 +15,6 @@ module verifier_addr::horner_evaluator {
       a direct pointer.
       The function requires that n is divisible by 8.
     */
-    use std::vector::borrow;
-
-    use lib_addr::math_mod::mod_mul;
     public fun horner_eval(proof: &vector<u256>, coefs_start: u64, point: u256, n_coef: u64): u256 {
         let result = 0;
         let prime = K_MODULUS;

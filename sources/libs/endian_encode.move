@@ -17,6 +17,7 @@ module lib_addr::endia_encode {
         // assert!(vector::length(&x) == 32, 1);
         reverse(x)
     }
+
     #[test]
     fun test_conversion() {
         let little_endian_bytes = to_bytes(&0x78563412u32);

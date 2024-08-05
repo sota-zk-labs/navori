@@ -21,6 +21,7 @@ module verifier_addr::memory_page_fact_registry {
     const INVALID_VALUE_OF_ALPHA: u64 = 4;
     const PRIME_IS_TOO_BIG: u64 = 5;
     const INVALID_VALUE_OF_START_ADDRESS: u64 = 6;
+
     #[event]
     struct LogMemorypPageFactRegular has store, drop {
         fact_hash: u256,

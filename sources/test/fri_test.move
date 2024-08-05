@@ -182,6 +182,7 @@ module verifier_addr::fri_test {
     public fun get_expected_root_2(): u256 {
         87254006650115822521038000749002345683174843578870016537379265999274067886080
     }
+
     // 3
     // Transaction hash for the proof :
     // 0xbd08177f737a822005498caa19eee1ce60e6e5f10027cb455bdcb938270a84a6

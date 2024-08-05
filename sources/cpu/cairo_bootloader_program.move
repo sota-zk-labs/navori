@@ -11,6 +11,7 @@ module verifier_addr::cairo_bootloader_program {
             inner: compiled_program
         });
     }
+
     public fun get_compiled_program(signer: &signer): vector<u256> acquires CompiledProgram {
         borrow_global<CompiledProgram>(address_of(signer)).inner
     }

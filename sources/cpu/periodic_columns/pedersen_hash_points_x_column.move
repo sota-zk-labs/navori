@@ -1,10 +1,10 @@
 module verifier_addr::pedersen_hash_points_x_column {
-     // This line is used for generating constants DO NOT REMOVE!
-	// 0x800000000000011000000000000000000000000000000000000000000000001
-	const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
-    // End of generating constants!
-
     use lib_addr::math_mod::mod_mul;
+
+    // This line is used for generating constants DO NOT REMOVE!
+    // 0x800000000000011000000000000000000000000000000000000000000000001
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // End of generating constants!
 
     #[view]
     fun add(x: u256, y: u256): u256 {

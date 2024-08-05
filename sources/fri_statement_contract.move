@@ -12,6 +12,7 @@ module verifier_addr::fri_statement_contract {
     use lib_addr::memory::{allocate, get_next, mloadrange, mstore};
     use verifier_addr::fact_registry::register_fact;
     use verifier_addr::fri_layer::{compute_next_layer, init_fri_group};
+
     #[test_only]
     use aptos_std::debug::print;
     #[test_only]
@@ -31,14 +32,14 @@ module verifier_addr::fri_statement_contract {
     };
 
     // This line is used for generating constants DO NOT REMOVE!
-	// 0x800000000000011000000000000000000000000000000000000000000000001
-	const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
-	// FRI_CTX_TO_FRI_GROUP_OFFSET + FRI_GROUP_SIZE
-	const FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET: u256 = 0x400;
-	// 0x20 * MAX_COSET_SIZE
-	const FRI_GROUP_SIZE: u256 = 0x200;
-	// FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET + (FRI_GROUP_SIZE / 2)
-	const FRI_CTX_SIZE: u256 = 0x500;
+    // 0x800000000000011000000000000000000000000000000000000000000000001
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // FRI_CTX_TO_FRI_GROUP_OFFSET + FRI_GROUP_SIZE
+    const FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET: u256 = 0x400;
+    // 0x20 * MAX_COSET_SIZE
+    const FRI_GROUP_SIZE: u256 = 0x200;
+    // FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET + (FRI_GROUP_SIZE / 2)
+    const FRI_CTX_SIZE: u256 = 0x500;
     // End of generating constants!
 
     public fun verify_fri(
@@ -158,6 +159,7 @@ module verifier_addr::fri_statement_contract {
             1
         );
     }
+
     #[test()]
     fun test_validate_fri_queue() {
         validate_fri_queue(get_fri_queue_3());

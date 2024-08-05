@@ -1,19 +1,19 @@
 module verifier_addr::verifier_channel {
-     // This line is used for generating constants DO NOT REMOVE!
-	// 0x800000000000011000000000000000000000000000000000000000000000001
-	const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
-	// 0x40000000000001100000000000012100000000000000000000000000000000
-	const K_MONTGOMERY_R_INV: u256 = 0x40000000000001100000000000012100000000000000000000000000000000;
-    // End of generating constants!
-
     use std::vector::{append, borrow, borrow_mut, enumerate_ref, length, slice};
     use aptos_std::aptos_hash::keccak256;
 
     use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be, vec_to_bytes_be};
     use lib_addr::math_mod::mod_mul;
-    use verifier_addr::prime_field_element_0::{from_montgomery};
+    use verifier_addr::prime_field_element_0::from_montgomery;
     use verifier_addr::prng::{get_random_bytes, init_prng};
     use verifier_addr::vector::{append_vector, set_el};
+
+    // This line is used for generating constants DO NOT REMOVE!
+    // 0x800000000000011000000000000000000000000000000000000000000000001
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // 0x40000000000001100000000000012100000000000000000000000000000000
+    const K_MONTGOMERY_R_INV: u256 = 0x40000000000001100000000000012100000000000000000000000000000000;
+    // End of generating constants!
 
     friend verifier_addr::stark_verifier_7;
     friend verifier_addr::fri_statement_verifier_7;

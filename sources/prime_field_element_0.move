@@ -1,26 +1,16 @@
 module verifier_addr::prime_field_element_0 {
-     // This line is used for generating constants DO NOT REMOVE!
-	// 0x800000000000011000000000000000000000000000000000000000000000001
-	const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
-	// 0x40000000000001100000000000012100000000000000000000000000000000
-	const K_MONTGOMERY_R_INV: u256 = 0x40000000000001100000000000012100000000000000000000000000000000;
-	// 0x7fffffffffffdf0ffffffffffffffffffffffffffffffffffffffffffffffe1
-	const K_MONTGOMERY_R: u256 = 0x7fffffffffffdf0ffffffffffffffffffffffffffffffffffffffffffffffe1;
-    // End of generating constants!
-
     use aptos_std::from_bcs;
 
     use lib_addr::math_mod::{mod_add, mod_exp, mod_mul, mod_sub};
 
-    
-
-    
-
-    
-
-    
-
-    
+    // This line is used for generating constants DO NOT REMOVE!
+    // 0x800000000000011000000000000000000000000000000000000000000000001
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // 0x40000000000001100000000000012100000000000000000000000000000000
+    const K_MONTGOMERY_R_INV: u256 = 0x40000000000001100000000000012100000000000000000000000000000000;
+    // 0x7fffffffffffdf0ffffffffffffffffffffffffffffffffffffffffffffffe1
+    const K_MONTGOMERY_R: u256 = 0x7fffffffffffdf0ffffffffffffffffffffffffffffffffffffffffffffffe1;
+    // End of generating constants!
 
     public fun fmul(a: u256, b: u256): u256 {
         mod_mul(a, b, K_MODULUS)
