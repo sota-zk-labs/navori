@@ -2,6 +2,7 @@ module verifier_addr::memory_page_fact_registry {
     use std::vector::{borrow, for_each, length};
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event::emit;
+    use verifier_addr::event::log_event;
 
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
     use lib_addr::math_mod::{mod_add, mod_mul};
@@ -159,10 +160,11 @@ module verifier_addr::memory_page_fact_registry {
         let fact_hash = u256_from_bytes_be(&keccak256(
             vec_to_bytes_be(&vector[CONTINUOUS_PAGE, prime, n_values, z, alpha, prod, memory_hash, start_address])
         ));
-        // TODO: enable emitting event
-        // let event_handler = account::new_event_handle<LogMemoryPageFactContinuous>(signer);
-        // event::emit_event(&mut event_handler, LogMemoryPageFactContinuous { fact_hash, memory_hash, prod });
-        // destroy_handle<LogMemoryPageFactContinuous>(event_handler);
+        log_event(signer, LogMemoryPageFactContinuous {
+            fact_hash,
+            memory_hash,
+            prod
+        });
         register_fact(signer, fact_hash);
         (fact_hash, memory_hash, prod)
     }
