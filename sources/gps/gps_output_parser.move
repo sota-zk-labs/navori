@@ -4,6 +4,7 @@ module verifier_addr::gps_output_parser {
     use std::vector::{for_each_mut, push_back, slice};
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::vector;
+    use verifier_addr::event::log_event;
 
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
     use verifier_addr::fact_registry::register_fact;
@@ -43,9 +44,9 @@ module verifier_addr::gps_output_parser {
       The event is emitted for each registered fact.
     */
     #[event]
-    struct LogMemoryPagesHashes has drop, copy {
-        program_output_fact: vector<u8>,
-        pages_hashes: vector<u8>,
+    struct LogMemoryPagesHashes has drop, store {
+        program_output_fact: u256,
+        pages_hashes: vector<u256>,
     }
     /*
       Parses the GPS program output (using taskMetadata, which should be verified by the caller),
@@ -191,7 +192,13 @@ module verifier_addr::gps_output_parser {
 
             {
                 // Emit the output Merkle root with the hashes of the relevant memory pages.
-                // Todo
+                // set_el(&mut page_hashed_log_data, 0, program_output_fact);
+                let length = cur_page - first_page_of_task;
+                set_el(&mut page_hashed_log_data, 2, (length as u256));
+                log_event(signer, LogMemoryPagesHashes {
+                    program_output_fact,
+                    pages_hashes: slice(&page_hashed_log_data, 1, length + 3),
+                })
             };
 
             register_fact(signer, fact);
