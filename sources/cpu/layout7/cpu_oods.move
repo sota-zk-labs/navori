@@ -53,14 +53,6 @@ module verifier_addr::cpu_oods_7 {
     // uint256 constant internal BATCH_INVERSE_CHUNK = (2 + N_ROWS_IN_MASK);
     const BATCH_INVERSE_CHUNK: u64 = (2 + 98);
 
-    fun add(x: u256, y: u256): u256 {
-        x + y
-    }
-
-    fun sub(x: u256, y: u256): u256 {
-        x - y
-    }
-
     /*
       Builds and sums boundary constraints that check that the prover provided the proper evaluations
       out of domain evaluations for the trace and composition columns.
@@ -126,7 +118,7 @@ module verifier_addr::cpu_oods_7 {
                                 oods_alpha_pow,
                                 prime
                             ),
-                            add(column_value, sub(prime, /*oods_values[0]*/ *borrow(ctx, 359 + odds_values_offset))),
+                            column_value + prime - /*oods_values[0]*/ *borrow(ctx, 359 + odds_values_offset),
                             prime
                         ),
                         prime
@@ -145,14 +137,14 @@ module verifier_addr::cpu_oods_7 {
                 // Read the next element.
                 let column_value = mod_mul(*borrow(ctx, composition_query_responses), K_MONTGOMERY_R_INV, prime);
                 // res += c_192*(h_0(x) - C_0(z^2)) / (x - z^2).
-                res = add(
-                    res,
+                res = 
+                    res +
                     mod_mul(mod_mul(/*(x - z^2)^(-1)*/ *borrow(&batch_inverse_array, denominators_ptr + 98),
                         oods_alpha_pow,
                         prime),
-                        add(column_value, sub(prime, /*composition_oods_values[0]*/ *borrow(ctx, 359 + 192))),
+                        column_value + (prime -/*composition_oods_values[0]*/ *borrow(ctx, 359 + 192)),
                         prime)
-                );
+                ;
                 oods_alpha_pow = mod_mul(oods_alpha_pow, oods_alpha, prime);
             };
 
@@ -160,14 +152,14 @@ module verifier_addr::cpu_oods_7 {
                 // Read the next element.
                 let column_value = mod_mul(*borrow(ctx, composition_query_responses + 1), K_MONTGOMERY_R_INV, prime);
                 // res += c_193*(h_1(x) - C_1(z^2)) / (x - z^2).
-                res = add(
-                    res,
+                res = 
+                    res +
                     mod_mul(mod_mul(/*(x - z^2)^(-1)*/ *borrow(&batch_inverse_array, denominators_ptr + 98),
                         oods_alpha_pow,
                         prime),
-                        add(column_value, sub(prime, /*composition_oods_values[1]*/ *borrow(ctx, 359 + 193))),
+                        column_value + (prime - /*composition_oods_values[1]*/ *borrow(ctx, 359 + 193)),
                         prime)
-                );
+                ;
                 oods_alpha_pow = mod_mul(oods_alpha_pow, oods_alpha, prime);
             };
 
@@ -273,7 +265,7 @@ module verifier_addr::cpu_oods_7 {
             let oods_point = /*oods_point*/ *borrow(ctx, MM_OODS_POINT);
             {
                 // point = -z.
-                let point = sub(prime, oods_point);
+                let point = prime - oods_point;
                 // Compute denominators for rows with nonconst mask expression.
                 // We compute those first because for the const rows we modify the point variable.
 
@@ -778,7 +770,7 @@ module verifier_addr::cpu_oods_7 {
             let products_to_values_offset = length(batch_inverse_array) >> 1;
             let values_ptr = products_ptr + products_to_values_offset;
             let partial_product = 1;
-            let minus_point_pow = sub(prime, mod_mul(oods_point, oods_point, prime));
+            let minus_point_pow = prime - mod_mul(oods_point, oods_point, prime);
             for (eval_points_ptr in eval_points_ptr..eval_points_end_ptr) {
                 let eval_point = *borrow(ctx, eval_points_ptr);
 
@@ -786,7 +778,7 @@ module verifier_addr::cpu_oods_7 {
                 let shifted_eval_point = mod_mul(eval_point, eval_coset_offset_, prime);
 
                 for (offset in 13..111) {
-                    let denominator = add(shifted_eval_point, *borrow(expmods_and_points, offset));
+                    let denominator = shifted_eval_point - *borrow(expmods_and_points, offset);
                     set_el(batch_inverse_array, products_ptr + offset - 13, partial_product);
                     set_el(batch_inverse_array, values_ptr + offset - 13, denominator);
                     partial_product = mod_mul(partial_product, denominator, prime);
@@ -794,7 +786,7 @@ module verifier_addr::cpu_oods_7 {
 
                 {
                     // Calculate the denominator for the composition polynomial columns: x - z^2.
-                    let denominator = add(shifted_eval_point, minus_point_pow);
+                    let denominator = shifted_eval_point + minus_point_pow;
                     set_el(batch_inverse_array, products_ptr + 98, partial_product);
                     set_el(batch_inverse_array, values_ptr + 98, denominator);
                     partial_product = mod_mul(partial_product, denominator, prime);

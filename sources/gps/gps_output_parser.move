@@ -121,14 +121,14 @@ module verifier_addr::gps_output_parser {
         for (task in 0..n_task) {
             let cur_offset = 0;
             let first_page_of_task = cur_page;
-            let n_tree_pairs = *borrow(
+            let n_tree_pairs = (*borrow(
                 &task_meta_data_copy,
                 task_metadata_offset + METADATA_OFFSET_TASK_N_TREE_PAIRS
-            );
+            ) as u64);
 
             // Build the Merkle tree using a stack (see the function documentation) to compute the fact.
             let node_stack_len = 0;
-            for (tree_pairs in 0u64..(n_tree_pairs as u64)) {
+            for (tree_pairs in 0u64..n_tree_pairs) {
                 let n_pages = *borrow(&task_meta_data_copy,
                     (task_metadata_offset + METADATA_TASK_HEADER_SIZE
                         + 2 * tree_pairs + METADATA_OFFSET_TREE_PAIR_N_PAGES)
@@ -188,7 +188,7 @@ module verifier_addr::gps_output_parser {
             let fact = u256_from_bytes_be(
                 &keccak256(vec_to_bytes_be<u256>(&vector[program_hash, program_output_fact]))
             );
-            task_metadata_offset = task_metadata_offset + METADATA_TASK_HEADER_SIZE + (2 * n_tree_pairs as u64);
+            task_metadata_offset = task_metadata_offset + METADATA_TASK_HEADER_SIZE + 2 * n_tree_pairs;
 
             {
                 // Emit the output Merkle root with the hashes of the relevant memory pages.
