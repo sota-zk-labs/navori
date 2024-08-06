@@ -3,7 +3,7 @@ module verifier_addr::prng {
     use aptos_std::aptos_hash::keccak256;
 
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
-    use verifier_addr::vector::set_el;
+    use lib_addr::vector::set_el;
 
     public fun store_prng(ctx: &mut vector<u256>, prng_ptr: u64, digest: u256, counter: u256) {
         set_el(ctx, prng_ptr, digest);

@@ -1,7 +1,7 @@
 module verifier_addr::memory_access_utils_7 {
     use std::vector::borrow;
 
-    use verifier_addr::vector::{assign, set_el};
+    use lib_addr::vector::{assign, set_el};
 
     // This line is used for generating constants DO NOT REMOVE!
 	// 10

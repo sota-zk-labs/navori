@@ -2,7 +2,7 @@ module verifier_addr::memory_page_fact_registry {
     use std::vector::{borrow, for_each, length};
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event::emit;
-    use verifier_addr::event::log_event;
+    use lib_addr::event::log_event;
 
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
     use lib_addr::math_mod::{mod_add, mod_mul};

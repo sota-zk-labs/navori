@@ -4,11 +4,11 @@ module verifier_addr::gps_output_parser {
     use std::vector::{for_each_mut, push_back, slice};
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::vector;
-    use verifier_addr::event::log_event;
+    use lib_addr::event::log_event;
 
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
     use verifier_addr::fact_registry::register_fact;
-    use verifier_addr::vector::{assign, set_el};
+    use lib_addr::vector::{assign, set_el};
 
     // This line is used for generating constants DO NOT REMOVE!
 	// 0

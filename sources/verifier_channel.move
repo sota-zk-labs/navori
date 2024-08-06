@@ -6,7 +6,7 @@ module verifier_addr::verifier_channel {
     use lib_addr::math_mod::mod_mul;
     use verifier_addr::prime_field_element_0::from_montgomery;
     use verifier_addr::prng::{get_random_bytes, init_prng};
-    use verifier_addr::vector::{append_vector, set_el};
+    use lib_addr::vector::{append_vector, set_el};
 
     // This line is used for generating constants DO NOT REMOVE!
     // 0x800000000000011000000000000000000000000000000000000000000000001
@@ -223,7 +223,7 @@ module verifier_addr::test_verifier_channel {
     use aptos_std::debug::print;
 
     use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be};
-    use verifier_addr::vector::append_vector;
+    use lib_addr::vector::append_vector;
 
     #[test]
     fun test_verify_proof_of_work() {

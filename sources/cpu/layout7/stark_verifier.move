@@ -14,7 +14,7 @@ module verifier_addr::stark_verifier_7 {
     use verifier_addr::public_memory_offsets_7::{get_offset_page_addr, get_offset_page_hash, get_offset_page_prod,
         get_offset_page_size, get_public_input_length
     };
-    use verifier_addr::vector::{append_vector, assign, set_el};
+    use lib_addr::vector::{append_vector, assign, set_el};
     use verifier_addr::verifier_channel::{init_channel, read_field_element, read_hash, send_field_elements,
         send_random_queries, verify_proof_of_work
     };

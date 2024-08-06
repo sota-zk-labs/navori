@@ -3,7 +3,7 @@ module verifier_addr::merkle_verifier {
     use aptos_std::aptos_hash::keccak256;
 
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
-    use verifier_addr::vector::{assign, set_el};
+    use lib_addr::vector::{assign, set_el};
 
     // This line is used for generating constants DO NOT REMOVE!
 	// 128

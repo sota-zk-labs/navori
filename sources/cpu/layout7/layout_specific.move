@@ -9,7 +9,7 @@ module verifier_addr::layout_specific_7 {
     use verifier_addr::poseidon_poseidon_partial_round_key_0_column_7;
     use verifier_addr::poseidon_poseidon_partial_round_key_1_column_7;
     use verifier_addr::prime_field_element_0::{fadd, fmul, fpow};
-    use verifier_addr::vector::set_el;
+    use lib_addr::vector::set_el;
 
     // This line is used for generating constants DO NOT REMOVE!
 	// 128

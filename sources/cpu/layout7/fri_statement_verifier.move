@@ -7,7 +7,7 @@ module verifier_addr::fri_statement_verifier_7 {
     use verifier_addr::horner_evaluator::horner_eval;
     use verifier_addr::memory_access_utils_7::get_fri_step_sizes;
     use verifier_addr::prime_field_element_0::{fmul, fpow};
-    use verifier_addr::vector::{assign, set_el};
+    use lib_addr::vector::{assign, set_el};
     use verifier_addr::verifier_channel::read_bytes;
 
     // This line is used for generating constants DO NOT REMOVE!

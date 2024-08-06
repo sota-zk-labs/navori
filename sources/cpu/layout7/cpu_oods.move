@@ -2,7 +2,7 @@ module verifier_addr::cpu_oods_7 {
     use std::vector::{borrow, for_each_ref, length, push_back};
 
     use lib_addr::math_mod::{mod_add, mod_exp, mod_mul};
-    use verifier_addr::vector::{assign, set_el};
+    use lib_addr::vector::{assign, set_el};
 
     // This line is used for generating constants DO NOT REMOVE!
 	// 3

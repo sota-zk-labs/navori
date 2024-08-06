@@ -8,7 +8,7 @@ module verifier_addr::gps_statement_verifier {
     use verifier_addr::gps_output_parser::register_gps_facts;
     use verifier_addr::memory_page_fact_registry::register_regular_memorypage;
 
-    use verifier_addr::vector::{assign, set_el};
+    use lib_addr::vector::{assign, set_el};
 
     // This line is used for generating constants DO NOT REMOVE!
 	// 0x800000000000011000000000000000000000000000000000000000000000001
