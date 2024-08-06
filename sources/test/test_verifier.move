@@ -76,6 +76,7 @@ module verifier_addr::test_verifier {
             i = i + 1;
             verify_merkle(
                 verifier,
+                248,
                 249,
                 9390404794146759926609078012164974184924937654759657766410025620812402262016,
                 13

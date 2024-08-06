@@ -5,8 +5,8 @@ module verifier_addr::fri_layer {
     use aptos_std::math128::pow;
     use aptos_std::math64::ceil_div;
     use aptos_std::smart_table;
-    use aptos_std::smart_table::{borrow, borrow_mut, upsert};
     use aptos_std::smart_table::SmartTable;
+    use aptos_std::smart_table::{borrow, borrow_mut, upsert};
 
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::fri_transform::{fri_max_step_size, transform_coset};

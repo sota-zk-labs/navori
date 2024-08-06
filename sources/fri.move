@@ -5,6 +5,7 @@ module verifier_addr::fri {
     friend verifier_addr::fri_statement;
     friend verifier_addr::fri_layer;
     friend verifier_addr::merkle_verifier;
+    friend verifier_addr::merkle_statement_contract;
 
     struct Fri has key, store {
         fri: SmartTable<u256, u256>

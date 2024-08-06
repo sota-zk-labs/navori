@@ -1,0 +1,142 @@
+module verifier_addr::merkle_statement_contract {
+    use std::signer::address_of;
+    use std::vector;
+    use std::vector::length;
+    use aptos_std::aptos_hash::keccak256;
+    use aptos_std::math64::pow;
+    use aptos_std::smart_table;
+    use aptos_std::smart_table::{borrow_with_default, upsert};
+
+    use verifier_addr::convert_memory::from_vector;
+    use verifier_addr::fact_registry::register_fact;
+    use verifier_addr::fri::{get_fri, init_fri, update_fri};
+    use verifier_addr::merkle_verifier;
+    use verifier_addr::merkle_verifier::init_verify_merkle;
+    use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
+    use verifier_addr::vector_helper::append_vector;
+
+    const MAX_N_MERKLE_VERIFIER_QUERIES: u64 = 128;
+    const MERKLE_SLOT_SIZE_IN_BYTES: u256 = 2;
+    //error codes
+    const E_HEIGHT_MUST_BE_LESS_THAN_200: u64 = 0x0;
+    const E_TOO_MANY_MERKLE_QUERIES: u64 = 0x1;
+    const E_INVALID_MERKLE_INDICES: u64 = 0x2;
+
+    public entry fun verify_merkle(
+        s: &signer,
+        merkle_view: vector<u256>,
+        initial_merkle_queue: vector<u256>,
+        height: u256,
+        expected_root: u256
+    ) {
+        assert!(height < 200, E_HEIGHT_MUST_BE_LESS_THAN_200);
+        assert!(length(&initial_merkle_queue) <= MAX_N_MERKLE_VERIFIER_QUERIES * 2, E_TOO_MANY_MERKLE_QUERIES);
+        //init
+        init_fri(s);
+        let ffri = get_fri(address_of(s));
+        let fri = &mut ffri;
+        // Let merkleViewPtr point to a free space in fri.
+        let merkle_view_ptr = 4;
+        // let initialMerkleQueuePtr point to a free space in fri.
+        let initial_merkle_queue_ptr = (length(&merkle_view) as u256) + 5;
+
+        // Copy the merkleView and initialMerkleQueue to fri.
+        upsert(fri, merkle_view_ptr, (length(&merkle_view) as u256));
+        from_vector(merkle_view, fri, 5);
+
+        upsert(fri, initial_merkle_queue_ptr, (vector::length(&initial_merkle_queue) as u256));
+        from_vector(initial_merkle_queue, fri, initial_merkle_queue_ptr + 1);
+
+        // Skip 0x20 bytes length at the beginning of the merkleView.
+        merkle_view_ptr = merkle_view_ptr + 1;
+        // Let channelPtr point to a free space.
+        let channel_ptr = 339;
+        // channelPtr will point to the merkleViewPtr since the 'verify' function expects
+        // a pointer to the proofPtr.
+        upsert(fri, channel_ptr, merkle_view_ptr);
+        // Skip 0x20 bytes length at the beginning of the initialMerkleQueue.
+        let merkle_queue_ptr = initial_merkle_queue_ptr + 1 ;
+        // Get number of queries.
+        let n_queries = *smart_table::borrow(fri, initial_merkle_queue_ptr) / 2;
+        // Get a pointer to the end of initialMerkleQueue.
+        let initial_merkle_queue_end_ptr = merkle_queue_ptr + (n_queries * MERKLE_SLOT_SIZE_IN_BYTES);
+        // Let dataToHashPtr point to a free memory.
+        let data_to_hash_ptr = channel_ptr + 1;
+
+        // Copy initialMerkleQueue to dataToHashPtr and validaite the indices.
+        // The indices need to be in the range [2**height..2*(height+1)-1] and
+        // strictly incrementing.
+
+        // First index needs to be >= 2**height.
+        let idx_lower_limit = (pow(2, (height as u64)) as u256) / 32;
+
+        let bad_input = 0;
+        while (merkle_queue_ptr < initial_merkle_queue_end_ptr) {
+            let cur_idx = *borrow_with_default(fri, merkle_queue_ptr, &0);
+
+            // Sanity check that the indices are sorted.
+            bad_input = bad_input | (if (cur_idx < idx_lower_limit) 1u256 else 0u256);
+
+            // The next idx must be at least curIdx + 1. Ensure it doesn't overflow.
+            idx_lower_limit = cur_idx + 1;
+            bad_input = bad_input | (if (idx_lower_limit == 0) 1u256 else 0u256);
+
+            // Copy the pair (idx, hash) to the dataToHash array.
+            upsert(fri, data_to_hash_ptr, cur_idx);
+
+            let value_store = *smart_table::borrow_with_default(fri, merkle_queue_ptr + 1, &0);
+            upsert(fri, data_to_hash_ptr + 1, value_store);
+            data_to_hash_ptr = data_to_hash_ptr + 2;
+            merkle_queue_ptr = merkle_queue_ptr + MERKLE_SLOT_SIZE_IN_BYTES;
+        };
+
+        // We need to enforce that lastIdx < 2**(height+1)
+        // => fail if lastIdx >= 2**(height+1)
+        // => fail if (lastIdx + 1) > 2**(height+1)
+        // => fail if idxLowerLimit > 2**(height+1).
+        //TODO: confusing logic, need to check but now it work correctly
+        bad_input = bad_input | (if (idx_lower_limit > (pow(2, (height as u64)) as u256) / 32) 0u256 else 1u256);
+
+        // Reset merkleQueuePtr.
+        merkle_queue_ptr = initial_merkle_queue_ptr + 1;
+        // Let freePtr point to a free memory (one word after the copied queries - reserved
+        // for the root).
+        upsert(fri, 2, data_to_hash_ptr + 1);
+
+        assert!(bad_input == 0, E_INVALID_MERKLE_INDICES);
+        update_fri(s, ffri);
+        // Verify the merkle tree.
+        init_verify_merkle(s, channel_ptr, merkle_queue_ptr);
+
+        //TODO: split to multi transactions
+        let res_root = merkle_verifier::verify_merkle(s, channel_ptr, merkle_queue_ptr, expected_root, n_queries);
+        // Register the fact.
+        register_fact_verify_merkle(s, channel_ptr, data_to_hash_ptr, n_queries, res_root);
+    }
+
+    public entry fun register_fact_verify_merkle(
+        s: &signer,
+        channel_ptr: u256,
+        data_to_hash_ptr: u256,
+        n_queries: u256,
+        res_root: vector<u8>
+    ) {
+        let ffri = get_fri(address_of(s));
+        let fri = &mut ffri;
+
+        upsert(fri, data_to_hash_ptr, bytes32_to_u256(res_root));
+        data_to_hash_ptr = channel_ptr + 1;
+
+        let input_hash = vector::empty();
+        let idx_hash = data_to_hash_ptr;
+
+        while (idx_hash < data_to_hash_ptr + n_queries * 2 + 1) {
+            let vec = u256_to_bytes32(*smart_table::borrow(fri, idx_hash));
+            input_hash = append_vector(input_hash, vec);
+            idx_hash = idx_hash + 1;
+        };
+        // register fact
+        register_fact(s, keccak256(input_hash));
+        smart_table::destroy(ffri);
+    }
+}

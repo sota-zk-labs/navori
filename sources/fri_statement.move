@@ -56,6 +56,7 @@ module verifier_addr::fri_statement {
         upsert(fri, channel_ptr, 5);
         let merkle_queue_ptr = channel_ptr + 1;
         let fri_ctx = merkle_queue_ptr + n_queries * 2;
+
         upsert(fri, 4, (vector::length(&proof) as u256));
         from_vector(proof, fri, 5);
         upsert(fri, 4 + (vector::length(&proof) as u256) + 1, (vector::length(&fri_queue) as u256));

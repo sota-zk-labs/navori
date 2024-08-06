@@ -22,7 +22,7 @@ module verifier_addr::merkle_verifier {
     const ETOO_MANY_MERKLE_QUERIES: u64 = 1;
     const EINVALID_MERKLE_PROOF: u64 = 2;
     const EOUT_OF_NOOB: u64 = 3;
-    const MAX_CYCLES: u64 = 110;
+    const MAX_CYCLES: u64 = 200;
     const EVERIFY_MERKLE_NOT_INITIATED: u64 = 4;
 
     #[event]
@@ -60,12 +60,13 @@ module verifier_addr::merkle_verifier {
         update_fri(s, ffri);
     }
 
-    public entry fun verify_merkle(
+    public fun verify_merkle(
         s: &signer,
+        channel_ptr: u256,
         queue_ptr: u256,
         root: u256,
         n: u256
-    ) acquires Ptr {
+    ): vector<u8> acquires Ptr {
         assert!(exists<Ptr>(address_of(s)), EVERIFY_MERKLE_NOT_INITIATED);
         let ffri = get_fri(address_of(s));
         let fri = &mut ffri;
@@ -142,18 +143,20 @@ module verifier_addr::merkle_verifier {
         ptr.rd_idx = rd_idx;
         ptr.wr_idx = wr_idx;
         ptr.proof_ptr = proof_ptr;
-
+        let byte_hash= u256_to_bytes32(root);
         if (index == 1 || index == 0) {
             let hash = *borrow(fri, hashes_ptr + rd_idx);
             assert!(hash == root, EINVALID_MERKLE_PROOF);
-            let byte_hash = u256_to_bytes32(hash);
+
+            byte_hash = u256_to_bytes32(hash);
             event::emit<Hash>(Hash { hash: byte_hash });
-            register_fact(s, byte_hash);
-            smart_table::destroy(ffri);
+
+            upsert(fri, channel_ptr, proof_ptr);
             move_from<Ptr>(address_of(s));
-        } else {
-            update_fri(s, ffri);
-        }
+        };
+        update_fri(s, ffri);
+        //TODO: Emit event for this return value
+        byte_hash
     }
 
     #[view]
