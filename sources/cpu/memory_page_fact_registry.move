@@ -1,6 +1,7 @@
 module verifier_addr::memory_page_fact_registry {
     use std::vector::{borrow, for_each, length};
     use aptos_std::aptos_hash::keccak256;
+    use aptos_std::debug::print;
     use aptos_framework::event::emit;
 
     use verifier_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
@@ -104,12 +105,10 @@ module verifier_addr::memory_page_fact_registry {
         alpha: u256,
         prime: u256
     ) {
-        for (i in 0..(length(&start_addr) - 1) ) {
+        for (i in 0..length(&start_addr) ) {
             register_continuous_memorypage(s, *borrow(&start_addr, i), *borrow(&values, i), z, alpha, prime);
         }
     }
-
-
     /*
       Registers a fact based on the given values, assuming continuous addresses.
       values should be [value at startAddr, value at (startAddr + 1), ...].
@@ -146,14 +145,15 @@ module verifier_addr::memory_page_fact_registry {
         while (addr < last_addr) {
             // Compute the product of (lin_comb - z) instead of (z - lin_comb), since we're
             // doing an even number of iterations, the result is the same.
-            for_each(vector[0u64, 2u64, 4u64, 8u64], |offset| {
+            for_each(vector[0u64, 2u64, 4u64, 6u64], |offset| {
+                print(&(10 - 7 + (offset as u256)));
                 prod = mod_mul(prod, mod_mul(
-                    alpha - 7 + (offset as u256) + mod_mul(
+                    addr - 7 + (offset as u256) + mod_mul(
                         alpha,
                         *borrow(&values, value_ptr + offset),
                         prime
                     ) + minus_z,
-                    alpha - 7 + (offset as u256) + 1 + mod_mul(
+                    addr - 7 + (offset as u256) + 1 + mod_mul(
                         alpha,
                         *borrow(&values, value_ptr + offset + 1),
                         prime
@@ -161,7 +161,7 @@ module verifier_addr::memory_page_fact_registry {
                     prime
                 ), prime);
             });
-            value_ptr = value_ptr + 5;
+            value_ptr = value_ptr + 8;
             addr = addr + 8;
         };
 
@@ -232,20 +232,8 @@ module verifier_addr::mpfr_test {
         register_continuous_page_batch(
             s,
             vector[1771799, 1771808],
-            vector[vector[1007,
-                1006,
-                1005,
-                1004,
-                1003,
-                1002,
-                1001], vector[1008,
-                1007,
-                1006,
-                1005,
-                1004,
-                1003,
-                1002,
-                1001]],
+            vector[vector[1007, 1006,1005, 1004, 1003, 1002, 1001],
+                          vector[1008, 1007, 1006, 1005, 1004, 1003, 1002, 1001]],
             3199940278565943790978406278706496237292797978280982699986488410844249594708,
             195072032121178106591923000375621188629735561133807175660265096969353999946,
             3618502788666131213697322783095070105623107215331596699973092056135872020481
