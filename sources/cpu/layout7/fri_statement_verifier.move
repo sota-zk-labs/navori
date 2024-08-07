@@ -5,8 +5,8 @@ module verifier_addr::fri_statement_verifier_7 {
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
     use verifier_addr::fact_registry;
     use verifier_addr::horner_evaluator::horner_eval;
-    use verifier_addr::memory_access_utils_7::get_fri_step_sizes;
-    use verifier_addr::prime_field_element_0::{fmul, fpow};
+    use cpu_addr::memory_access_utils_7::get_fri_step_sizes;
+    use lib_addr::prime_field_element_0::{fmul, fpow};
     use lib_addr::vector::{assign, set_el};
     use verifier_addr::verifier_channel::read_bytes;
 

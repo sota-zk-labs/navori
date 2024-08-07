@@ -1,5 +1,5 @@
 script {
-    use verifier_addr::cairo_bootloader_program::init_compiled_program;
+    use cpu_addr::cairo_bootloader_program::init_compiled_program;
     use verifier_addr::gps_statement_verifier::init_gps_statement_verifier;
     use verifier_addr::stark_verifier_7::init_stark_verifier;
     use verifier_addr::fact_registry::init_fact_registry;

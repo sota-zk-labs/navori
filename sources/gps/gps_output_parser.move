@@ -82,13 +82,13 @@ module verifier_addr::gps_output_parser {
     */
     public fun register_gps_facts(
         signer: &signer,
-        task_metadata: vector<u256>,
-        public_memory_pages: vector<u256>,
+        task_metadata: &vector<u256>,
+        public_memory_pages: &vector<u256>,
         output_start_address: u256
     ) {
-        let total_num_pages = *borrow(&public_memory_pages, 0);
+        let total_num_pages = *borrow(public_memory_pages, 0);
 
-        let n_task = *borrow(&task_metadata, 0);
+        let n_task = *borrow(task_metadata, 0);
 
         // Contains fact hash with the relevant memory pages' hashes.
         // Size is bounded from above with the total number of pages. Three extra places are
@@ -122,14 +122,14 @@ module verifier_addr::gps_output_parser {
             let cur_offset = 0;
             let first_page_of_task = cur_page;
             let n_tree_pairs = (*borrow(
-                &task_meta_data_copy,
+                task_meta_data_copy,
                 task_metadata_offset + METADATA_OFFSET_TASK_N_TREE_PAIRS
             ) as u64);
 
             // Build the Merkle tree using a stack (see the function documentation) to compute the fact.
             let node_stack_len = 0;
             for (tree_pairs in 0u64..n_tree_pairs) {
-                let n_pages = *borrow(&task_meta_data_copy,
+                let n_pages = *borrow(task_meta_data_copy,
                     (task_metadata_offset + METADATA_TASK_HEADER_SIZE
                         + 2 * tree_pairs + METADATA_OFFSET_TREE_PAIR_N_PAGES)
                 );
@@ -138,7 +138,7 @@ module verifier_addr::gps_output_parser {
                 // (the bound is somewhat arbitrary).
                 assert!(n_pages <= (1 << 20), INVALID_VALUE_OF_N_PAGES_IN_TREE_STRUCTURE);
                 for (i in 0..n_pages) {
-                    let page_info_ptr = slice(&public_memory_pages, page_info_ptr_start,
+                    let page_info_ptr = slice(public_memory_pages, page_info_ptr_start,
                         page_info_ptr_start + (PAGE_INFO_SIZE as u64)
                     );
                     let (page_size, page_hash) = push_page_to_stack(
@@ -156,7 +156,7 @@ module verifier_addr::gps_output_parser {
 
                     page_info_ptr_start = page_info_ptr_start + (PAGE_INFO_SIZE as u64);
                 };
-                let n_nodes = *vector::borrow(&task_meta_data_copy,
+                let n_nodes = *vector::borrow(task_meta_data_copy,
                     (task_metadata_offset + METADATA_TASK_HEADER_SIZE
                         + 2 * tree_pairs + METADATA_OFFSET_TREE_PAIR_N_NODES)
                 );
@@ -166,7 +166,7 @@ module verifier_addr::gps_output_parser {
             };
             assert!(node_stack_len == 1, NODE_STACK_MUST_CONTAIN_EXACTLY_ONE_ITEM);
             let program_hash = *vector::borrow(
-                &task_meta_data_copy,
+                task_meta_data_copy,
                 task_metadata_offset + METADATA_OFFSET_TASK_PROGRAM_HASH
             );
 
@@ -174,7 +174,7 @@ module verifier_addr::gps_output_parser {
             // sure that the computed hash is indeed the hash of the entire output of the task.
             {
                 let output_size = *borrow(
-                    &task_meta_data_copy,
+                    task_meta_data_copy,
                     task_metadata_offset + METADATA_OFFSET_TASK_OUTPUT_SIZE
                 );
 

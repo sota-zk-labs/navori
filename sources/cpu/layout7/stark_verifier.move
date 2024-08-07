@@ -4,14 +4,14 @@ module verifier_addr::stark_verifier_7 {
 
     use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be, vec_to_bytes_be};
     use lib_addr::math_mod::{mod_exp, mod_mul};
-    use verifier_addr::cpu_oods_7;
+    use cpu_addr::cpu_oods_7;
     use verifier_addr::fact_registry::is_valid;
     use verifier_addr::fri_statement_verifier_7;
-    use verifier_addr::layout_specific_7::{layout_specific_init, prepare_for_oods_check, safe_div};
-    use verifier_addr::memory_access_utils_7::{get_fri_step_sizes};
+    use cpu_addr::layout_specific_7::{layout_specific_init, prepare_for_oods_check, safe_div};
+    use cpu_addr::memory_access_utils_7::{get_fri_step_sizes};
     use verifier_addr::merkle_statement_verifier;
-    use verifier_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
-    use verifier_addr::public_memory_offsets_7::{get_offset_page_addr, get_offset_page_hash, get_offset_page_prod,
+    use lib_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
+    use cpu_addr::public_memory_offsets_7::{get_offset_page_addr, get_offset_page_hash, get_offset_page_prod,
         get_offset_page_size, get_public_input_length
     };
     use lib_addr::vector::{append_vector, assign, set_el};

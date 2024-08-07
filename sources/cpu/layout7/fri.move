@@ -2,8 +2,8 @@ module verifier_addr::fri_7 {
     use std::vector::{borrow, borrow_mut, length};
 
     use verifier_addr::horner_evaluator::horner_eval;
-    use verifier_addr::memory_access_utils_7::get_fri_step_sizes;
-    use verifier_addr::prime_field_element_0::{fmul, fpow};
+    use cpu_addr::memory_access_utils_7::get_fri_step_sizes;
+    use lib_addr::prime_field_element_0::{fmul, fpow};
     use lib_addr::vector::set_el;
 
     // This line is used for generating constants DO NOT REMOVE!

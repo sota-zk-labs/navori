@@ -4,7 +4,7 @@ module verifier_addr::verifier_channel {
 
     use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be, vec_to_bytes_be};
     use lib_addr::math_mod::mod_mul;
-    use verifier_addr::prime_field_element_0::from_montgomery;
+    use lib_addr::prime_field_element_0::from_montgomery;
     use verifier_addr::prng::{get_random_bytes, init_prng};
     use lib_addr::vector::{append_vector, set_el};
 

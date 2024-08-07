@@ -4,9 +4,8 @@ version = "1.0.0"
 authors = []
 
 [addresses]
-verifier_addr = "01a04014797f5bfca67396bd5fff0553acb9c179e81e84f23bd742774bbc5716"
-lib_addr = "01a04014797f5bfca67396bd5fff0553acb9c179e81e84f23bd742774bbc5716"
-err_addr = "01a04014797f5bfca67396bd5fff0553acb9c179e81e84f23bd742774bbc5716"
+verifier_addr = "e3b4b487e0d6ae06f70899f313c0027f7348eee632d20c9eec330d968e7664ef"
+err_addr = "e3b4b487e0d6ae06f70899f313c0027f7348eee632d20c9eec330d968e7664ef"
 
 [dev-addresses]
 
@@ -15,4 +14,6 @@ git = "https://github.com/aptos-labs/aptos-core.git"
 rev = "mainnet"
 subdir = "aptos-move/framework/aptos-framework"
 
-[dev-dependencies]
+[dependencies]
+libs = { git = "https://github.com/hduoc2003/navori-libs", rev = "main" }
+cpu = { git = "https://github.com/hduoc2003/navori-cpu", rev = "main" }

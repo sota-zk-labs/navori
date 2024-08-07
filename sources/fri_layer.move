@@ -7,7 +7,7 @@ module verifier_addr::fri_layer {
     use lib_addr::endia_encode::to_big_endian;
     use lib_addr::memory::{Memory, mload, mloadrange, mstore};
     use verifier_addr::fri_transform::transform_coset;
-    use verifier_addr::prime_field_element_0::{fmul, fpow};
+    use lib_addr::prime_field_element_0::{fmul, fpow};
 
     // This line is used for generating constants DO NOT REMOVE!
 	// 0x800000000000011000000000000000000000000000000000000000000000001
