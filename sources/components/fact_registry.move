@@ -1,4 +1,5 @@
 module verifier_addr::fact_registry {
+    use std::signer::address_of;
     use aptos_std::table::{Self, borrow, Table, upsert};
 
     struct VerifierFact has key, store {
@@ -13,22 +14,20 @@ module verifier_addr::fact_registry {
         });
     }
 
-    #[view]
-    public fun is_valid(fact: u256): bool acquires VerifierFact {
-        let verifier_fact = borrow_global<VerifierFact>(@verifier_addr);
+    public fun is_valid(signer: &signer, fact: u256): bool acquires VerifierFact {
+        let verifier_fact = borrow_global<VerifierFact>(address_of(signer));
         *table::borrow(&verifier_fact.verified_fact, fact)
     }
 
-    #[view]
-    public fun fast_check(fact: u256): bool acquires VerifierFact {
-        *borrow(&borrow_global<VerifierFact>(@verifier_addr).verified_fact, fact)
+    public fun fast_check(signer: &signer, fact: u256): bool acquires VerifierFact {
+        *borrow(&borrow_global<VerifierFact>(address_of(signer)).verified_fact, fact)
     }
 
     public fun register_fact(signer: &signer, fact_hash: u256) acquires VerifierFact {
-        if (exists<VerifierFact>(@verifier_addr) == false) {
+        if (exists<VerifierFact>(address_of(signer)) == false) {
             init_fact_registry(signer);
         };
-        let verifier_fact = borrow_global_mut<VerifierFact>(@verifier_addr);
+        let verifier_fact = borrow_global_mut<VerifierFact>(address_of(signer));
         upsert(&mut verifier_fact.verified_fact, fact_hash, true);
 
         if (verifier_fact.any_fact_registered == false) {
@@ -36,7 +35,7 @@ module verifier_addr::fact_registry {
         }
     }
 
-    fun has_registered_fact(): bool acquires VerifierFact {
-        borrow_global<VerifierFact>(@verifier_addr).any_fact_registered
+    fun has_registered_fact(signer: &signer): bool acquires VerifierFact {
+        borrow_global<VerifierFact>(address_of(signer)).any_fact_registered
     }
 }

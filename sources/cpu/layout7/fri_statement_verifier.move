@@ -81,6 +81,7 @@ module verifier_addr::fri_statement_verifier_7 {
 
     // Tested: OK
     public fun fri_verify_layers(
+        signer: &signer,
         ctx: &mut vector<u256>,
         proof: &vector<u256>,
         proof_params: &vector<u256>
@@ -119,7 +120,7 @@ module verifier_addr::fri_statement_verifier_7 {
 
             // Verify statement is registered.
             assert!(// NOLINT: calls-loop.
-                fact_registry::is_valid(u256_from_bytes_be(&keccak256(vec_to_bytes_be(&data_to_hash)))),
+                fact_registry::is_valid(signer, u256_from_bytes_be(&keccak256(vec_to_bytes_be(&data_to_hash)))),
                 INVALIDATED_FRI_STATEMENT
             );
 
@@ -136,7 +137,7 @@ module verifier_addr::fri_statement_verifier_7 {
         set_el(&mut data_to_hash, 4, *borrow(ctx, MM_FRI_COMMITMENTS + fri_step - 1));
 
         assert!(
-            fact_registry::is_valid(u256_from_bytes_be(&keccak256(vec_to_bytes_be(&data_to_hash)))),
+            fact_registry::is_valid(signer, u256_from_bytes_be(&keccak256(vec_to_bytes_be(&data_to_hash)))),
             INVALIDATED_FRI_STATEMENT
         );
     }
@@ -149,10 +150,10 @@ module verifier_addr::fri_statement_verifier_7 {
 module verifier_addr::test_fri_statement_verifier_7 {
     use verifier_addr::fri_statement_verifier_7::fri_verify_layers;
 
-    #[test]
-    fun test_fri_verify_layers() {
+    #[test(signer = @test_signer)]
+    fun test_fri_verify_layers(signer: &signer) {
         let ctx = ctx_();
-        fri_verify_layers(&mut ctx, &proof_(), &proof_params_());
+        fri_verify_layers(signer, &mut ctx, &proof_(), &proof_params_());
     }
 
     fun ctx_(): vector<u256> {

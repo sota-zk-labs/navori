@@ -1,4 +1,5 @@
 module verifier_addr::stark_verifier_7 {
+    use std::signer::address_of;
     use std::vector::{append, borrow, length, slice};
     use aptos_std::aptos_hash::keccak256;
 
@@ -277,6 +278,7 @@ module verifier_addr::stark_verifier_7 {
       function.
     */
     fun read_query_responses_and_decommit(
+        signer: &signer,
         ctx: &mut vector<u256>,
         proof: &vector<u256>,
         n_total_columns: u64,
@@ -333,7 +335,7 @@ module verifier_addr::stark_verifier_7 {
 
         set_el(ctx, channel_ptr, (proof_ptr as u256));
 
-        merkle_statement_verifier::verify_merkle(ctx, channel_ptr, merkle_queue_ptr, merkle_root, n_unique_queries);
+        merkle_statement_verifier::verify_merkle(signer, ctx, channel_ptr, merkle_queue_ptr, merkle_root, n_unique_queries);
     }
 
     /*
@@ -346,11 +348,12 @@ module verifier_addr::stark_verifier_7 {
       I.e. if the prover said that f(z) = c, the first FRI layer will include
       the term (f(x) - c)/(x-z).
     */
-    fun compute_first_fri_layer(ctx: &mut vector<u256>, proof: &vector<u256>) {
+    fun compute_first_fri_layer(signer: &signer, ctx: &mut vector<u256>, proof: &vector<u256>) {
         adjust_query_indices_and_prepare_eval_points(ctx);
         // emit LogGas("Prepare evaluation points", gasleft());
         let tmp = *borrow(ctx, MM_TRACE_COMMITMENT);
         read_query_responses_and_decommit(
+            signer,
             ctx,
             proof,
             get_n_columns_in_trace(),
@@ -363,6 +366,7 @@ module verifier_addr::stark_verifier_7 {
         tmp = *borrow(ctx, MM_TRACE_COMMITMENT + 1);
         if (has_interaction()) {
             read_query_responses_and_decommit(
+                signer,
                 ctx,
                 proof,
                 get_n_columns_in_trace(),
@@ -375,6 +379,7 @@ module verifier_addr::stark_verifier_7 {
 
         tmp = *borrow(ctx, MM_OODS_COMMITMENT);
         read_query_responses_and_decommit(
+            signer,
             ctx,
             proof,
             get_n_columns_in_composition(),
@@ -438,11 +443,12 @@ module verifier_addr::stark_verifier_7 {
     }
 
     public fun verify_proof(
+        signer: &signer,
         proof_params: vector<u256>,
         proof: vector<u256>,
         public_input: vector<u256>
     ) acquires ConstructorConfig {
-        let ctx = init_verifier_params(&public_input, &proof_params);
+        let ctx = init_verifier_params(signer, &public_input, &proof_params);
         let channel_ptr = MM_CHANNEL;
 
         init_channel(&mut ctx, channel_ptr, get_public_input_hash(&public_input));
@@ -482,7 +488,7 @@ module verifier_addr::stark_verifier_7 {
             set_el(&mut ctx, i, tmp);
         };
         // emit LogGas("Read OODS commitments", gasleft());
-        oods_consistency_check(&mut ctx, &public_input);
+        oods_consistency_check(signer, &mut ctx, &public_input);
         // emit LogGas("OODS consistency check", gasleft());
         send_field_elements(&mut ctx, channel_ptr, 1, MM_OODS_ALPHA);
         // emit LogGas("Generate OODS coefficients", gasleft());
@@ -526,19 +532,20 @@ module verifier_addr::stark_verifier_7 {
         set_el(&mut ctx, MM_N_UNIQUE_QUERIES, tmp);
         // emit LogGas("Send queries", gasleft());
 
-        compute_first_fri_layer(&mut ctx, &proof);
+        compute_first_fri_layer(signer, &mut ctx, &proof);
 
-        fri_statement_verifier_7::fri_verify_layers(&mut ctx, &proof, &proof_params);
+        fri_statement_verifier_7::fri_verify_layers(signer, &mut ctx, &proof, &proof_params);
     }
 
     public fun init_verifier_params(
+        signer: &signer,
         public_input: &vector<u256>,
         proof_params: &vector<u256>
     ): vector<u256> acquires ConstructorConfig {
         let ConstructorConfig {
             min_proof_of_work_bits,
             num_security_bits
-        } = *borrow_global<ConstructorConfig>(@verifier_addr);
+        } = *borrow_global<ConstructorConfig>(address_of(signer));
         assert!(length(proof_params) > PROOF_PARAMS_FRI_STEPS_OFFSET, INVALID_PROOF_PARAMS);
         assert!(
             length(proof_params) == PROOF_PARAMS_FRI_STEPS_OFFSET + (*borrow(
@@ -707,7 +714,7 @@ module verifier_addr::stark_verifier_7 {
       address) is consistent with z and alpha, by checking that the corresponding facts were
       registered on memoryPageFactRegistry.
     */
-    fun verify_memory_page_facts(ctx: &mut vector<u256>, public_input: &vector<u256>) {
+    fun verify_memory_page_facts(signer: &signer, ctx: &mut vector<u256>, public_input: &vector<u256>) {
         let n_public_memory_pages = *borrow(ctx, MM_N_PUBLIC_MEM_PAGES);
 
         for (page in 0..1) {
@@ -739,7 +746,7 @@ module verifier_addr::stark_verifier_7 {
                 page_addr
             ])));
 
-            assert!(is_valid(fact_hash), MEMORY_PAGE_FACT_NOT_REGISTERED);
+            assert!(is_valid(signer, fact_hash), MEMORY_PAGE_FACT_NOT_REGISTERED);
         }
     }
 
@@ -824,8 +831,8 @@ module verifier_addr::stark_verifier_7 {
     }
 
     // In Starknet's contracts, this function is implemented in `CpuVerifier.sol`
-    fun oods_consistency_check(ctx: &mut vector<u256>, public_input: &vector<u256>) {
-        verify_memory_page_facts(ctx, public_input);
+    fun oods_consistency_check(signer: &signer, ctx: &mut vector<u256>, public_input: &vector<u256>) {
+        verify_memory_page_facts(signer, ctx, public_input);
         let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS);
         set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM, temp);
         let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 1);

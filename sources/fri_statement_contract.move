@@ -177,7 +177,7 @@ module verifier_addr::fri_statement_contract {
             get_expected_root_3()
         );
         let fact_hash: u256 = 0x81b6de7f72176840720dbf7460352c0a18342fd155c307bee6e384302b472179;
-        assert!(is_valid(fact_hash), 1);
+        assert!(is_valid(signer, fact_hash), 1);
     }
 
     #[test(signer = @verifier_addr)]
@@ -192,7 +192,7 @@ module verifier_addr::fri_statement_contract {
             get_expected_root_2()
         );
         let fact_hash: u256 = 0xbc348fdab2b2e1f3564918265f0c0371e70078a8195897eb9a76687bbda53558;
-        assert!(is_valid(fact_hash), 1);
+        assert!(is_valid(signer, fact_hash), 1);
     }
 
     #[test]

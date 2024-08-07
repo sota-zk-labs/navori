@@ -14,6 +14,7 @@ module verifier_addr::merkle_statement_verifier {
     // Merkle Fact Registry. Receives as input the queuePtr (as address), its length
     // the numbers of queries n, and the root. The channelPtr is is ignored.
     public fun verify_merkle(
+        signer: &signer,
         ctx: &vector<u256>,
         _channelPtr: u64,
         queuePtr: u64,
@@ -25,7 +26,7 @@ module verifier_addr::merkle_statement_verifier {
         push_back(&mut data_to_hash, root);
         let statement = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&data_to_hash)));
         // assert!(statement == 0x783e37788a8e8829cacdf5c97df3d880baf94ac7fd85c3fef6bf6b193d2ffe4b, 12);
-        assert!(is_valid(statement), INVALIDATED_MERKLE_STATEMENT);
+        assert!(is_valid(signer, statement), INVALIDATED_MERKLE_STATEMENT);
         root
     }
 
@@ -37,8 +38,8 @@ module verifier_addr::merkle_statement_verifier {
 module verifier_addr::test_merkle_statement_verifier {
     use verifier_addr::merkle_statement_verifier::verify_merkle;
 
-    #[test]
-    fun test_verify_mekrle() {
+    #[test(signer = @test_signer)]
+    fun test_verify_mekrle(signer: &signer) {
         let ctx = vector[
             4454578245,
             242210697132226487864800604238939948990425017818861103997987730725047107584,
@@ -64,6 +65,7 @@ module verifier_addr::test_merkle_statement_verifier {
             6178236124115166430304790233901489418872596551248981266332469856327415365632
         ];
         verify_merkle(
+            signer,
             &ctx,
             0,
             0,

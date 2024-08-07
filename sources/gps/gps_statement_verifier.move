@@ -164,7 +164,7 @@ module verifier_addr::gps_statement_verifier {
         );
 
         // NOLINTNEXTLINE: reentrancy-benign.
-        verify_proof_external(proof_params, proof, cairo_public_input);
+        verify_proof_external(signer, proof_params, proof, cairo_public_input);
 
         register_gps_facts(signer, task_metadata, &public_memory_pages, *borrow(&cairo_aux_input,
             OFFSET_OUTPUT_BEGIN_ADDR
@@ -286,7 +286,7 @@ module verifier_addr::gps_statement_verifier {
                 let ConstructorConfig {
                     hashed_supported_cairo_verifiers,
                     simple_bootloader_program_hash
-                } = borrow_global<ConstructorConfig>(@verifier_addr);
+                } = borrow_global<ConstructorConfig>(address_of(signer));
                 let output_address = *borrow(cairo_aux_input, OFFSET_OUTPUT_BEGIN_ADDR);
                 // Force that memory[outputAddress] and memory[outputAddress + 1] contain the
                 // bootloader config (which is 2 words size).
@@ -375,7 +375,7 @@ module verifier_addr::test_gps {
     use verifier_addr::gps_statement_verifier::{verify_proof_and_register, prepush_task_metadata};
 
     // test data is taken from https://dashboard.tenderly.co/tx/mainnet/0x587790da89108585d1400d7156416b62ca3079f55fd71b873b50d2af39c03d75/debugger?trace=0.1.1
-    #[test(signer = @verifier_addr)]
+    #[test(signer = @0xc4e4ef65ffc72f988daa3e3ec39d73bf115b345825fc6967d3a0caa63dcfd07c)]
     fun test_verify_proof_and_register(signer: &signer) {
         init_all(signer);
         prepush_task_metadata(signer, task_meta_data_());
