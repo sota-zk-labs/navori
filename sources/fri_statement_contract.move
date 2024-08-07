@@ -1,11 +1,13 @@
-module verifier_addr::fri_statement {
+module verifier_addr::fri_statement_contract {
     use std::signer::address_of;
     use std::vector;
     use std::vector::length;
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math128::pow;
+    use aptos_std::smart_table;
     use aptos_std::smart_table::{borrow, upsert};
     use aptos_framework::event::emit;
+    use verifier_addr::fact_registry::register_fact;
 
     use verifier_addr::convert_memory::from_vector;
     use verifier_addr::fri::{get_fri, init_fri, update_fri};
@@ -20,7 +22,7 @@ module verifier_addr::fri_statement {
     }
 
     #[event]
-    struct ComputeNextLayer has drop, store {
+    struct ComputeNextLayer has store, drop {
         channel_ptr: u256,
         fri_queue_ptr: u256,
         merkle_queue_ptr: u256,
@@ -28,6 +30,12 @@ module verifier_addr::fri_statement {
         fri_ctx: u256,
         evaluation_point: u256,
         fri_coset_size: u256,
+    }
+
+    #[event]
+    struct RegisterFactVerifyFri has store, drop {
+        data_to_hash: u256,
+        fri_queue_ptr: u256
     }
 
 
@@ -89,6 +97,45 @@ module verifier_addr::fri_statement {
             evaluation_point,
             fri_coset_size,
         });
+
+        emit(RegisterFactVerifyFri{
+            data_to_hash,
+            fri_queue_ptr
+        });
+    }
+
+    public entry fun register_fact_verify_fri(s: &signer, data_to_hash: u256, fri_queue_ptr: u256, n_queries: u256 ) {
+        let ffri = get_fri(address_of(s));
+        let fri = &mut ffri;
+
+        let input_hash = vector::empty();
+        let idx_hash = 0;
+
+        //input_hash has range from friQueuePtr to n_queries * 3.
+        while (idx_hash < n_queries * 3) {
+            vector::append(
+                &mut input_hash,
+                u256_to_bytes32(*smart_table::borrow(fri, fri_queue_ptr + idx_hash))
+            );
+            idx_hash = idx_hash + 1;
+        };
+
+        upsert(fri, data_to_hash,bytes32_to_u256(keccak256(input_hash)));
+
+        input_hash = vector::empty();
+        let idx_hash = 0;
+
+        //input_hash has range from friQueuePtr to n_queries * 3.
+        while (idx_hash < 5) {
+            vector::append(
+                &mut input_hash,
+                u256_to_bytes32(*smart_table::borrow(fri, data_to_hash + idx_hash))
+            );
+            idx_hash = idx_hash + 1;
+        };
+
+        register_fact(s, keccak256(input_hash));
+        smart_table::destroy(ffri);
     }
 
     fun validate_fri_queue(fri_queue: vector<u256>) {

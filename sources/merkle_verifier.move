@@ -2,10 +2,8 @@ module verifier_addr::merkle_verifier {
     use std::signer::address_of;
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math64::ceil_div;
-    use aptos_std::smart_table;
-    use aptos_std::smart_table::{borrow, upsert, destroy};
+    use aptos_std::smart_table::{borrow, destroy, upsert};
     use aptos_framework::event;
-    use verifier_addr::fact_registry::register_fact;
 
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
@@ -22,11 +20,11 @@ module verifier_addr::merkle_verifier {
     const ETOO_MANY_MERKLE_QUERIES: u64 = 1;
     const EINVALID_MERKLE_PROOF: u64 = 2;
     const EOUT_OF_NOOB: u64 = 3;
-    const MAX_CYCLES: u64 = 200;
+    const MAX_CYCLES: u64 = 110;
     const EVERIFY_MERKLE_NOT_INITIATED: u64 = 4;
 
     #[event]
-    struct Hash has drop, store {
+    struct Hash has store, drop {
         hash: vector<u8>
     }
 
@@ -60,13 +58,13 @@ module verifier_addr::merkle_verifier {
         update_fri(s, ffri);
     }
 
-    public fun verify_merkle(
+    public entry fun verify_merkle(
         s: &signer,
         channel_ptr: u256,
         queue_ptr: u256,
         root: u256,
         n: u256
-    ): vector<u8> acquires Ptr {
+    ) acquires Ptr {
         assert!(exists<Ptr>(address_of(s)), EVERIFY_MERKLE_NOT_INITIATED);
         let ffri = get_fri(address_of(s));
         let fri = &mut ffri;
@@ -143,20 +141,16 @@ module verifier_addr::merkle_verifier {
         ptr.rd_idx = rd_idx;
         ptr.wr_idx = wr_idx;
         ptr.proof_ptr = proof_ptr;
-        let byte_hash= u256_to_bytes32(root);
+
         if (index == 1 || index == 0) {
             let hash = *borrow(fri, hashes_ptr + rd_idx);
             assert!(hash == root, EINVALID_MERKLE_PROOF);
-
-            byte_hash = u256_to_bytes32(hash);
-            event::emit<Hash>(Hash { hash: byte_hash });
+            event::emit<Hash>(Hash { hash: u256_to_bytes32(hash) });
 
             upsert(fri, channel_ptr, proof_ptr);
             move_from<Ptr>(address_of(s));
         };
         update_fri(s, ffri);
-        //TODO: Emit event for this return value
-        byte_hash
     }
 
     #[view]

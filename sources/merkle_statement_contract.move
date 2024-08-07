@@ -6,14 +6,12 @@ module verifier_addr::merkle_statement_contract {
     use aptos_std::math64::pow;
     use aptos_std::smart_table;
     use aptos_std::smart_table::{borrow_with_default, upsert};
+    use aptos_framework::event;
 
     use verifier_addr::convert_memory::from_vector;
     use verifier_addr::fact_registry::register_fact;
     use verifier_addr::fri::{get_fri, init_fri, update_fri};
-    use verifier_addr::merkle_verifier;
-    use verifier_addr::merkle_verifier::init_verify_merkle;
-    use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
-    use verifier_addr::vector_helper::append_vector;
+    use verifier_addr::u256_to_byte32::u256_to_bytes32;
 
     const MAX_N_MERKLE_VERIFIER_QUERIES: u64 = 128;
     const MERKLE_SLOT_SIZE_IN_BYTES: u256 = 2;
@@ -21,6 +19,23 @@ module verifier_addr::merkle_statement_contract {
     const E_HEIGHT_MUST_BE_LESS_THAN_200: u64 = 0x0;
     const E_TOO_MANY_MERKLE_QUERIES: u64 = 0x1;
     const E_INVALID_MERKLE_INDICES: u64 = 0x2;
+
+    #[event]
+    struct VerifyMerkle has store, drop {
+        channel_ptr: u256,
+        merkle_queue_ptr: u256,
+        expected_root: u256,
+        n_queries: u256
+    }
+
+    #[event]
+    struct RegisterFactVerifyMerkle has store, drop {
+        channel_ptr: u256,
+        data_to_hash_ptr: u256,
+        n_queries: u256,
+        res_root: u256
+    }
+
 
     public entry fun verify_merkle(
         s: &signer,
@@ -106,12 +121,19 @@ module verifier_addr::merkle_statement_contract {
         assert!(bad_input == 0, E_INVALID_MERKLE_INDICES);
         update_fri(s, ffri);
         // Verify the merkle tree.
-        init_verify_merkle(s, channel_ptr, merkle_queue_ptr);
+        event::emit<VerifyMerkle>(VerifyMerkle {
+            channel_ptr,
+            merkle_queue_ptr,
+            expected_root,
+            n_queries
+        });
 
-        //TODO: split to multi transactions
-        let res_root = merkle_verifier::verify_merkle(s, channel_ptr, merkle_queue_ptr, expected_root, n_queries);
-        // Register the fact.
-        register_fact_verify_merkle(s, channel_ptr, data_to_hash_ptr, n_queries, res_root);
+        event::emit<RegisterFactVerifyMerkle>(RegisterFactVerifyMerkle {
+            channel_ptr,
+            data_to_hash_ptr,
+            n_queries,
+            res_root: expected_root
+        });
     }
 
     public entry fun register_fact_verify_merkle(
@@ -119,23 +141,27 @@ module verifier_addr::merkle_statement_contract {
         channel_ptr: u256,
         data_to_hash_ptr: u256,
         n_queries: u256,
-        res_root: vector<u8>
+        res_root: u256
     ) {
         let ffri = get_fri(address_of(s));
         let fri = &mut ffri;
 
-        upsert(fri, data_to_hash_ptr, bytes32_to_u256(res_root));
+        upsert(fri, data_to_hash_ptr, res_root);
         data_to_hash_ptr = channel_ptr + 1;
 
         let input_hash = vector::empty();
-        let idx_hash = data_to_hash_ptr;
+        let idx_hash = 0;
 
-        while (idx_hash < data_to_hash_ptr + n_queries * 2 + 1) {
-            let vec = u256_to_bytes32(*smart_table::borrow(fri, idx_hash));
-            input_hash = append_vector(input_hash, vec);
+        //input_hash has range from data_to_hash_ptr to data_to_hash_ptr + n_queries * 2.
+        while (idx_hash < n_queries * 2 + 1) {
+            vector::append(
+                &mut input_hash,
+                u256_to_bytes32(*smart_table::borrow(fri, data_to_hash_ptr + idx_hash))
+            );
             idx_hash = idx_hash + 1;
         };
         // register fact
+
         register_fact(s, keccak256(input_hash));
         smart_table::destroy(ffri);
     }

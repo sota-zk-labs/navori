@@ -1,7 +1,10 @@
 #[test_only]
 module verifier_addr::full_flow_verifier_test {
 
-    use verifier_addr::merkle_statement_contract::verify_merkle;
+        use aptos_std::debug::print;
+        use aptos_framework::event;
+        use aptos_framework::event::emitted_events;
+        use verifier_addr::merkle_statement_contract::{verify_merkle, VerifyMerkle};
 
 
     public fun  get_merkle_view_data() : vector<u256> {
@@ -359,5 +362,6 @@ module verifier_addr::full_flow_verifier_test {
             32,
             66279586371982341056910360864513599119118930197222666183661655062851553853440
         );
+
     }
 }

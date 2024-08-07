@@ -2,7 +2,7 @@ module verifier_addr::fri {
     use std::signer::address_of;
     use aptos_std::smart_table::{SmartTable, new};
 
-    friend verifier_addr::fri_statement;
+    friend verifier_addr::fri_statement_contract;
     friend verifier_addr::fri_layer;
     friend verifier_addr::merkle_verifier;
     friend verifier_addr::merkle_statement_contract;

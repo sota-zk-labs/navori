@@ -6,7 +6,7 @@ module verifier_addr::test_verifier {
     use verifier_addr::fri_layer::{ compute_next_layer, init_fri_group, init_compute_next_layer,
         count_next_layer_cycles
     };
-    use verifier_addr::fri_statement::verify_fri;
+    use verifier_addr::fri_statement_contract::verify_fri;
     use verifier_addr::fri_test::{get_evaluation_point_3,
         get_expected_root_3,
         get_fri_queue_3,
