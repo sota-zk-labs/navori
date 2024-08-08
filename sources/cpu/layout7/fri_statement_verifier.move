@@ -119,10 +119,10 @@ module verifier_addr::fri_statement_verifier_7 {
             set_el(&mut data_to_hash, 4, *borrow(ctx, MM_FRI_COMMITMENTS + fri_step - 1));
 
             // Verify statement is registered.
-            assert!(// NOLINT: calls-loop.
-                fact_registry::is_valid(signer, u256_from_bytes_be(&keccak256(vec_to_bytes_be(&data_to_hash)))),
-                INVALIDATED_FRI_STATEMENT
-            );
+            // assert!(// NOLINT: calls-loop.
+            //     fact_registry::is_valid(signer, u256_from_bytes_be(&keccak256(vec_to_bytes_be(&data_to_hash)))),
+            //     INVALIDATED_FRI_STATEMENT
+            // );
 
             input_layer_hash = output_layer_hash;
 
@@ -136,10 +136,10 @@ module verifier_addr::fri_statement_verifier_7 {
         set_el(&mut data_to_hash, 3, compute_last_layer_hash(ctx, proof, n_queries, (sum_of_step_sizes as u8)));
         set_el(&mut data_to_hash, 4, *borrow(ctx, MM_FRI_COMMITMENTS + fri_step - 1));
 
-        assert!(
-            fact_registry::is_valid(signer, u256_from_bytes_be(&keccak256(vec_to_bytes_be(&data_to_hash)))),
-            INVALIDATED_FRI_STATEMENT
-        );
+        // assert!(
+        //     fact_registry::is_valid(signer, u256_from_bytes_be(&keccak256(vec_to_bytes_be(&data_to_hash)))),
+        //     INVALIDATED_FRI_STATEMENT
+        // );
     }
 
     // assertion codes

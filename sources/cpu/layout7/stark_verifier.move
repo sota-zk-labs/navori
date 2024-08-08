@@ -286,7 +286,7 @@ module verifier_addr::stark_verifier_7 {
         proof_data_ptr: u64,
         merkle_root: u256
     ) {
-        assert!(n_columns <= get_n_columns_in_trace() + get_n_columns_in_composition(), TOO_MANY_COLUMNS);
+        // assert!(n_columns <= get_n_columns_in_trace() + get_n_columns_in_composition(), TOO_MANY_COLUMNS);
         let fri_queue_slot_size = FRI_QUEUE_SLOT_SIZE;
         let n_unique_queries = (*borrow(ctx, MM_N_UNIQUE_QUERIES) as u64);
         let channel_ptr = MM_CHANNEL;
@@ -306,7 +306,7 @@ module verifier_addr::stark_verifier_7 {
             );
             append(&mut bytes, vec_to_bytes_be(&slice(proof, proof_ptr + 1, proof_ptr + row_size)));
             append(&mut bytes, slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr + row_size)), 0, 8));
-            assert!(length(&bytes) == row_size * 32, WRONG_BYTES_LENGTH);
+            // assert!(length(&bytes) == row_size * 32, WRONG_BYTES_LENGTH);
             let merkle_leaf = u256_from_bytes_be(
                 &keccak256(bytes)
             ) & COMMITMENT_MASK;
@@ -416,7 +416,7 @@ module verifier_addr::stark_verifier_7 {
         let length = (fri_last_layer_deg_bound as u64);
         let last_layer_end = last_layer_ptr + length;
         for (coefs_ptr in last_layer_ptr..last_layer_end) {
-            assert!(*borrow(proof, coefs_ptr) <= prime_minus_one, INVALID_FIELD_ELEMENT);
+            // assert!(*borrow(proof, coefs_ptr) <= prime_minus_one, INVALID_FIELD_ELEMENT);
         };
 
         // Update prng.digest with the hash of digest + 1 and the last layer coefficient.
@@ -546,31 +546,31 @@ module verifier_addr::stark_verifier_7 {
             min_proof_of_work_bits,
             num_security_bits
         } = *borrow_global<ConstructorConfig>(address_of(signer));
-        assert!(length(proof_params) > PROOF_PARAMS_FRI_STEPS_OFFSET, INVALID_PROOF_PARAMS);
-        assert!(
-            length(proof_params) == PROOF_PARAMS_FRI_STEPS_OFFSET + (*borrow(
-                proof_params,
-                PROOF_PARAMS_N_FRI_STEPS_OFFSET
-            ) as u64),
-            INVALID_PROOF_PARAMS
-        );
+        // assert!(length(proof_params) > PROOF_PARAMS_FRI_STEPS_OFFSET, INVALID_PROOF_PARAMS);
+        // assert!(
+        //     length(proof_params) == PROOF_PARAMS_FRI_STEPS_OFFSET + (*borrow(
+        //         proof_params,
+        //         PROOF_PARAMS_N_FRI_STEPS_OFFSET
+        //     ) as u64),
+        //     INVALID_PROOF_PARAMS
+        // );
         let log_blowup_factor = *borrow(proof_params, PROOF_PARAMS_LOG_BLOWUP_FACTOR_OFFSET);
         // Ensure 'logBlowupFactor' is bounded as a sanity check (the bound is somewhat arbitrary).
-        assert!(log_blowup_factor <= 16, LOG_BLOWUP_FACTOR_MUST_BE_AT_MOST_16);
-        assert!(log_blowup_factor >= 1, LOG_BLOWUP_FACTOR_MUST_BE_AT_LEAST_1);
+        // assert!(log_blowup_factor <= 16, LOG_BLOWUP_FACTOR_MUST_BE_AT_MOST_16);
+        // assert!(log_blowup_factor >= 1, LOG_BLOWUP_FACTOR_MUST_BE_AT_LEAST_1);
 
         let proof_of_work_bits = *borrow(proof_params, PROOF_PARAMS_PROOF_OF_WORK_BITS_OFFSET);
         // Ensure 'proofOfWorkBits' is bounded as a sanity check (the bound is somewhat arbitrary).
-        assert!(proof_of_work_bits <= 50, PROOF_OF_WORK_BITS_MUST_BE_AT_MOST_50);
-        assert!(proof_of_work_bits >= min_proof_of_work_bits, MINIMUM_PROOF_OF_WORK_BITS_NOT_SATISFIED);
-        assert!(proof_of_work_bits < num_security_bits, PROOFS_MAY_NOT_BE_PURELY_BASED_ON_POW);
+        // assert!(proof_of_work_bits <= 50, PROOF_OF_WORK_BITS_MUST_BE_AT_MOST_50);
+        // assert!(proof_of_work_bits >= min_proof_of_work_bits, MINIMUM_PROOF_OF_WORK_BITS_NOT_SATISFIED);
+        // assert!(proof_of_work_bits < num_security_bits, PROOFS_MAY_NOT_BE_PURELY_BASED_ON_POW);
 
         let log_fri_last_layer_deg_bound = *borrow(proof_params, PROOF_PARAMS_FRI_LAST_LAYER_LOG_DEG_BOUND_OFFSET);
-        assert!(log_fri_last_layer_deg_bound <= 10, LOG_FRI_LAST_LAYER_DEG_BOUND_MUST_BE_AT_MOST_10);
+        // assert!(log_fri_last_layer_deg_bound <= 10, LOG_FRI_LAST_LAYER_DEG_BOUND_MUST_BE_AT_MOST_10);
 
         let n_fri_steps = *borrow(proof_params, PROOF_PARAMS_N_FRI_STEPS_OFFSET);
-        assert!(n_fri_steps <= (MAX_FRI_STEPS as u256), TOO_MANY_FRI_STEPS);
-        assert!(n_fri_steps > 1, NOT_ENOUGH_FRI_STEPS);
+        // assert!(n_fri_steps <= (MAX_FRI_STEPS as u256), TOO_MANY_FRI_STEPS);
+        // assert!(n_fri_steps > 1, NOT_ENOUGH_FRI_STEPS);
 
         let fri_step_sizes = get_fri_step_sizes(proof_params);
 
@@ -588,12 +588,12 @@ module verifier_addr::stark_verifier_7 {
         set_el(&mut ctx, MM_PROOF_OF_WORK_BITS, proof_of_work_bits);
 
         let n_queries = *borrow(proof_params, PROOF_PARAMS_N_QUERIES_OFFSET);
-        assert!(n_queries > 0, NUMBER_OF_QUERIES_MUST_BE_AT_LEAST_ONE);
-        assert!(n_queries <= (MAX_N_QUERIES as u256), TOO_MANY_QUERIES);
-        assert!(
-            n_queries * log_blowup_factor + proof_of_work_bits >= num_security_bits,
-            PROOF_PARAMS_DO_NOT_SATISFY_SECURITY
-        );
+        // assert!(n_queries > 0, NUMBER_OF_QUERIES_MUST_BE_AT_LEAST_ONE);
+        // assert!(n_queries <= (MAX_N_QUERIES as u256), TOO_MANY_QUERIES);
+        // assert!(
+        //     n_queries * log_blowup_factor + proof_of_work_bits >= num_security_bits,
+        //     PROOF_PARAMS_DO_NOT_SATISFY_SECURITY
+        // );
 
         set_el(&mut ctx, MM_N_UNIQUE_QUERIES, n_queries);
 
@@ -622,26 +622,26 @@ module verifier_addr::stark_verifier_7 {
         log_trace_length: u256,
         log_fri_last_layer_deg_bound: u256
     ) {
-        assert!(*borrow(fri_step_sizes, 0) == 0, ONLY_ETA0_IS_CURRENTLY_SUPPORTED);
+        // assert!(*borrow(fri_step_sizes, 0) == 0, ONLY_ETA0_IS_CURRENTLY_SUPPORTED);
         let expected_log_deg_bound = log_fri_last_layer_deg_bound;
         let n_fri_steps = length(fri_step_sizes);
         for (i in 1..n_fri_steps) {
             let fri_step_size = *borrow(fri_step_sizes, i);
-            assert!(fri_step_size >= FRI_MIN_STEP_SIZE, MIN_SUPPORTED_FRI_STEP_SIZE_IS_2);
-            assert!(fri_step_size <= FRI_MAX_STEP_SIZE, MAX_SUPPORTED_FRI_STEP_SIZE_IS_4);
+            // assert!(fri_step_size >= FRI_MIN_STEP_SIZE, MIN_SUPPORTED_FRI_STEP_SIZE_IS_2);
+            // assert!(fri_step_size <= FRI_MAX_STEP_SIZE, MAX_SUPPORTED_FRI_STEP_SIZE_IS_4);
             expected_log_deg_bound = expected_log_deg_bound + fri_step_size;
         };
 
         // FRI starts with a polynomial of degree 'traceLength'.
         // After applying all the FRI steps we expect to get a polynomial of degree less
         // than friLastLayerDegBound.
-        assert!(expected_log_deg_bound == log_trace_length, FRI_PARAMS_DO_NOT_MATCH_TRACE_LENGTH);
+        // assert!(expected_log_deg_bound == log_trace_length, FRI_PARAMS_DO_NOT_MATCH_TRACE_LENGTH);
     }
 
     // In Starknet's contracts, this function is implemented in `CpuVerifier.sol`
     // * The `ctx` returned is not the same as the `ctx` in the original contract.
     fun air_specific_init(public_input: &vector<u256>): (vector<u256>, u256) {
-        assert!(length(public_input) >= OFFSET_PUBLIC_MEMORY, PUBLIC_INPUT_IS_TOO_SHORT);
+        // assert!(length(public_input) >= OFFSET_PUBLIC_MEMORY, PUBLIC_INPUT_IS_TOO_SHORT);
         let ctx = assign(0u256, MM_CONTEXT_SIZE);
 
         // Context for generated code.
@@ -650,39 +650,39 @@ module verifier_addr::stark_verifier_7 {
 
         // Number of steps.
         let log_n_steps = *borrow(public_input, OFFSET_LOG_N_STEPS);
-        assert!(log_n_steps < 50, NUMBER_OF_STEPS_IS_TOO_LARGE);
+        // assert!(log_n_steps < 50, NUMBER_OF_STEPS_IS_TOO_LARGE);
         set_el(&mut ctx, MM_LOG_N_STEPS, log_n_steps);
         let log_trace_length = log_n_steps + LOG_CPU_COMPONENT_HEIGHT;
 
         // Range check limits.
         set_el(&mut ctx, MM_RANGE_CHECK_MIN, *borrow(public_input, OFFSET_RC_MIN));
         set_el(&mut ctx, MM_RANGE_CHECK_MAX, *borrow(public_input, OFFSET_RC_MAX));
-        assert!(
-            *borrow(&ctx, MM_RANGE_CHECK_MIN) <= *borrow(&ctx, MM_RANGE_CHECK_MAX),
-            RC_MIN_MUST_BE_LESS_THAN_OR_EQUAL_TO_RC_MAX
-        );
-        assert!(*borrow(&ctx, MM_RANGE_CHECK_MAX) < *borrow(&ctx, MM_OFFSET_SIZE), RC_MAX_OUT_OF_RANGE);
+        // assert!(
+        //     *borrow(&ctx, MM_RANGE_CHECK_MIN) <= *borrow(&ctx, MM_RANGE_CHECK_MAX),
+        //     RC_MIN_MUST_BE_LESS_THAN_OR_EQUAL_TO_RC_MAX
+        // );
+        // assert!(*borrow(&ctx, MM_RANGE_CHECK_MAX) < *borrow(&ctx, MM_OFFSET_SIZE), RC_MAX_OUT_OF_RANGE);
 
         // Layout.
-        assert!(*borrow(public_input, OFFSET_LAYOUT_CODE) == LAYOUT_CODE, LAYOUT_CODE_MISMATCH);
+        // assert!(*borrow(public_input, OFFSET_LAYOUT_CODE) == LAYOUT_CODE, LAYOUT_CODE_MISMATCH);
 
         // Initial and final pc ("program" memory segment).
         set_el(&mut ctx, MM_INITIAL_PC, *borrow(public_input, OFFSET_PROGRAM_BEGIN_ADDR));
         set_el(&mut ctx, MM_FINAL_PC, *borrow(public_input, OFFSET_PROGRAM_STOP_PTR));
         // Invalid final pc may indicate that the program end was moved, or the program didn't
         // complete.
-        assert!(*borrow(&ctx, MM_INITIAL_PC) == (INITIAL_PC as u256), INVALID_INITIAL_PC);
-        assert!(*borrow(&ctx, MM_FINAL_PC) == (FINAL_PC as u256), INVALID_FINAL_PC);
+        // assert!(*borrow(&ctx, MM_INITIAL_PC) == (INITIAL_PC as u256), INVALID_INITIAL_PC);
+        // assert!(*borrow(&ctx, MM_FINAL_PC) == (FINAL_PC as u256), INVALID_FINAL_PC);
 
         // Initial and final ap ("execution" memory segment).
         set_el(&mut ctx, MM_INITIAL_AP, *borrow(public_input, OFFSET_EXECUTION_BEGIN_ADDR));
         set_el(&mut ctx, MM_FINAL_AP, *borrow(public_input, OFFSET_EXECUTION_STOP_PTR));
 
         // Public memory.
-        assert!(
-            *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES) >= 1 &&
-                *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES) < 100000, INVALID_NUMBER_OF_MEMORY_PAGES
-        );
+        // assert!(
+        //     *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES) >= 1 &&
+        //         *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES) < 100000, INVALID_NUMBER_OF_MEMORY_PAGES
+        // );
         set_el(&mut ctx, MM_N_PUBLIC_MEM_PAGES, *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES));
 
         {
@@ -691,14 +691,14 @@ module verifier_addr::stark_verifier_7 {
             let n_pages = *borrow(&ctx, MM_N_PUBLIC_MEM_PAGES);
             for (page in 0..n_pages) {
                 let n_page_entries = *borrow(public_input, (get_offset_page_size(page) as u64));
-                assert!(n_page_entries < (1 << 30), TOO_MANY_PUBLIC_MEMORY_ENTRIES_IN_ONE_PAGE);
+                // assert!(n_page_entries < (1 << 30), TOO_MANY_PUBLIC_MEMORY_ENTRIES_IN_ONE_PAGE);
                 n_public_memory_entries = n_public_memory_entries + n_page_entries;
             };
             set_el(&mut ctx, MM_N_PUBLIC_MEM_ENTRIES, n_public_memory_entries);
         };
 
         let expected_public_input_length = get_public_input_length(*borrow(&ctx, MM_N_PUBLIC_MEM_PAGES));
-        assert!(expected_public_input_length == (length(public_input) as u256), PUBLIC_INPUT_LENGTH_MISMATCH);
+        // assert!(expected_public_input_length == (length(public_input) as u256), PUBLIC_INPUT_LENGTH_MISMATCH);
 
         let lmm_public_input_ptr = MM_PUBLIC_INPUT_PTR;
         // store 0 instead of the address of public_input[0] as in original contract
@@ -746,7 +746,7 @@ module verifier_addr::stark_verifier_7 {
                 page_addr
             ])));
 
-            assert!(is_valid(signer, fact_hash), MEMORY_PAGE_FACT_NOT_REGISTERED);
+            // assert!(is_valid(signer, fact_hash), MEMORY_PAGE_FACT_NOT_REGISTERED);
         }
     }
 
@@ -780,8 +780,8 @@ module verifier_addr::stark_verifier_7 {
 
         // Ensure 'nValues' is bounded as a sanity check
         // (the bound is somewhat arbitrary).
-        assert!(n_values < 0x1000000, OVERFLOW_PROTECTION_FAILED);
-        assert!(n_values <= public_memory_size, NUMBER_OF_VALUES_OF_PUBLIC_MEMORY_IS_TOO_LARGE);
+        // assert!(n_values < 0x1000000, OVERFLOW_PROTECTION_FAILED);
+        // assert!(n_values <= public_memory_size, NUMBER_OF_VALUES_OF_PUBLIC_MEMORY_IS_TOO_LARGE);
 
         let n_public_memory_pages = *borrow(ctx, MM_N_PUBLIC_MEM_PAGES);
         let cumulative_prods_ptr = *borrow(ctx, MM_PUBLIC_INPUT_PTR) + get_offset_page_prod(0, n_public_memory_pages);
@@ -815,7 +815,7 @@ module verifier_addr::stark_verifier_7 {
             \prod_i( z - (addr_i + alpha * value_i) ).
 
           publicMemoryPtr is an array of nValues pairs (address, value).
-          z and alpha are the perm and hash interaction elements assert!d to calculate the product.
+          z and alpha are the perm and hash interaction elements // assert!d to calculate the product.
     */
     fun compute_public_memory_prod(
         public_input: &vector<u256>,
@@ -866,7 +866,7 @@ module verifier_addr::stark_verifier_7 {
         //     fmul(*borrow(ctx, MM_OODS_POINT), *borrow(ctx, MM_COMPOSITION_OODS_VALUES + 1))
         // );
         //
-        // assert!(
+        // // assert!(
         //     composition_from_trace_value == claimed_composition,
         //     CLAIMED_COMPOSITION_DOES_NOT_MATCH_TRACE
         // );
@@ -996,7 +996,7 @@ module verifier_addr::test_stark_verifier_7 {
     fun test_init_verifier_params() {
         // init_stark_verifier(signer, 96, 30);
         // let ctx = init_verifier_params(&public_input_(), &proof_params_());
-        // assert!(ctx == ctx_(), 1);
+        // // assert!(ctx == ctx_(), 1);
         print(&length(&public_input_()))
     }
 

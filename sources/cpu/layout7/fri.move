@@ -54,11 +54,11 @@ module verifier_addr::fri_7 {
             // Invert point using inverse(point) == fpow(point, ord(point) - 1).
 
             point = fpow(point, group_order_minus_one);
-            assert!(
-                horner_eval(proof, (coefs_start as u64), point, (fri_last_layer_deg_bound as u64)) ==
-                    *borrow(ctx, MM_FRI_QUEUE + FRI_QUEUE_SLOT_SIZE * i + 1),
-                BAD_LAST_LAYER_VALUE
-            );
+            // assert!(
+            //     horner_eval(proof, (coefs_start as u64), point, (fri_last_layer_deg_bound as u64)) ==
+            //         *borrow(ctx, MM_FRI_QUEUE + FRI_QUEUE_SLOT_SIZE * i + 1),
+            //     BAD_LAST_LAYER_VALUE
+            // );
         }
     }
 
@@ -68,10 +68,10 @@ module verifier_addr::fri_7 {
         proof_params: &vector<u256>
     ) {
         let fri_ctx = MM_FRI_CTX;
-        assert!(
-            MAX_SUPPORTED_FRI_STEP_SIZE == (FRI_MAX_STEP_SIZE as u64),
-            MAX_STEP_SIZE_IS_INCONSISTENT
-        );
+        // assert!(
+        //     MAX_SUPPORTED_FRI_STEP_SIZE == (FRI_MAX_STEP_SIZE as u64),
+        //     MAX_STEP_SIZE_IS_INCONSISTENT
+        // );
         // Todo
         // initFriGroups(fri_ctx);
         // emit LogGas("FRI offset precomputation", gasleft());

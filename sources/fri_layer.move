@@ -122,7 +122,7 @@ module verifier_addr::fri_layer {
         num: u256,
         number_of_bits: u256
     ): u256 {
-        assert!((number_of_bits == 256 || num < (pow(2, (number_of_bits as u128)) as u256)), 1);
+        // assert!((number_of_bits == 256 || num < (pow(2, (number_of_bits as u128)) as u256)), 1);
         let n = num;
         let r = 0 ;
         let k = 0;

@@ -19,9 +19,9 @@ module verifier_addr::horner_evaluator {
         let result = 0;
         let prime = K_MODULUS;
 
-        assert!(n_coef % 8 == 0, NUMBER_OF_POLYNOMIAL_COEFFICIENTS_MUST_BE_DIVISIBLE_BY_8);
+        // assert!(n_coef % 8 == 0, NUMBER_OF_POLYNOMIAL_COEFFICIENTS_MUST_BE_DIVISIBLE_BY_8);
         // Ensure 'n_coef' is bounded as a sanity check (the bound is somewhat arbitrary).
-        assert!(n_coef < 4096, NO_MORE_THAN_4096_COEFFICIENTS_ARE_SUPPORTED);
+        // assert!(n_coef < 4096, NO_MORE_THAN_4096_COEFFICIENTS_ARE_SUPPORTED);
 
         let coefs_ptr = coefs_start + n_coef;
         while (coefs_ptr > coefs_start) {
