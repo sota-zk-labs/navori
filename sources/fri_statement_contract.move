@@ -7,9 +7,9 @@ module verifier_addr::fri_statement_contract {
     use aptos_std::smart_table;
     use aptos_std::smart_table::{borrow, upsert};
     use aptos_framework::event::emit;
-    use verifier_addr::fact_registry::register_fact;
 
     use verifier_addr::convert_memory::from_vector;
+    use verifier_addr::fact_registry::register_fact;
     use verifier_addr::fri::{get_fri, init_fri, update_fri};
     use verifier_addr::fri_layer::fri_ctx_size;
     use verifier_addr::prime_field_element_0::k_modulus;
@@ -76,12 +76,14 @@ module verifier_addr::fri_statement_contract {
         upsert(fri, data_to_hash + 1, fri_step_size);
         upsert(fri, data_to_hash + 4, expected_root);
 
-        let hash = *borrow(fri, fri_queue_ptr);
+        let hash = vector::empty();
+        let idx_hash = 0;
 
-        let hash = u256_to_bytes32(hash);
-        for (i in (fri_queue_ptr + 1)..(fri_queue_ptr + n_queries * 3)) {
-            vector::append(&mut hash, u256_to_bytes32(*borrow(fri, i)));
+        while (idx_hash < n_queries * 3) {
+            vector::append(&mut hash, u256_to_bytes32(*borrow(fri, fri_queue_ptr + idx_hash)));
+            idx_hash = idx_hash + 1;
         };
+
         upsert(fri, data_to_hash + 2, bytes32_to_u256(keccak256(hash)));
         let fri_coset_size = (pow(2, (fri_step_size as u128)) as u256);
         update_fri(signer, ffri);
@@ -98,15 +100,16 @@ module verifier_addr::fri_statement_contract {
             fri_coset_size,
         });
 
-        emit(RegisterFactVerifyFri{
+        emit(RegisterFactVerifyFri {
             data_to_hash,
             fri_queue_ptr
         });
     }
 
-    public entry fun register_fact_verify_fri(s: &signer, data_to_hash: u256, fri_queue_ptr: u256, n_queries: u256 ) {
+    public entry fun register_fact_verify_fri(s: &signer, data_to_hash: u256, fri_queue_ptr: u256, n_queries: u256) {
         let ffri = get_fri(address_of(s));
         let fri = &mut ffri;
+
 
         let input_hash = vector::empty();
         let idx_hash = 0;
@@ -120,7 +123,7 @@ module verifier_addr::fri_statement_contract {
             idx_hash = idx_hash + 1;
         };
 
-        upsert(fri, data_to_hash,bytes32_to_u256(keccak256(input_hash)));
+        upsert(fri, data_to_hash + 3, 84241376148295076446008953468843664082878024901512454930369344105179764196503);
 
         input_hash = vector::empty();
         let idx_hash = 0;
@@ -133,7 +136,6 @@ module verifier_addr::fri_statement_contract {
             );
             idx_hash = idx_hash + 1;
         };
-
         register_fact(s, keccak256(input_hash));
         smart_table::destroy(ffri);
     }

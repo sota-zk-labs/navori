@@ -6,7 +6,8 @@ module verifier_addr::fri_layer {
     use aptos_std::math64::ceil_div;
     use aptos_std::smart_table;
     use aptos_std::smart_table::SmartTable;
-    use aptos_std::smart_table::{borrow, borrow_mut, upsert};
+    use aptos_std::smart_table::{borrow, upsert};
+    use aptos_framework::event::emit;
 
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::fri_transform::{fri_max_step_size, transform_coset};
@@ -74,7 +75,7 @@ module verifier_addr::fri_layer {
         let coset_off_set = fmul(fri_queue, queue_item);
 
 
-        let proof_ptr = *borrow_mut(fri, channel_ptr);
+        let proof_ptr = *borrow(fri, channel_ptr);
         let index = coset_idx;
 
 
@@ -219,19 +220,22 @@ module verifier_addr::fri_layer {
                 input_ptr,
                 fri_coset_size
             );
-            ptr.input_ptr = input_ptr;
 
+            ptr.input_ptr = input_ptr;
+            // Compute the index of the coset evaluations in the Merkle queue.
             index = index / fri_coset_size;
+            // Add (index, keccak256(evaluationsOnCoset)) to the Merkle queue.
             upsert(fri, merkle_queue_ptr, index);
 
-            let hash = *borrow(fri, evaluation_on_coset_ptr);
-
-            let hash = u256_to_bytes32(hash);
-            for (i in (evaluation_on_coset_ptr + 1)..(evaluation_on_coset_ptr + fri_coset_size)) {
-                vector::append(&mut hash, u256_to_bytes32(*borrow(fri, i)));
+            let hash = vector::empty();
+            let idx_hash = 0;
+            while (idx_hash < fri_coset_size) {
+                vector::append(&mut hash, u256_to_bytes32(*borrow(fri, evaluation_on_coset_ptr + idx_hash)));
+                idx_hash = idx_hash + 1;
             };
 
             upsert(fri, merkle_queue_ptr + 1, COMMITMENT_MASK & bytes32_to_u256(keccak256(hash)));
+
 
             merkle_queue_ptr = merkle_queue_ptr + 2;
 
@@ -247,9 +251,12 @@ module verifier_addr::fri_layer {
             upsert(fri, output_ptr, index);
             upsert(fri, output_ptr + 1, fri_value);
             upsert(fri, output_ptr + 2, fri_inversed_point);
-            ptr.output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
+            output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
+            ptr.output_ptr = output_ptr;
             ptr.merkle_queue_ptr = merkle_queue_ptr;
         };
+        let n_queries = ((input_end - input_ptr) / FRI_QUEUE_SLOT_SIZE);
+        emit<NQueries>(NQueries { n_queries });
         update_fri(s, ffri);
     }
 

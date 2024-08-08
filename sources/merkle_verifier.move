@@ -128,11 +128,12 @@ module verifier_addr::merkle_verifier {
             };
 
             let new_hash = *borrow(fri, new_hash_ptr);
-
             upsert(fri, sibling_offset, new_hash);
+
             let pre_hash = keccak256(
                 append_vector(u256_to_bytes32(*borrow(fri, 0)), u256_to_bytes32(*borrow(fri, 1)))
             );
+
             upsert(fri, (wr_idx + hashes_ptr), COMMITMENT_MASK & bytes32_to_u256(pre_hash));
             wr_idx = (wr_idx + MERKLE_SLOT_SIZE) % queue_size;
         };
