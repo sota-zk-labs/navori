@@ -2,6 +2,7 @@ module verifier_addr::fri_layer {
     use std::signer::address_of;
     use std::vector;
     use aptos_std::aptos_hash::keccak256;
+    use aptos_std::debug::print;
     use aptos_std::math128::pow;
     use aptos_std::math64::ceil_div;
     use aptos_std::smart_table;
@@ -189,6 +190,7 @@ module verifier_addr::fri_layer {
     public entry fun compute_next_layer(
         s: &signer,
         channel_ptr: u256,
+        fri_queue_ptr: u256,
         fri_ctx: u256,
         fri_eval_point: u256,
         fri_coset_size: u256,
@@ -254,8 +256,9 @@ module verifier_addr::fri_layer {
             output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
             ptr.output_ptr = output_ptr;
             ptr.merkle_queue_ptr = merkle_queue_ptr;
+
         };
-        let n_queries = ((input_end - input_ptr) / FRI_QUEUE_SLOT_SIZE);
+        let n_queries = ((input_end -  fri_queue_ptr) / FRI_QUEUE_SLOT_SIZE);
         emit<NQueries>(NQueries { n_queries });
         update_fri(s, ffri);
     }
