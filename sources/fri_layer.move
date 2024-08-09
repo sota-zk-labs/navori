@@ -2,13 +2,11 @@ module verifier_addr::fri_layer {
     use std::signer::address_of;
     use std::vector;
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::debug::print;
     use aptos_std::math128::pow;
     use aptos_std::math64::ceil_div;
     use aptos_std::smart_table;
     use aptos_std::smart_table::SmartTable;
     use aptos_std::smart_table::{borrow, upsert};
-    use aptos_framework::event::emit;
 
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::fri_transform::{fri_max_step_size, transform_coset};
@@ -40,12 +38,6 @@ module verifier_addr::fri_layer {
         output_ptr: u256,
         merkle_queue_ptr: u256
     }
-
-    #[event]
-    struct NQueries has store, drop {
-        n_queries: u256
-    }
-
 
     public fun gather_coset_inputs(
         fri: &mut SmartTable<u256, u256>,
@@ -117,7 +109,6 @@ module verifier_addr::fri_layer {
         };
         r
     }
-
     /*
           Initializes the FRI group and half inv group in the FRI context.
     */
@@ -190,7 +181,6 @@ module verifier_addr::fri_layer {
     public entry fun compute_next_layer(
         s: &signer,
         channel_ptr: u256,
-        fri_queue_ptr: u256,
         fri_ctx: u256,
         fri_eval_point: u256,
         fri_coset_size: u256,
@@ -256,10 +246,7 @@ module verifier_addr::fri_layer {
             output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
             ptr.output_ptr = output_ptr;
             ptr.merkle_queue_ptr = merkle_queue_ptr;
-
         };
-        let n_queries = ((input_end -  fri_queue_ptr) / FRI_QUEUE_SLOT_SIZE);
-        emit<NQueries>(NQueries { n_queries });
         update_fri(s, ffri);
     }
 
