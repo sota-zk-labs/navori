@@ -1,4 +1,6 @@
 module verifier_addr::stark_verifier_7 {
+    use std::option;
+    use std::option::Option;
     use std::signer::address_of;
     use std::vector::{append, borrow, length, slice};
     use aptos_std::aptos_hash::keccak256;
@@ -444,18 +446,18 @@ module verifier_addr::stark_verifier_7 {
 
     public fun verify_proof(
         signer: &signer,
-        proof_params: vector<u256>,
-        proof: vector<u256>,
-        public_input: vector<u256>
-    ) acquires ConstructorConfig {
-        let ctx = init_verifier_params(signer, &public_input, &proof_params);
+        proof_params: &vector<u256>,
+        proof: &mut vector<u256>,
+        public_input: &vector<u256>
+    ): Option<bool> acquires ConstructorConfig {
+        let ctx = init_verifier_params(signer, public_input, proof_params);
         let channel_ptr = MM_CHANNEL;
 
-        init_channel(&mut ctx, channel_ptr, get_public_input_hash(&public_input));
+        init_channel(&mut ctx, channel_ptr, get_public_input_hash(public_input));
         // // emit LogGas(Initializations, gasleft());
 
         // // Read trace commitment.
-        let hash = read_hash(&mut ctx, &proof, channel_ptr, true);
+        let hash = read_hash(&mut ctx, proof, channel_ptr, true);
         set_el(&mut ctx, MM_TRACE_COMMITMENT, hash);
 
         if (has_interaction()) {
@@ -468,14 +470,14 @@ module verifier_addr::stark_verifier_7 {
             );
 
             // Read second trace commitment.
-            let tmp = read_hash(&mut ctx, &proof, channel_ptr, true);
+            let tmp = read_hash(&mut ctx, proof, channel_ptr, true);
             set_el(&mut ctx, MM_TRACE_COMMITMENT + 1, tmp);
         };
         // Send constraint polynomial random element.
         send_field_elements(&mut ctx, channel_ptr, 1, MM_COMPOSITION_ALPHA);
         // emit LogGas("Generate coefficients", gasleft());
 
-        hash = read_hash(&mut ctx, &proof, channel_ptr, true);
+        hash = read_hash(&mut ctx, proof, channel_ptr, true);
         set_el(&mut ctx, MM_OODS_COMMITMENT, hash);
 
         // Send Out of Domain Sampling point.
@@ -484,22 +486,22 @@ module verifier_addr::stark_verifier_7 {
         // Read the answers to the Out of Domain Sampling.
         let lmm_oods_values = MM_OODS_VALUES;
         for (i in lmm_oods_values..(lmm_oods_values + N_OODS_VALUES)) {
-            let tmp = read_field_element(&mut ctx, &proof, channel_ptr, true);
+            let tmp = read_field_element(&mut ctx, proof, channel_ptr, true);
             set_el(&mut ctx, i, tmp);
         };
         // emit LogGas("Read OODS commitments", gasleft());
-        oods_consistency_check(signer, &mut ctx, &public_input);
+        oods_consistency_check(signer, &mut ctx, public_input);
         // emit LogGas("OODS consistency check", gasleft());
         send_field_elements(&mut ctx, channel_ptr, 1, MM_OODS_ALPHA);
         // emit LogGas("Generate OODS coefficients", gasleft());
-        hash = read_hash(&mut ctx, &proof, channel_ptr, true);
+        hash = read_hash(&mut ctx, proof, channel_ptr, true);
         set_el(&mut ctx, MM_FRI_COMMITMENTS, hash);
 
-        let n_fri_steps = length(&get_fri_step_sizes(&proof_params));
+        let n_fri_steps = length(&get_fri_step_sizes(proof_params));
         let fri_eval_point_ptr = MM_FRI_EVAL_POINTS;
         for (i in 1..(n_fri_steps - 1)) {
             send_field_elements(&mut ctx, channel_ptr, 1, fri_eval_point_ptr + i);
-            hash = read_hash(&mut ctx, &proof, channel_ptr, true);
+            hash = read_hash(&mut ctx, proof, channel_ptr, true);
             set_el(&mut ctx, MM_FRI_COMMITMENTS + i, hash);
         };
 
@@ -512,12 +514,12 @@ module verifier_addr::stark_verifier_7 {
         );
 
         // Read FRI last layer commitment.
-        read_last_fri_layer(&mut ctx, &mut proof);
+        read_last_fri_layer(&mut ctx, proof);
 
         // Generate queries.
         // emit LogGas("Read FRI commitments", gasleft());
         let tmp = (*borrow(&ctx, MM_PROOF_OF_WORK_BITS) as u8);
-        verify_proof_of_work(&mut ctx, &proof, channel_ptr, tmp);
+        verify_proof_of_work(&mut ctx, proof, channel_ptr, tmp);
 
         let tmp1 = *borrow(&ctx, MM_N_UNIQUE_QUERIES);
         let tmp2 = *borrow(&ctx, MM_EVAL_DOMAIN_SIZE);
@@ -532,9 +534,10 @@ module verifier_addr::stark_verifier_7 {
         set_el(&mut ctx, MM_N_UNIQUE_QUERIES, tmp);
         // emit LogGas("Send queries", gasleft());
 
-        compute_first_fri_layer(signer, &mut ctx, &proof);
+        compute_first_fri_layer(signer, &mut ctx, proof);
 
-        fri_statement_verifier_7::fri_verify_layers(signer, &mut ctx, &proof, &proof_params);
+        fri_statement_verifier_7::fri_verify_layers(signer, &mut ctx, proof, proof_params);
+        option::some(true)
     }
 
     public fun init_verifier_params(
@@ -995,7 +998,7 @@ module verifier_addr::test_stark_verifier_7 {
     #[test]
     fun test_init_verifier_params() {
         // init_stark_verifier(signer, 96, 30);
-        // let ctx = init_verifier_params(&public_input_(), &proof_params_());
+        // let ctx = init_verifier_params(public_input_(), proof_params_());
         // // assert!(ctx == ctx_(), 1);
         print(&length(&public_input_()))
     }

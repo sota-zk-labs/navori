@@ -1,15 +1,16 @@
 // Code: https://vscode.blockscan.com/ethereum/0x28e3ad4201ba416b23d9950503db28a9232be32a
 module verifier_addr::cairo_verifier_contract {
+    use std::option::Option;
     use verifier_addr::cpu_verifier_7;
     use cpu_addr::layout_specific_7;
 
     public fun verify_proof_external(
         signer: &signer,
-        proof_params: vector<u256>,
-        proof: vector<u256>,
-        public_input: vector<u256>
-    ) {
-        cpu_verifier_7::verify_proof_external(signer, proof_params, proof, public_input);
+        proof_params: &vector<u256>,
+        proof: &mut vector<u256>,
+        public_input: &vector<u256>
+    ): Option<bool> {
+        cpu_verifier_7::verify_proof_external(signer, proof_params, proof, public_input)
     }
 
     /*

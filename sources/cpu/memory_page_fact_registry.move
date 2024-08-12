@@ -1,18 +1,35 @@
+/*
+  A fact registry for the claim:
+    I know n pairs (addr, value) for which the hash of the pairs is memoryHash, and the cumulative
+    product: \prod_i( z - (addr_i + alpha * value_i) ) is prod.
+  The exact format of the hash depends on the type of the page
+  (see MemoryPageFactRegistryConstants).
+  The fact consists of (pageType, prime, n, z, alpha, prod, memoryHash, address).
+  Note that address is only available for CONTINUOUS_PAGE, and otherwise it is 0.
+*/
 module verifier_addr::memory_page_fact_registry {
+    use std::option;
+    use std::option::Option;
+    use std::signer::address_of;
     use std::vector::{borrow, for_each, length};
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event::emit;
     use lib_addr::event::log_event;
 
-    use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
+    use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be, long_vec_to_bytes_be};
     use lib_addr::math_mod::{mod_add, mod_mul};
     use verifier_addr::fact_registry::register_fact;
 
+    // A page based on a list of pairs (address, value).
+    // In this case, memoryHash = hash(address, value, address, value, address, value, ...).
+    // A page based on adjacent memory cells, starting from a given address.
+    // In this case, memoryHash = hash(value, value, value, ...).
+
     // This line is used for generating constants DO NOT REMOVE!
-	// 0
-	const REGULAR_PAGE: u256 = 0x0;
-	// 1
-	const CONTINUOUS_PAGE: u256 = 0x1;
+    // 0
+    const REGULAR_PAGE: u256 = 0x0;
+    // 1
+    const CONTINUOUS_PAGE: u256 = 0x1;
     // End of generating constants!
 
     //Errors
@@ -39,56 +56,95 @@ module verifier_addr::memory_page_fact_registry {
 
     public fun register_regular_memorypage(
         signer: &signer,
-        memory_pairs: vector<u256>,
+        memory_pairs: &vector<u256>,
         z: u256,
         alpha: u256,
         prime: u256
-    ): (u256, u256, u256) {
-        // assert!(length(&memory_pairs) < (1 << 20), TOO_MANY_MEMORY_VALUES);
-        // assert!((length(&memory_pairs) & 1) == 0, SIZE_OF_MEMORYPAIRS_MUST_BE_EVEN);
-        // assert!(z < prime, INVALID_VALUE_OF_Z);
-        // assert!(alpha < prime, INVALID_VALUE_OF_ALPHA);
+    ): Option<vector<u256>> acquires ComputeFactHashCheckpoint, IterationCache {
+        assert!(length(memory_pairs) < (1 << 20), TOO_MANY_MEMORY_VALUES);
+        assert!((length(memory_pairs) & 1) == 0, SIZE_OF_MEMORYPAIRS_MUST_BE_EVEN);
+        assert!(z < prime, INVALID_VALUE_OF_Z);
+        assert!(alpha < prime, INVALID_VALUE_OF_ALPHA);
 
-        let (fact_hash, memory_hash, prod) = compute_fact_hash(memory_pairs, z, alpha, prime);
+        let tmp = compute_fact_hash(signer, memory_pairs, z, alpha, prime);
+        if (option::is_none(&tmp)) {
+            return option::none<vector<u256>>()
+        };
+        let tmp = option::borrow(&tmp);
+        let (fact_hash, memory_hash, prod) = (*borrow(tmp, 0), *borrow(tmp, 1), *borrow(tmp, 2));
         emit(LogMemorypPageFactRegular { fact_hash, memory_hash, prod });
 
         register_fact(signer, fact_hash);
-        (fact_hash, memory_hash, prod)
+        option::some(vector[fact_hash, memory_hash, prod])
     }
 
     fun compute_fact_hash(
-        memory_pairs: vector<u256>,
+        signer: &signer,
+        memory_pairs: &vector<u256>,
         z: u256,
         alpha: u256,
         prime: u256
-    ): (u256, u256, u256) {
-        let n = length(&memory_pairs);
+    ): Option<vector<u256>> acquires ComputeFactHashCheckpoint, IterationCache {
+        let signer_addr = address_of(signer);
+        if (!exists<ComputeFactHashCheckpoint>(signer_addr)) {
+            move_to(signer, ComputeFactHashCheckpoint {
+                inner: IN_ITERATION
+            });
+        };
+        let ComputeFactHashCheckpoint {
+            inner: checkpoint
+        } = borrow_global_mut<ComputeFactHashCheckpoint>(signer_addr);
+        let n = length(memory_pairs);
         let memory_size = n / 2; // NOLINT: divide-before-multiply.
 
-        let prod = 1u256;
-        let memory_ptr = 0;
-        while (memory_ptr < n) {
-            // Compute address + alpha * value.
-            let address_value_lin_comb = mod_add(
-                // address
-                *borrow(&memory_pairs, memory_ptr),
-                mod_mul(
-                    // value
-                    *borrow(&memory_pairs, memory_ptr + 1),
-                    alpha,
+        if (!exists<IterationCache>(signer_addr)) {
+            move_to(signer, IterationCache {
+                prod: 1,
+                memory_ptr: 0
+            });
+        };
+        let IterationCache {
+            prod,
+            memory_ptr
+        } = borrow_global_mut<IterationCache>(signer_addr);
+        if (*checkpoint == IN_ITERATION) {
+            let count = 0;
+            while (*memory_ptr < n && count < ITERATION_LENGTH) {
+                // Compute address + alpha * value.
+                let address_value_lin_comb = mod_add(
+                    // address
+                    *borrow(memory_pairs, *memory_ptr),
+                    mod_mul(
+                        // value
+                        *borrow(memory_pairs, *memory_ptr + 1),
+                        alpha,
+                        prime
+                    ),
                     prime
-                ),
-                prime
-            );
-            prod = mod_mul(prod, z + prime - address_value_lin_comb, prime);
-            memory_ptr = memory_ptr + 2;
+                );
+                *prod = mod_mul(*prod, z + prime - address_value_lin_comb, prime);
+                *memory_ptr = *memory_ptr + 2;
+                count = count + 1;
+            };
+            if (*memory_ptr >= n) {
+                *checkpoint = END_ITERATION;
+            };
+            return option::none<vector<u256>>()
         };
 
-        let memory_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&memory_pairs)));
+        let memory_pairs_bytes = long_vec_to_bytes_be(signer, memory_pairs);
+        if (option::is_none(&memory_pairs_bytes)) {
+            return option::none<vector<u256>>()
+        };
+        let memory_pairs_bytes = option::borrow(&memory_pairs_bytes);
+        let memory_hash = u256_from_bytes_be(&keccak256(*memory_pairs_bytes));
+        let prod = *prod;
         let fact_hash = u256_from_bytes_be(&keccak256(
             vec_to_bytes_be(&vector[REGULAR_PAGE, prime, (memory_size as u256), z, alpha, prod, memory_hash, 0u256])
         ));
-        (fact_hash, memory_hash, prod)
+        move_from<ComputeFactHashCheckpoint>(signer_addr);
+        move_from<IterationCache>(signer_addr);
+        option::some(vector[fact_hash, memory_hash, prod])
     }
 
     // TODO: mark as entry func
@@ -169,10 +225,21 @@ module verifier_addr::memory_page_fact_registry {
         (fact_hash, memory_hash, prod)
     }
 
-    // A page based on a list of pairs (address, value).
-    // In this case, memoryHash = hash(address, value, address, value, address, value, ...).
-    // A page based on adjacent memory cells, starting from a given address.
-    // In this case, memoryHash = hash(value, value, value, ...).
+    // Data of the function `compute_fact_hash`
+    // checkpoints
+    const IN_ITERATION: u8 = 1;
+    const END_ITERATION: u8 = 2;
+
+    const ITERATION_LENGTH: u64 = 50;
+
+    struct ComputeFactHashCheckpoint has key, drop {
+        inner: u8
+    }
+
+    struct IterationCache has key, drop {
+        prod: u256,
+        memory_ptr: u64
+    }
 }
 
 #[test_only]
