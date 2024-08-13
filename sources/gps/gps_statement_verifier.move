@@ -12,6 +12,7 @@ module verifier_addr::gps_statement_verifier {
     use verifier_addr::memory_page_fact_registry::register_regular_memorypage;
 
     use lib_addr::vector::{assign, set_el};
+    use verifier_addr::memory_page_fact_registry;
 
     // This line is used for generating constants DO NOT REMOVE!
     // 0x800000000000011000000000000000000000000000000000000000000000001
@@ -76,32 +77,76 @@ module verifier_addr::gps_statement_verifier {
         return (config.simple_bootloader_program_hash, config.hashed_supported_cairo_verifiers)
     }
 
+    public fun init_data_type(signer: &signer) {
+        // Data of the function `verify_proof_and_register`
+        move_to(signer, TaskMetaData {
+            inner: vector[]
+        });
+        move_to(signer, VerifyProofAndRegisterParams {
+            proof_params: vector[],
+            proof: vector[],
+            task_metadata: vector[],
+            cairo_aux_input: vector[],
+            cairo_verifier_id: 0
+        });
+        move_to(signer, VerifyProofAndRegisterCheckpoint {
+            checkpoint: 0,
+            first_invoking: true
+        });
+        move_to(signer, Cache2 {
+            selected_builtins: 0,
+            cairo_public_input: vector[],
+            public_memory_pages: vector[],
+            n_pages: 0,
+            first_invoking: true
+        });
+
+        // Data of the function `register_public_memory_main_page`
+
+        move_to(signer, RegisterPublicMemoryMainPageCheckpoint {
+            checkpoint: 0,
+            first_invoking: true
+        });
+        move_to(signer, Cache3 {
+            public_memory: vector[],
+            offset: 0,
+            n_tasks: 0,
+            public_memory_length: 0
+        });
+        move_to(signer, Cache4 {
+            ptr: 0,
+            task_metadata_slice: vector[],
+            output_address: 0,
+            first_invoking: true
+        });
+        
+        memory_page_fact_registry::init_data_type(signer);
+    }
+
     public entry fun prepush_data_to_verify_proof_and_register(
         signer: &signer,
         proof_params: vector<u256>,
         proof: vector<u256>,
         cairo_aux_input: vector<u256>,
         cairo_verifier_id: u256
-    ) acquires TaskMetaData {
-        move_to(signer, VerifyProofAndRegisterParams {
+    ) acquires TaskMetaData, VerifyProofAndRegisterParams {
+        let signer_addr = address_of(signer);
+        *borrow_global_mut<VerifyProofAndRegisterParams>(signer_addr) = VerifyProofAndRegisterParams {
             proof_params,
             proof,
-            task_metadata: move_from<TaskMetaData>(address_of(signer)).inner,
+            task_metadata: borrow_global<TaskMetaData>(address_of(signer)).inner,
             cairo_aux_input,
             cairo_verifier_id
-        });
-        move_to(signer, VerifyProofAndRegisterCheckpoint {
-            inner: REGISTER_PUBLIC_MEMORY_MAIN_PAGE
-        });
+        };
     }
     /*
         This function is used to push `task_metadata` before calling the function `verify_proof_and_register` due to
         Aptos' function parameter size limit
     */
-    public entry fun prepush_task_metadata(signer: &signer, task_metadata: vector<u256>) {
-        move_to(signer, TaskMetaData {
+    public entry fun prepush_task_metadata(signer: &signer, task_metadata: vector<u256>) acquires TaskMetaData {
+        *borrow_global_mut<TaskMetaData>(address_of(signer)) = TaskMetaData {
             inner: task_metadata
-        });
+        };
     }
 
     /*
@@ -118,7 +163,6 @@ module verifier_addr::gps_statement_verifier {
     ) acquires ConstructorConfig,
     VerifyProofAndRegisterParams,
     VerifyProofAndRegisterCheckpoint,
-    CacheSelectedBuiltins,
     Cache2,
     RegisterPublicMemoryMainPageCheckpoint,
     Cache3,
@@ -133,31 +177,36 @@ module verifier_addr::gps_statement_verifier {
         } = borrow_global_mut<VerifyProofAndRegisterParams>(signer_addr);
 
         let VerifyProofAndRegisterCheckpoint {
-            inner: checkpoint
+            checkpoint,
+            first_invoking: first_invoking_1
         } = borrow_global_mut<VerifyProofAndRegisterCheckpoint>(signer_addr);
+        if (*first_invoking_1) {
+            *checkpoint = REGISTER_PUBLIC_MEMORY_MAIN_PAGE;
+            *first_invoking_1 = false;
+        };
         if (*checkpoint == REGISTER_PUBLIC_MEMORY_MAIN_PAGE) {
             // Aptos has no abstract contract, so we set `cairo_verifier_id` to 7, as shown in these transactions
             // https://etherscan.io/address/0x47312450b3ac8b5b8e247a6bb6d523e7605bdb60
             // Todo: Consider this function with another `cairo_verifier_id`
-            // assert!(cairo_verifier_id == 7, WRONG_CAIRO_VERIFIER_ID);
+            assert!(*cairo_verifier_id == 7, WRONG_CAIRO_VERIFIER_ID);
 
             // The values z and alpha are used only for the fact registration of the main page.
             // They are not part of the public input of CpuVerifier as they are computed there.
             // Take the relevant slice from 'cairoAuxInput'.
             // let cairo_public_input = cairo_aux_input[0..length(cairo_aux_input) - 2]; // z and alpha.
-            let tmp = length(cairo_aux_input) - 2;
-            if (!exists<CacheSelectedBuiltins>(signer_addr)) {
+            if (borrow_global<Cache2>(signer_addr).first_invoking) {
+                let tmp = length(cairo_aux_input) - 2;
                 let cairo_public_input = slice(cairo_aux_input, 0, tmp); // z and alpha.
 
                 let (public_memory_offset, selected_builtins) = get_layout_info();
-                // assert!(length(cairo_aux_input) > (public_memory_offset as u64), INVALID_CAIROAUXINPUT_LENGTH);
+                assert!(length(cairo_aux_input) > (public_memory_offset as u64), INVALID_CAIROAUXINPUT_LENGTH);
                 let public_memory_pages = slice(
                     &cairo_public_input,
                     (public_memory_offset as u64),
                     length(&cairo_public_input)
                 );
                 let n_pages = *borrow(&public_memory_pages, 0);
-                // assert!(n_pages < 10000, INVALID_NPAGES);
+                assert!(n_pages < 10000, INVALID_NPAGES);
 
                 // Validate publicMemoryPages.length.
                 // Each page has a page info and a cumulative product.
@@ -167,22 +216,20 @@ module verifier_addr::gps_statement_verifier {
                     (length(&public_memory_pages) as u256) == n_pages * (PAGE_INFO_SIZE + 1),
                     INVALID_PUBLIC_MEMORY_PAGES_LENGTH
                 );
-                move_to(signer, CacheSelectedBuiltins {
-                    selected_builtins
-                });
-                move_to(signer, Cache2 {
+                *borrow_global_mut<Cache2>(signer_addr) = Cache2 {
+                    selected_builtins,
                     cairo_public_input,
                     public_memory_pages,
-                    n_pages
-                });
+                    n_pages,
+                    first_invoking: false
+                };
             };
-            let CacheSelectedBuiltins {
-                selected_builtins
-            } = borrow_global<CacheSelectedBuiltins>(signer_addr);
             let Cache2 {
+                selected_builtins,
                 cairo_public_input,
                 public_memory_pages,
-                n_pages
+                n_pages,
+                first_invoking: first_invoking_2
             } = borrow_global_mut<Cache2>(signer_addr);
             // Process public memory.
             let tmp = register_public_memory_main_page(
@@ -235,11 +282,8 @@ module verifier_addr::gps_statement_verifier {
         //     ));
         //
         //     *checkpoint = END_VERIFY_PROOF_AND_REGISTER;
-        //     move_from<VerifyProofAndRegisterParams>(signer_addr);
-        //     move_from<VerifyProofAndRegisterCheckpoint>(signer_addr);
-        //     move_from<CacheSelectedBuiltins>(signer_addr);
-        //     move_from<Cache2>(signer_addr);
         // }
+        *first_invoking_1 = true;
     }
 
     /*
@@ -267,15 +311,14 @@ module verifier_addr::gps_statement_verifier {
         selected_builtins: u256
     ): Option<vector<u256>> acquires ConstructorConfig, RegisterPublicMemoryMainPageCheckpoint, Cache3, Cache4 {
         let signer_addr = address_of(signer);
-        if (!exists<RegisterPublicMemoryMainPageCheckpoint>(signer_addr)) {
-            move_to(signer, RegisterPublicMemoryMainPageCheckpoint {
-                inner: CHECKPOINT1
-            });
-        };
         let RegisterPublicMemoryMainPageCheckpoint {
-            inner: checkpoint
+            checkpoint,
+            first_invoking: first_invoking_checkpoint
         } = borrow_global_mut<RegisterPublicMemoryMainPageCheckpoint>(signer_addr);
-
+        if (*first_invoking_checkpoint) {
+            *checkpoint = CHECKPOINT1;
+            *first_invoking_checkpoint = false;
+        };
         if (*checkpoint == CHECKPOINT1) {
             let n_tasks = *borrow(task_metadata, 0);
             // Ensure 'n_tasks' is bounded as a sanity check (the bound is somewhat arbitrary).
@@ -362,12 +405,12 @@ module verifier_addr::gps_statement_verifier {
                 offset = offset + (2 * N_BUILTINS as u64);
             };
             *checkpoint = CHECKPOINT2;
-            move_to(signer, Cache3 {
+            *borrow_global_mut<Cache3>(signer_addr) = Cache3 {
                 public_memory,
                 offset,
                 n_tasks,
                 public_memory_length
-            });
+            };
             return option::none<vector<u256>>()
         };
 
@@ -381,7 +424,7 @@ module verifier_addr::gps_statement_verifier {
         if (*checkpoint == CHECKPOINT2) {
             // Program output.
             {
-                if (!exists<Cache4>(signer_addr)) {
+                if (borrow_global<Cache4>(signer_addr).first_invoking) {
                     let ConstructorConfig {
                         hashed_supported_cairo_verifiers,
                         simple_bootloader_program_hash
@@ -401,17 +444,19 @@ module verifier_addr::gps_statement_verifier {
 
                     let task_metadata_slice = slice(task_metadata,
                         METADATA_TASKS_OFFSET, length(task_metadata));
-                    move_to(signer, Cache4 {
+                    *borrow_global_mut<Cache4>(signer_addr) = Cache4 {
                         ptr: 0,
                         task_metadata_slice,
-                        output_address
-                    });
+                        output_address,
+                        first_invoking: false
+                    };
                 };
 
                 let Cache4 {
                     ptr,
                     task_metadata_slice,
                     output_address,
+                    first_invoking: first_invoking_cache4
                 } = borrow_global_mut<Cache4>(signer_addr);
                 let end_ptr = min(*ptr + ITERATION_LENGTH, (*n_tasks as u64));
                 for (task in *ptr..end_ptr) {
@@ -450,6 +495,7 @@ module verifier_addr::gps_statement_verifier {
                         INCONSISTENT_PROGRAM_OUTPUT_LENGTH
                     );
                     *checkpoint = CHECKPOINT3;
+                    *first_invoking_cache4 = true;
                 };
 
                 return option::none<vector<u256>>()
@@ -473,9 +519,8 @@ module verifier_addr::gps_statement_verifier {
             let tmp = option::borrow(&tmp);
             let (memory_hash, prod) = (*borrow(tmp, 1), *borrow(tmp, 2));
             let public_memory_length = *public_memory_length;
-            move_from<Cache3>(signer_addr);
-            move_from<RegisterPublicMemoryMainPageCheckpoint>(signer_addr);
-            move_from<Cache4>(signer_addr);
+            
+            *first_invoking_checkpoint = true;
 
             return option::some(vector[public_memory_length, memory_hash, prod])
         };
@@ -521,17 +566,16 @@ module verifier_addr::gps_statement_verifier {
     }
 
     struct VerifyProofAndRegisterCheckpoint has key, drop {
-        inner: u8
-    }
-
-    struct CacheSelectedBuiltins has key, drop {
-        selected_builtins: u256
+        checkpoint: u8,
+        first_invoking: bool
     }
 
     struct Cache2 has key, drop {
+        selected_builtins: u256,
         cairo_public_input: vector<u256>,
         public_memory_pages: vector<u256>,
-        n_pages: u256
+        n_pages: u256,
+        first_invoking: bool
     }
 
     // Data of the function `register_public_memory_main_page`
@@ -542,7 +586,8 @@ module verifier_addr::gps_statement_verifier {
     const CHECKPOINT3: u8 = 3;
 
     struct RegisterPublicMemoryMainPageCheckpoint has key, drop {
-        inner: u8
+        checkpoint: u8,
+        first_invoking: bool
     }
 
     struct Cache3 has key, drop {
@@ -558,6 +603,7 @@ module verifier_addr::gps_statement_verifier {
         ptr: u64,
         task_metadata_slice: vector<u256>,
         output_address: u256,
+        first_invoking: bool
     }
 }
 

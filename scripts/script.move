@@ -1,10 +1,12 @@
 script {
     use cpu_addr::cairo_bootloader_program::init_compiled_program;
+    use verifier_addr::gps_statement_verifier;
     use verifier_addr::gps_statement_verifier::init_gps_statement_verifier;
     use verifier_addr::stark_verifier_7::init_stark_verifier;
     use verifier_addr::fact_registry::init_fact_registry;
 
     fun all_constructor(signer: &signer) {
+        gps_statement_verifier::init_data_type(signer);
         init_fact_registry(signer);
         init_stark_verifier(signer, 96, 30);
         init_gps_statement_verifier(

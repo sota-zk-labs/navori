@@ -1,12 +1,14 @@
 #[test_only]
 module verifier_addr::constructor {
     use cpu_addr::cairo_bootloader_program::init_compiled_program;
+    use verifier_addr::gps_statement_verifier;
     use verifier_addr::fact_registry::init_fact_registry;
     use verifier_addr::gps_statement_verifier::init_gps_statement_verifier;
     use verifier_addr::stark_verifier_7::init_stark_verifier;
 
     // test data is taken from https://dashboard.tenderly.co/tx/mainnet/0x587790da89108585d1400d7156416b62ca3079f55fd71b873b50d2af39c03d75/debugger?trace=0.1.1
     public fun init_all(signer: &signer) {
+        gps_statement_verifier::init_data_type(signer);
         init_fact_registry(signer);
         init_stark_verifier(signer, 96, 30);
         init_gps_statement_verifier(
