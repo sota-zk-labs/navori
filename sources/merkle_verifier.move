@@ -9,19 +9,33 @@ module verifier_addr::merkle_verifier {
     use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
     use verifier_addr::vector_helper::append_vector;
 
-    const MAX_N_MERKLE_VERIFIER_QUERIES: u256 = 128;
-    const MERKLE_SLOT_SIZE: u256 = 2;
+    // This line is used for generating constants DO NOT REMOVE!
+    // 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
     const COMMITMENT_MASK: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
-    const COMMITMENT_SIZE: u256 = 1;
-    const TWO_COMMITMENTS_SIZE: u256 = 2;
-    const INDEX_SIZE: u256 = 1;
+    // 1
+    const COMMITMENT_SIZE: u256 = 0x1;
+    // 32
+    const COMMITMENT_SIZE_IN_BYTES: u64 = 0x20;
+    // 2
+    const EINVALID_MERKLE_PROOF: u64 = 0x2;
+    // 1
+    const ETOO_MANY_MERKLE_QUERIES: u64 = 0x1;
+    // 4
+    const EVERIFY_MERKLE_NOT_INITIATED: u64 = 0x4;
+    // 1
+    const INDEX_SIZE: u256 = 0x1;
+    // 110
+    const MAX_CYCLES_MERKLE: u64 = 0x6e;
+    // 128
+    const MAX_N_MERKLE_VERIFIER_QUERIES: u64 = 0x80;
+    // 2
+    const MERKLE_SLOT_SIZE: u256 = 0x2;
+    // 64
+    const MERKLE_SLOT_SIZE_IN_BYTES: u64 = 0x40;
+    // 2
+    const TWO_COMMITMENTS_SIZE: u256 = 0x2;
+    // End of generating constants!
 
-    //error
-    const ETOO_MANY_MERKLE_QUERIES: u64 = 1;
-    const EINVALID_MERKLE_PROOF: u64 = 2;
-    const EOUT_OF_NOOB: u64 = 3;
-    const MAX_CYCLES: u64 = 110;
-    const EVERIFY_MERKLE_NOT_INITIATED: u64 = 4;
 
     #[event]
     struct Hash has store, drop {
@@ -69,7 +83,7 @@ module verifier_addr::merkle_verifier {
         let ffri = get_fri(address_of(s));
         let fri = &mut ffri;
 
-        assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES, ETOO_MANY_MERKLE_QUERIES);
+        assert!(n <= (MAX_N_MERKLE_VERIFIER_QUERIES as u256), ETOO_MANY_MERKLE_QUERIES);
 
         let ptr = borrow_global_mut<Ptr>(address_of(s));
 
@@ -83,7 +97,7 @@ module verifier_addr::merkle_verifier {
         let hashes_ptr = queue_ptr + INDEX_SIZE;
         let queue_size = n * MERKLE_SLOT_SIZE;
         let count = 0;
-        while (index > 1 && count < MAX_CYCLES) {
+        while (index > 1 && count < MAX_CYCLES_MERKLE) {
             count = count + 1;
             let sibling_index = index ^ 1;
             // sibblingOffset := COMMITMENT_SIZE_IN_BYTES * lsb(siblingIndex).
@@ -120,7 +134,7 @@ module verifier_addr::merkle_verifier {
                 rd_idx = (rd_idx + MERKLE_SLOT_SIZE) % queue_size;
 
                 // Index was consumed, read the next one.
-                // Note that the queue can't be empty at this point.
+                // Note that the queue can't.txt be empty at this point.
                 // The index of the parent of the current node was already pushed into the
                 // queue, and the parent is never the sibling.
 
@@ -162,7 +176,7 @@ module verifier_addr::merkle_verifier {
     ): u64 {
         let ffri = get_fri(s);
         let fri = &mut ffri;
-        assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES, ETOO_MANY_MERKLE_QUERIES);
+        assert!(n <= (MAX_N_MERKLE_VERIFIER_QUERIES as u256), ETOO_MANY_MERKLE_QUERIES);
         let index = *borrow(fri, queue_ptr);
         let rd_idx = 0;
         let wr_idx = 0;
@@ -185,7 +199,7 @@ module verifier_addr::merkle_verifier {
             count = count + 1;
         };
         destroy(ffri);
-        ceil_div(count, MAX_CYCLES)
+        ceil_div(count, MAX_CYCLES_MERKLE)
     }
 }
 

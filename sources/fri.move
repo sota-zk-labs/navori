@@ -1,6 +1,6 @@
 module verifier_addr::fri {
     use std::signer::address_of;
-    use aptos_std::smart_table::{SmartTable, new};
+    use aptos_std::smart_table::{new, SmartTable};
 
     friend verifier_addr::fri_statement_contract;
     friend verifier_addr::fri_layer;
@@ -11,13 +11,12 @@ module verifier_addr::fri {
         fri: SmartTable<u256, u256>
     }
 
-    const END_FRI_VERIFIY: u64 = 0x3;
-
-    public(friend) fun init_fri(account: &signer) {
-        if (!exists<Fri>(address_of(account))) {
+    public(friend) fun new_fri(signer: &signer): SmartTable<u256, u256> acquires Fri {
+        if (!exists<Fri>(address_of(signer))) {
             let fri = new<u256, u256>();
-            move_to(account, Fri { fri });
-        }
+            move_to(signer, Fri { fri });
+        };
+        get_fri(address_of(signer))
     }
 
     public(friend) fun get_fri(signer: address): SmartTable<u256, u256> acquires Fri {

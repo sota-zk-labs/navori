@@ -10,10 +10,17 @@ module verifier_addr::fri_statement_contract {
 
     use verifier_addr::convert_memory::from_vector;
     use verifier_addr::fact_registry::register_fact;
-    use verifier_addr::fri::{get_fri, init_fri, update_fri};
-    use verifier_addr::fri_layer::fri_ctx_size;
-    use verifier_addr::prime_field_element_0::k_modulus;
+    use verifier_addr::fri::{get_fri, new_fri, update_fri};
     use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
+
+    // This line is used for generating constants DO NOT REMOVE!
+    // FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET + (FRI_GROUP_SIZE / 2)
+    const FRI_CTX_SIZE: u256 = 0x28;
+    // 4
+    const FRI_MAX_STEP_SIZE: u256 = 0x4;
+    // 3618502788666131213697322783095070105623107215331596699973092056135872020481
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // End of generating constants!
 
     //log-event
     #[event]
@@ -35,7 +42,7 @@ module verifier_addr::fri_statement_contract {
     #[event]
     struct RegisterFactVerifyFri has store, drop {
         data_to_hash: u256,
-        fri_queue_ptr: u256
+        fri_queue_ptr: u256,
     }
 
 
@@ -47,17 +54,17 @@ module verifier_addr::fri_statement_contract {
         fri_step_size: u256,
         expected_root: u256
     ) {
-        init_fri(signer);
-        // must <= FRI_MAX_STEPS_SIZE
-        let ffri = get_fri(address_of(signer));
+        let ffri =  new_fri(signer);
         let fri = &mut ffri;
         // let fri = fri_storage;
-        assert!(fri_step_size <= 4, 1);
-        assert!(evaluation_point < k_modulus(), 1);
+
+        // must <= FRI_MAX_STEPS_SIZE
+        assert!(fri_step_size <= FRI_MAX_STEP_SIZE, 1);
+        assert!(evaluation_point < K_MODULUS, 1);
 
         validate_fri_queue(fri_queue);
 
-        let mm_fri_ctx_size = fri_ctx_size();
+        let mm_fri_ctx_size = FRI_CTX_SIZE;
         let n_queries = (vector::length(&fri_queue) / 3 as u256); // expected eq 13 (40 /3)
         let fri_queue_ptr = (vector::length(&proof) + 6 as u256);
         let channel_ptr = fri_queue_ptr + (length(&fri_queue) as u256);
@@ -158,8 +165,8 @@ module verifier_addr::fri_statement_contract {
         let prev_query = 0;
         for (i in 0..n_queries) {
             assert!(*vector::borrow(&fri_queue, 3 * i) > prev_query, 1);
-            assert!(*vector::borrow(&fri_queue, 3 * i + 1) < k_modulus(), 1);
-            assert!(*vector::borrow(&fri_queue, 3 * i + 2) < k_modulus(), 1);
+            assert!(*vector::borrow(&fri_queue, 3 * i + 1) < K_MODULUS, 1);
+            assert!(*vector::borrow(&fri_queue, 3 * i + 2) < K_MODULUS, 1);
             prev_query = *vector::borrow(&fri_queue, 3 * i);
         };
 

@@ -9,28 +9,36 @@ module verifier_addr::fri_layer {
     use aptos_std::smart_table::{borrow, upsert};
 
     use verifier_addr::fri::{get_fri, update_fri};
-    use verifier_addr::fri_transform::{fri_max_step_size, transform_coset};
-    use verifier_addr::prime_field_element_0::{fmul, fpow, k_modulus};
+    use verifier_addr::fri_transform::transform_coset;
+    use verifier_addr::prime_field_element_0::{fmul, fpow};
     use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
 
-    const MAX_COSET_SIZE: u256 = 16;
-    const FRI_GROUP_GEN: u256 = 0x5ec467b88826aba4537602d514425f3b0bdf467bbf302458337c45f6021e539;
-    const FRI_GROUP_SIZE: u256 = 16;
-    const FRI_CTX_TO_COSET_EVALUATIONS_OFFSET: u256 = 0;
-    const FRI_CTX_TO_FRI_GROUP_OFFSET: u256 = 16;
-    const FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET: u256 = 32;
-    const FRI_CTX_SIZE: u256 = 40;
-    const FRI_QUEUE_SLOT_SIZE: u256 = 3;
-    const FRI_QUEUE_SLOT_SIZE_IN_BYTES: u256 = 96;
-    const NOT_NUM: u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    // This line is used for generating constants DO NOT REMOVE!
+    // 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
     const COMMITMENT_MASK: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
+    // 10
+    const ECOMPUTE_NEXT_LAYER_NOT_INITIATED: u64 = 0xa;
+    // 0
+    const FRI_CTX_TO_COSET_EVALUATIONS_OFFSET: u256 = 0x0;
+    // FRI_GROUP_SIZE
+    const FRI_CTX_TO_FRI_GROUP_OFFSET: u256 = 0x10;
+    // FRI_CTX_TO_FRI_GROUP_OFFSET + FRI_GROUP_SIZE
+    const FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET: u256 = 0x20;
+    // 2679026602897868112349604024891625875968950767352485125058791696935099163961
+    const FRI_GROUP_GEN: u256 = 0x5ec467b88826aba4537602d514425f3b0bdf467bbf302458337c45f6021e539;
+    // 4
+    const FRI_MAX_STEP_SIZE: u256 = 0x4;
+    // 3
+    const FRI_QUEUE_SLOT_SIZE: u256 = 0x3;
+    // 2^FRI_MAX_STEP_SIZE
+    const MAX_COSET_SIZE: u256 = 0x10;
+    // 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+    const NOT_NUM: u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    // 3618502788666131213697322783095070105623107215331596699973092056135872020481
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // End of generating constants!
+
     const MAX_CYCLES: u64 = 6;
-
-    const ECOMPUTE_NEXT_LAYER_NOT_INITIATED: u64 = 10;
-
-    public fun fri_ctx_size(): u256 {
-        FRI_CTX_SIZE
-    }
 
     struct Ptr has key, store, copy, drop {
         input_ptr: u256,
@@ -84,7 +92,7 @@ module verifier_addr::fri_layer {
             };
 
             let field_element = *borrow(fri, field_element_ptr);
-            upsert(fri, evaluations_on_coset_ptr, field_element % k_modulus());
+            upsert(fri, evaluations_on_coset_ptr, field_element % K_MODULUS);
             evaluations_on_coset_ptr = evaluations_on_coset_ptr + 1;
             index = index + 1;
         };
@@ -127,17 +135,17 @@ module verifier_addr::fri_layer {
 
         upsert(ffri, fri_half_inv_group_ptr, last_val_inv);
         upsert(ffri, fri_group_ptr, last_val);
-        upsert(ffri, fri_group_ptr + 1, k_modulus() - last_val);
+        upsert(ffri, fri_group_ptr + 1, K_MODULUS - last_val);
 
         let half_coset_size = MAX_COSET_SIZE / 2;
         let i = 1;
         while (i < half_coset_size) {
             last_val = fmul(last_val, gen_fri_group);
             last_val_inv = fmul(last_val_inv, gen_fri_group_inv);
-            let idx = bit_reverse(i, fri_max_step_size() - 1);
+            let idx = bit_reverse(i, FRI_MAX_STEP_SIZE - 1);
             upsert(ffri, fri_half_inv_group_ptr + idx, last_val_inv);
             upsert(ffri, fri_group_ptr + idx * 2, last_val);
-            upsert(ffri, fri_group_ptr + idx * 2 + 1, k_modulus() - last_val);
+            upsert(ffri, fri_group_ptr + idx * 2 + 1, K_MODULUS - last_val);
             i = i + 1;
         };
         update_fri(signer, fri);

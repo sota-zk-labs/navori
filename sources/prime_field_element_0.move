@@ -1,32 +1,18 @@
 module verifier_addr::prime_field_element_0 {
     use aptos_std::from_bcs;
 
+    // This line is used for generating constants DO NOT REMOVE!
+    // 3
+    const GENERATOR_VAL: u256 = 0x3;
+    // 3618502788666131213697322783095070105623107215331596699973092056135872020481
     const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // 3618502788666127798953978732740734578953660990361066340291730267701097005025
     const K_MONTGOMERY_R: u256 = 0x7fffffffffffdf0ffffffffffffffffffffffffffffffffffffffffffffffe1;
+    // 113078212145816603762751633895895194930089271709401121343797004406777446400
     const K_MONTGOMERY_R_INV: u256 = 0x40000000000001100000000000012100000000000000000000000000000000;
-    const GENERATOR_VAL: u256 = 3;
-    const ONE_VAL: u256 = 1;
-
-    public fun k_modulus(): u256 {
-        K_MODULUS
-    }
-
-    public fun k_montgomery_r(): u256 {
-        K_MONTGOMERY_R
-    }
-
-    public fun k_montgomery_r_inv(): u256 {
-        K_MONTGOMERY_R_INV
-    }
-
-    public fun generator_val(): u256 {
-        GENERATOR_VAL
-    }
-
-    public fun one_val(): u256 {
-        ONE_VAL
-    }
-
+    // 1
+    const ONE_VAL: u256 = 0x1;
+    // End of generating constants!
 
     public fun fmul(a: u256, b: u256): u256 {
         let res = 0;

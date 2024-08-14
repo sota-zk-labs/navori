@@ -1,7 +1,7 @@
 module verifier_addr::memory_page_fact_registry {
+    use std::signer::address_of;
     use std::vector::{borrow, for_each, length};
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::debug::print;
     use aptos_framework::event::emit;
 
     use verifier_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
@@ -10,19 +10,26 @@ module verifier_addr::memory_page_fact_registry {
     use verifier_addr::u256_to_byte32::u256_to_bytes32;
 
     // This line is used for generating constants DO NOT REMOVE!
-    // 0
-    const REGULAR_PAGE: u256 = 0x0;
     // 1
     const CONTINUOUS_PAGE: u256 = 0x1;
+    // 4
+    const EINVALID_VALUE_OF_ALPHA: u64 = 0x4;
+    // 6
+    const EINVALID_VALUE_OF_START_ADDRESS: u64 = 0x6;
+    // 3
+    const EINVALID_VALUE_OF_Z: u64 = 0x3;
+    // 5
+    const EPRIME_IS_TOO_BIG: u64 = 0x5;
+    // 2
+    const ESIZE_OF_MEMORYPAIRS_MUST_BE_EVEN: u64 = 0x2;
+    // 1
+    const ETOO_MANY_MEMORY_VALUES: u64 = 0x1;
+    // 0
+    const REGULAR_PAGE: u256 = 0x0;
     // End of generating constants!
 
-    //Errors
-    const TOO_MANY_MEMORY_VALUES: u64 = 1;
-    const SIZE_OF_MEMORYPAIRS_MUST_BE_EVEN: u64 = 2;
-    const INVALID_VALUE_OF_Z: u64 = 3;
-    const INVALID_VALUE_OF_ALPHA: u64 = 4;
-    const PRIME_IS_TOO_BIG: u64 = 5;
-    const INVALID_VALUE_OF_START_ADDRESS: u64 = 6;
+    //Constants
+    const MAX_CIRCLE: u256 = 50;
 
     #[event]
     struct LogMemorypPageFactRegular has store, drop {
@@ -38,6 +45,12 @@ module verifier_addr::memory_page_fact_registry {
         prod: u256
     }
 
+    struct Ptr has key, store {
+        addr: u256,
+        value_ptr: u64,
+        prod: u256
+    }
+
     public fun register_regular_memorypage(
         signer: &signer,
         memory_pairs: vector<u256>,
@@ -45,10 +58,10 @@ module verifier_addr::memory_page_fact_registry {
         alpha: u256,
         prime: u256
     ): (u256, u256, u256) {
-        assert!(length(&memory_pairs) < (1 << 20), TOO_MANY_MEMORY_VALUES);
-        assert!((length(&memory_pairs) & 1) == 0, SIZE_OF_MEMORYPAIRS_MUST_BE_EVEN);
-        assert!(z < prime, INVALID_VALUE_OF_Z);
-        assert!(alpha < prime, INVALID_VALUE_OF_ALPHA);
+        assert!(length(&memory_pairs) < (1 << 20), ETOO_MANY_MEMORY_VALUES);
+        assert!((length(&memory_pairs) & 1) == 0, ESIZE_OF_MEMORYPAIRS_MUST_BE_EVEN);
+        assert!(z < prime, EINVALID_VALUE_OF_Z);
+        assert!(alpha < prime, EINVALID_VALUE_OF_ALPHA);
 
         let (fact_hash, memory_hash, prod) = compute_fact_hash(memory_pairs, z, alpha, prime);
         emit(LogMemorypPageFactRegular { fact_hash, memory_hash, prod });
@@ -122,12 +135,12 @@ module verifier_addr::memory_page_fact_registry {
         alpha: u256,
         prime: u256
     ) {
-        assert!(length(&values) < (1 << 20), TOO_MANY_MEMORY_VALUES);
-        assert!(prime < (1u256 << 254), PRIME_IS_TOO_BIG);
-        assert!(z < prime, INVALID_VALUE_OF_Z);
-        assert!(alpha < prime, INVALID_VALUE_OF_ALPHA);
+        assert!(length(&values) < (1 << 20), ETOO_MANY_MEMORY_VALUES);
+        assert!(prime < (1u256 << 254), EPRIME_IS_TOO_BIG);
+        assert!(z < prime, EINVALID_VALUE_OF_Z);
+        assert!(alpha < prime, EINVALID_VALUE_OF_ALPHA);
         // Ensure 'startAddr' less then prime and bounded as a sanity check (the bound is somewhat arbitrary).
-        assert!(start_address < prime && start_address < (1u256 << 64), INVALID_VALUE_OF_START_ADDRESS);
+        assert!(start_address < prime && start_address < (1u256 << 64), EINVALID_VALUE_OF_START_ADDRESS);
 
         let n_values = (length(&values) as u256);
         // Initialize prod to 1.
@@ -146,7 +159,6 @@ module verifier_addr::memory_page_fact_registry {
             // Compute the product of (lin_comb - z) instead of (z - lin_comb), since we're
             // doing an even number of iterations, the result is the same.
             for_each(vector[0u64, 2u64, 4u64, 6u64], |offset| {
-                print(&(10 - 7 + (offset as u256)));
                 prod = mod_mul(prod, mod_mul(
                     addr - 7 + (offset as u256) + mod_mul(
                         alpha,
@@ -191,7 +203,112 @@ module verifier_addr::memory_page_fact_registry {
     // In this case, memoryHash = hash(address, value, address, value, address, value, ...).
     // A page based on adjacent memory cells, starting from a given address.
     // In this case, memoryHash = hash(value, value, value, ...).
+
+
+    public entry fun compute_large_continuous_memorypage(
+        s: &signer,
+        start_address: u256,
+        values: vector<u256>,
+        z: u256,
+        alpha: u256,
+        prime: u256
+    ) acquires Ptr {
+        assert!(length(&values) < (1 << 20), ETOO_MANY_MEMORY_VALUES);
+        assert!(prime < (1u256 << 254), EPRIME_IS_TOO_BIG);
+        assert!(z < prime, EINVALID_VALUE_OF_Z);
+        assert!(alpha < prime, EINVALID_VALUE_OF_ALPHA);
+        // Ensure 'startAddr' less then prime and bounded as a sanity check (the bound is somewhat arbitrary).
+        assert!(start_address < prime && start_address < (1u256 << 64), EINVALID_VALUE_OF_START_ADDRESS);
+
+        let n_values = (length(&values) as u256);
+        let minus_z = (prime - z) % prime;
+        let last_addr = start_address + n_values;
+
+        if (!exists<Ptr>(address_of(s))) {
+            let ptr = Ptr {
+                // Start by processing full batches of 8 cells, addr represents the last address in each batch.
+                addr: start_address + 7,
+                // Initialize valuesPtr to point to the first value in the array.
+                value_ptr: 0,
+                // Initialize prod to 1.
+                prod: 1
+            };
+            move_to(s, ptr);
+        };
+
+        let prod = borrow_global<Ptr>(address_of(s)).prod;
+
+        let value_ptr = borrow_global<Ptr>(address_of(s)).value_ptr;
+
+        let addr = borrow_global<Ptr>(address_of(s)).addr;
+
+        let idx = 0;
+        while (addr < last_addr && idx < MAX_CIRCLE) {
+            // Compute the product of (lin_comb - z) instead of (z - lin_comb), since we're
+            // doing an even number of iterations, the result is the same.
+            for_each(vector[0u64, 2u64, 4u64, 6u64], |offset| {
+                prod = mod_mul(prod, mod_mul(
+                    addr - 7 + (offset as u256) + mod_mul(
+                        alpha,
+                        *borrow(&values, value_ptr + offset),
+                        prime
+                    ) + minus_z,
+                    addr - 7 + (offset as u256) + 1 + mod_mul(
+                        alpha,
+                        *borrow(&values, value_ptr + offset + 1),
+                        prime
+                    ) + minus_z,
+                    prime
+                ), prime);
+            });
+            value_ptr = value_ptr + 8;
+            addr = addr + 8;
+            idx = idx + 1;
+        };
+        move_to(s, Ptr {
+            addr,
+            value_ptr,
+            prod
+        });
+    }
+
+    public entry fun register_large_continuous_memorypage(
+        s: &signer,
+        start_address: u256,
+        values: vector<u256>,
+        z: u256,
+        alpha: u256,
+        prime: u256
+    ) acquires Ptr {
+        let value_ptr = 0u64;
+        let n_values = (length(&values) as u256);
+        let last_addr = start_address + n_values;
+
+        let addr = borrow_global<Ptr>(address_of(s)).addr;
+        let prod = borrow_global<Ptr>(address_of(s)).prod;
+        // Handle leftover.
+        // Translate addr to the beginning of the last incomplete batch.
+        addr = addr - 7;
+        while (addr < last_addr) {
+            let address_value_lin_comb = mod_add(addr, mod_mul(*borrow(&values, value_ptr), alpha, prime), prime);
+            prod = mod_mul(prod, z + prime - address_value_lin_comb, prime);
+            addr = addr + 1;
+            value_ptr = value_ptr + 1;
+        };
+
+        let memory_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&values)));
+        let fact_hash = keccak256(
+            vec_to_bytes_be(&vector[CONTINUOUS_PAGE, prime, n_values, z, alpha, prod, memory_hash, start_address])
+        );
+        emit(LogMemoryPageFactContinuous {
+            fact_hash,
+            memory_hash,
+            prod
+        });
+        register_fact(s, fact_hash);
+    }
 }
+
 
 #[test_only]
 module verifier_addr::mpfr_test {
@@ -232,8 +349,8 @@ module verifier_addr::mpfr_test {
         register_continuous_page_batch(
             s,
             vector[1771799, 1771808],
-            vector[vector[1007, 1006,1005, 1004, 1003, 1002, 1001],
-                          vector[1008, 1007, 1006, 1005, 1004, 1003, 1002, 1001]],
+            vector[vector[1007, 1006, 1005, 1004, 1003, 1002, 1001],
+                vector[1008, 1007, 1006, 1005, 1004, 1003, 1002, 1001]],
             3199940278565943790978406278706496237292797978280982699986488410844249594708,
             195072032121178106591923000375621188629735561133807175660265096969353999946,
             3618502788666131213697322783095070105623107215331596699973092056135872020481

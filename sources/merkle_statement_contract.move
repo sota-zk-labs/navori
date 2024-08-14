@@ -10,15 +10,22 @@ module verifier_addr::merkle_statement_contract {
 
     use verifier_addr::convert_memory::from_vector;
     use verifier_addr::fact_registry::register_fact;
-    use verifier_addr::fri::{get_fri, init_fri, update_fri};
+    use verifier_addr::fri::{get_fri, new_fri, update_fri};
     use verifier_addr::u256_to_byte32::u256_to_bytes32;
 
-    const MAX_N_MERKLE_VERIFIER_QUERIES: u64 = 128;
-    const MERKLE_SLOT_SIZE_IN_BYTES: u256 = 2;
-    //error codes
-    const E_HEIGHT_MUST_BE_LESS_THAN_200: u64 = 0x0;
-    const E_TOO_MANY_MERKLE_QUERIES: u64 = 0x1;
-    const E_INVALID_MERKLE_INDICES: u64 = 0x2;
+    // This line is used for generating constants DO NOT REMOVE!
+    // 1
+    const EHEIGHT_MUST_BE_LESS_THAN_200: u64 = 0x1;
+    // 2
+    const EINVALID_MERKLE_INDICES: u64 = 0x2;
+    // 1
+    const ETOO_MANY_MERKLE_QUERIES: u64 = 0x1;
+    // 128
+    const MAX_N_MERKLE_VERIFIER_QUERIES: u64 = 0x80;
+    // 2
+    const MERKLE_SLOT_SIZE: u256 = 0x2;
+    // End of generating constants!
+
 
     #[event]
     struct VerifyMerkle has store, drop {
@@ -44,12 +51,12 @@ module verifier_addr::merkle_statement_contract {
         height: u256,
         expected_root: u256
     ) {
-        assert!(height < 200, E_HEIGHT_MUST_BE_LESS_THAN_200);
-        assert!(length(&initial_merkle_queue) <= MAX_N_MERKLE_VERIFIER_QUERIES * 2, E_TOO_MANY_MERKLE_QUERIES);
+        assert!(height < 200, EHEIGHT_MUST_BE_LESS_THAN_200);
+        assert!(length(&initial_merkle_queue) <= MAX_N_MERKLE_VERIFIER_QUERIES * 2, ETOO_MANY_MERKLE_QUERIES);
         //init
-        init_fri(s);
-        let ffri = get_fri(address_of(s));
+        let ffri = new_fri(s);
         let fri = &mut ffri;
+
         // Let merkleViewPtr point to a free space in fri.
         let merkle_view_ptr = 4;
         // let initialMerkleQueuePtr point to a free space in fri.
@@ -74,7 +81,7 @@ module verifier_addr::merkle_statement_contract {
         // Get number of queries.
         let n_queries = *smart_table::borrow(fri, initial_merkle_queue_ptr) / 2;
         // Get a pointer to the end of initialMerkleQueue.
-        let initial_merkle_queue_end_ptr = merkle_queue_ptr + (n_queries * MERKLE_SLOT_SIZE_IN_BYTES);
+        let initial_merkle_queue_end_ptr = merkle_queue_ptr + (n_queries * MERKLE_SLOT_SIZE);
         // Let dataToHashPtr point to a free memory.
         let data_to_hash_ptr = channel_ptr + 1;
 
@@ -92,7 +99,7 @@ module verifier_addr::merkle_statement_contract {
             // Sanity check that the indices are sorted.
             bad_input = bad_input | (if (cur_idx < idx_lower_limit) 1u256 else 0u256);
 
-            // The next idx must be at least curIdx + 1. Ensure it doesn't overflow.
+            // The next idx must be at least curIdx + 1. Ensure it doesn't.txt overflow.
             idx_lower_limit = cur_idx + 1;
             bad_input = bad_input | (if (idx_lower_limit == 0) 1u256 else 0u256);
 
@@ -102,7 +109,7 @@ module verifier_addr::merkle_statement_contract {
             let value_store = *smart_table::borrow_with_default(fri, merkle_queue_ptr + 1, &0);
             upsert(fri, data_to_hash_ptr + 1, value_store);
             data_to_hash_ptr = data_to_hash_ptr + 2;
-            merkle_queue_ptr = merkle_queue_ptr + MERKLE_SLOT_SIZE_IN_BYTES;
+            merkle_queue_ptr = merkle_queue_ptr + MERKLE_SLOT_SIZE;
         };
 
         // We need to enforce that lastIdx < 2**(height+1)
@@ -118,7 +125,7 @@ module verifier_addr::merkle_statement_contract {
         // for the root).
         upsert(fri, 2, data_to_hash_ptr + 1);
 
-        assert!(bad_input == 0, E_INVALID_MERKLE_INDICES);
+        assert!(bad_input == 0, EINVALID_MERKLE_INDICES);
         update_fri(s, ffri);
         // Verify the merkle tree.
         event::emit<VerifyMerkle>(VerifyMerkle {
