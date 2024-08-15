@@ -48,7 +48,7 @@ module verifier_addr::fri_layer {
     }
 
     public fun gather_coset_inputs(
-        fri: &mut SmartTable<u256, u256>,
+        fri: &mut vector<u256>,
         channel_ptr: u256,
         fri_group_ptr: u256,
         evaluations_on_coset_ptr: u256,
@@ -284,7 +284,6 @@ module verifier_addr::fri_layer {
                 fri_coset_size
             );
         };
-        smart_table::destroy(ffri);
         ceil_div(count, MAX_CYCLES)
     }
 }

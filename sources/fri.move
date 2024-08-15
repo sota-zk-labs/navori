@@ -8,28 +8,28 @@ module verifier_addr::fri {
     friend verifier_addr::merkle_statement_contract;
 
     struct Fri has key, store {
-        fri: SmartTable<u256, u256>
+        fri: vector<u256>
     }
 
-    public(friend) fun new_fri(signer: &signer): SmartTable<u256, u256> acquires Fri {
+    public(friend) fun new_fri(signer: &signer): vector<u256> acquires Fri {
         if (!exists<Fri>(address_of(signer))) {
-            let fri = new<u256, u256>();
+            let fri = vector[];
             move_to(signer, Fri { fri });
         };
         get_fri(address_of(signer))
     }
 
-    public(friend) fun get_fri(signer: address): SmartTable<u256, u256> acquires Fri {
+    public(friend) fun get_fri(signer: address): vector<u256> acquires Fri {
         let Fri { fri } = move_from<Fri>(signer);
         fri
     }
 
-    public(friend) fun update_fri(signer: &signer, fri: SmartTable<u256, u256>) {
+    public(friend) fun update_fri(signer: &signer, fri: vector<u256>) {
         move_to(signer, Fri { fri });
     }
 
     #[view]
-    public fun view_fri(signer: address): SmartTable<u256, u256> acquires Fri {
+    public fun view_fri(signer: address): vector<u256> acquires Fri {
         let Fri { fri } = move_from<Fri>(signer);
         fri
     }

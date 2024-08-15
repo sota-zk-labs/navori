@@ -4,8 +4,6 @@ module verifier_addr::merkle_statement_contract {
     use std::vector::length;
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math64::pow;
-    use aptos_std::smart_table;
-    use aptos_std::smart_table::{borrow_with_default, upsert};
     use aptos_framework::event;
 
     use verifier_addr::convert_memory::from_vector;
@@ -79,7 +77,7 @@ module verifier_addr::merkle_statement_contract {
         // Skip 0x20 bytes length at the beginning of the initialMerkleQueue.
         let merkle_queue_ptr = initial_merkle_queue_ptr + 1 ;
         // Get number of queries.
-        let n_queries = *smart_table::borrow(fri, initial_merkle_queue_ptr) / 2;
+        let n_queries = *vector::borrow(fri, initial_merkle_queue_ptr) / 2;
         // Get a pointer to the end of initialMerkleQueue.
         let initial_merkle_queue_end_ptr = merkle_queue_ptr + (n_queries * MERKLE_SLOT_SIZE);
         // Let dataToHashPtr point to a free memory.
@@ -93,8 +91,13 @@ module verifier_addr::merkle_statement_contract {
         let idx_lower_limit = (pow(2, (height as u64)) as u256) / 32;
 
         let bad_input = 0;
+
+
+
+        // Basically just copying all initial_merkle_queue into other memory slot
+        // Then the sanity check that the indices are sorted and the overflow check
         while (merkle_queue_ptr < initial_merkle_queue_end_ptr) {
-            let cur_idx = *borrow_with_default(fri, merkle_queue_ptr, &0);
+            let cur_idx = *vector::borrow(fri, merkle_queue_ptr);
 
             // Sanity check that the indices are sorted.
             bad_input = bad_input | (if (cur_idx < idx_lower_limit) 1u256 else 0u256);
@@ -106,7 +109,7 @@ module verifier_addr::merkle_statement_contract {
             // Copy the pair (idx, hash) to the dataToHash array.
             upsert(fri, data_to_hash_ptr, cur_idx);
 
-            let value_store = *smart_table::borrow_with_default(fri, merkle_queue_ptr + 1, &0);
+            let value_store = *vector::borrow(fri, merkle_queue_ptr + 1, &0);
             upsert(fri, data_to_hash_ptr + 1, value_store);
             data_to_hash_ptr = data_to_hash_ptr + 2;
             merkle_queue_ptr = merkle_queue_ptr + MERKLE_SLOT_SIZE;
@@ -117,7 +120,9 @@ module verifier_addr::merkle_statement_contract {
         // => fail if (lastIdx + 1) > 2**(height+1)
         // => fail if idxLowerLimit > 2**(height+1).
         //TODO: confusing logic, need to check but now it work correctly
-        bad_input = bad_input | (if (idx_lower_limit > (pow(2, (height as u64)) as u256) / 32) 0u256 else 1u256);
+
+        // Check the last idx_lower_limit must inside the index range.
+        bad_input = bad_input | (if (idx_lower_limit > (pow(2, (height as u64)) as u256)) 1 else 0);
 
         // Reset merkleQueuePtr.
         merkle_queue_ptr = initial_merkle_queue_ptr + 1;
@@ -163,13 +168,12 @@ module verifier_addr::merkle_statement_contract {
         while (idx_hash < n_queries * 2 + 1) {
             vector::append(
                 &mut input_hash,
-                u256_to_bytes32(*smart_table::borrow(fri, data_to_hash_ptr + idx_hash))
+                u256_to_bytes32(*vector::borrow(fri, data_to_hash_ptr + idx_hash))
             );
             idx_hash = idx_hash + 1;
         };
         // register fact
 
         register_fact(s, keccak256(input_hash));
-        smart_table::destroy(ffri);
     }
 }
