@@ -21,7 +21,7 @@ module verifier_addr::merkle_statement_contract {
     // 128
     const MAX_N_MERKLE_VERIFIER_QUERIES: u64 = 0x80;
     // 2
-    const MERKLE_SLOT_SIZE: u256 = 0x2;
+    const MERKLE_SLOT_SIZE: u64 = 0x2;
     // End of generating constants!
 
 
@@ -49,6 +49,8 @@ module verifier_addr::merkle_statement_contract {
         height: u256,
         expected_root: u256
     ) {
+        let height = (height as u64);
+
         assert!(height < 200, EHEIGHT_MUST_BE_LESS_THAN_200);
         assert!(length(&initial_merkle_queue) <= MAX_N_MERKLE_VERIFIER_QUERIES * 2, ETOO_MANY_MERKLE_QUERIES);
         //init
@@ -58,26 +60,26 @@ module verifier_addr::merkle_statement_contract {
         // Let merkleViewPtr point to a free space in fri.
         let merkle_view_ptr = 4;
         // let initialMerkleQueuePtr point to a free space in fri.
-        let initial_merkle_queue_ptr = (length(&merkle_view) as u256) + 5;
+        let initial_merkle_queue_ptr = length(&merkle_view) + 5;
 
         // Copy the merkleView and initialMerkleQueue to fri.
-        upsert(fri, merkle_view_ptr, (length(&merkle_view) as u256));
+        *vector::borrow_mut(fri, merkle_view_ptr) = (length(&merkle_view) as u256);
         from_vector(merkle_view, fri, 5);
 
-        upsert(fri, initial_merkle_queue_ptr, (vector::length(&initial_merkle_queue) as u256));
+        *vector::borrow_mut(fri, initial_merkle_queue_ptr) = (vector::length(&initial_merkle_queue) as u256);
         from_vector(initial_merkle_queue, fri, initial_merkle_queue_ptr + 1);
 
         // Skip 0x20 bytes length at the beginning of the merkleView.
         merkle_view_ptr = merkle_view_ptr + 1;
         // Let channelPtr point to a free space.
-        let channel_ptr = 339;
+        let channel_ptr: u64 = 339;
         // channelPtr will point to the merkleViewPtr since the 'verify' function expects
         // a pointer to the proofPtr.
-        upsert(fri, channel_ptr, merkle_view_ptr);
+        *vector::borrow_mut(fri, channel_ptr) = (merkle_view_ptr as u256);
         // Skip 0x20 bytes length at the beginning of the initialMerkleQueue.
         let merkle_queue_ptr = initial_merkle_queue_ptr + 1 ;
         // Get number of queries.
-        let n_queries = *vector::borrow(fri, initial_merkle_queue_ptr) / 2;
+        let n_queries = (*vector::borrow(fri, initial_merkle_queue_ptr) / 2 as u64);
         // Get a pointer to the end of initialMerkleQueue.
         let initial_merkle_queue_end_ptr = merkle_queue_ptr + (n_queries * MERKLE_SLOT_SIZE);
         // Let dataToHashPtr point to a free memory.
@@ -88,10 +90,9 @@ module verifier_addr::merkle_statement_contract {
         // strictly incrementing.
 
         // First index needs to be >= 2**height.
-        let idx_lower_limit = (pow(2, (height as u64)) as u256) / 32;
+        let idx_lower_limit = ((pow(2, height) / 32) as u256);
 
         let bad_input = 0;
-
 
 
         // Basically just copying all initial_merkle_queue into other memory slot
@@ -107,10 +108,10 @@ module verifier_addr::merkle_statement_contract {
             bad_input = bad_input | (if (idx_lower_limit == 0) 1u256 else 0u256);
 
             // Copy the pair (idx, hash) to the dataToHash array.
-            upsert(fri, data_to_hash_ptr, cur_idx);
+            *vector::borrow_mut(fri, data_to_hash_ptr) = cur_idx;
 
-            let value_store = *vector::borrow(fri, merkle_queue_ptr + 1, &0);
-            upsert(fri, data_to_hash_ptr + 1, value_store);
+            let value_store = *vector::borrow(fri, merkle_queue_ptr + 1);
+            *vector::borrow_mut(fri, data_to_hash_ptr + 1) = value_store;
             data_to_hash_ptr = data_to_hash_ptr + 2;
             merkle_queue_ptr = merkle_queue_ptr + MERKLE_SLOT_SIZE;
         };
@@ -122,28 +123,28 @@ module verifier_addr::merkle_statement_contract {
         //TODO: confusing logic, need to check but now it work correctly
 
         // Check the last idx_lower_limit must inside the index range.
-        bad_input = bad_input | (if (idx_lower_limit > (pow(2, (height as u64)) as u256)) 1 else 0);
+        bad_input = bad_input | (if (idx_lower_limit > (pow(2, height + 1) as u256)) 1 else 0);
 
         // Reset merkleQueuePtr.
         merkle_queue_ptr = initial_merkle_queue_ptr + 1;
         // Let freePtr point to a free memory (one word after the copied queries - reserved
         // for the root).
-        upsert(fri, 2, data_to_hash_ptr + 1);
+        *vector::borrow_mut(fri, 2) = (data_to_hash_ptr + 1 as u256);
 
         assert!(bad_input == 0, EINVALID_MERKLE_INDICES);
         update_fri(s, ffri);
         // Verify the merkle tree.
         event::emit<VerifyMerkle>(VerifyMerkle {
-            channel_ptr,
-            merkle_queue_ptr,
+            channel_ptr: (channel_ptr as u256),
+            merkle_queue_ptr: (merkle_queue_ptr as u256),
             expected_root,
-            n_queries
+            n_queries: (n_queries as u256)
         });
 
         event::emit<RegisterFactVerifyMerkle>(RegisterFactVerifyMerkle {
-            channel_ptr,
-            data_to_hash_ptr,
-            n_queries,
+            channel_ptr: (channel_ptr as u256),
+            data_to_hash_ptr: (data_to_hash_ptr as u256),
+            n_queries: (n_queries as u256),
             res_root: expected_root
         });
     }
@@ -155,14 +156,18 @@ module verifier_addr::merkle_statement_contract {
         n_queries: u256,
         res_root: u256
     ) {
+        let data_to_hash_ptr = (data_to_hash_ptr as u64);
+        let channel_ptr = (channel_ptr as u64);
+        let n_queries = (n_queries as u64);
+
         let ffri = get_fri(address_of(s));
         let fri = &mut ffri;
 
-        upsert(fri, data_to_hash_ptr, res_root);
+        *vector::borrow_mut(fri, data_to_hash_ptr) = res_root;
         data_to_hash_ptr = channel_ptr + 1;
 
         let input_hash = vector::empty();
-        let idx_hash = 0;
+        let idx_hash: u64 = 0;
 
         //input_hash has range from data_to_hash_ptr to data_to_hash_ptr + n_queries * 2.
         while (idx_hash < n_queries * 2 + 1) {

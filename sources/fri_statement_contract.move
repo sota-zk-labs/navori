@@ -4,8 +4,6 @@ module verifier_addr::fri_statement_contract {
     use std::vector::length;
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math128::pow;
-    use aptos_std::smart_table;
-    use aptos_std::smart_table::{borrow, upsert};
     use aptos_framework::event::emit;
 
     use verifier_addr::convert_memory::from_vector;
@@ -15,7 +13,7 @@ module verifier_addr::fri_statement_contract {
 
     // This line is used for generating constants DO NOT REMOVE!
     // FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET + (FRI_GROUP_SIZE / 2)
-    const FRI_CTX_SIZE: u256 = 0x28;
+    const FRI_CTX_SIZE: u64 = 0x28;
     // 4
     const FRI_MAX_STEP_SIZE: u256 = 0x4;
     // 3618502788666131213697322783095070105623107215331596699973092056135872020481
@@ -54,9 +52,8 @@ module verifier_addr::fri_statement_contract {
         fri_step_size: u256,
         expected_root: u256
     ) {
-        let ffri =  new_fri(signer);
+        let ffri = new_fri(signer);
         let fri = &mut ffri;
-        // let fri = fri_storage;
 
         // must <= FRI_MAX_STEPS_SIZE
         assert!(fri_step_size <= FRI_MAX_STEP_SIZE, 1);
@@ -65,72 +62,79 @@ module verifier_addr::fri_statement_contract {
         validate_fri_queue(fri_queue);
 
         let mm_fri_ctx_size = FRI_CTX_SIZE;
-        let n_queries = (vector::length(&fri_queue) / 3 as u256); // expected eq 13 (40 /3)
-        let fri_queue_ptr = (vector::length(&proof) + 6 as u256);
-        let channel_ptr = fri_queue_ptr + (length(&fri_queue) as u256);
-        upsert(fri, channel_ptr, 5);
+        let n_queries = vector::length(&fri_queue) / 3; // expected eq 13 (40 /3)
+        let fri_queue_ptr = vector::length(&proof) + 6 ;
+        let channel_ptr = fri_queue_ptr + length(&fri_queue);
+        *vector::borrow_mut(fri, channel_ptr) = 5u256;
         let merkle_queue_ptr = channel_ptr + 1;
         let fri_ctx = merkle_queue_ptr + n_queries * 2;
-
-        upsert(fri, 4, (vector::length(&proof) as u256));
+        *vector::borrow_mut(fri, 4) = (vector::length(&proof) as u256);
         from_vector(proof, fri, 5);
-        upsert(fri, 4 + (vector::length(&proof) as u256) + 1, (vector::length(&fri_queue) as u256));
+
+        *vector::borrow_mut(fri, 4 + vector::length(&proof) + 1) = (vector::length(&fri_queue) as u256);
+
         from_vector(fri_queue, fri, fri_queue_ptr);
 
         let data_to_hash = fri_ctx + mm_fri_ctx_size;
 
-        upsert(fri, data_to_hash, evaluation_point);
-        upsert(fri, data_to_hash + 1, fri_step_size);
-        upsert(fri, data_to_hash + 4, expected_root);
+        *vector::borrow_mut(fri, data_to_hash) = evaluation_point;
+        *vector::borrow_mut(fri, data_to_hash + 1) = fri_step_size;
+        *vector::borrow_mut(fri, data_to_hash + 4) = expected_root;
 
         let hash = vector::empty();
         let idx_hash = 0;
 
         while (idx_hash < n_queries * 3) {
-            vector::append(&mut hash, u256_to_bytes32(*borrow(fri, fri_queue_ptr + idx_hash)));
+            vector::append(&mut hash, u256_to_bytes32(*vector::borrow(fri, fri_queue_ptr + idx_hash)));
             idx_hash = idx_hash + 1;
         };
 
-        upsert(fri, data_to_hash + 2, bytes32_to_u256(keccak256(hash)));
+        *vector::borrow_mut(fri, data_to_hash + 2) = bytes32_to_u256(keccak256(hash));
         let fri_coset_size = (pow(2, (fri_step_size as u128)) as u256);
         update_fri(signer, ffri);
 
-        emit(FriCtx { fri_ctx });
+        emit(FriCtx { fri_ctx: (fri_ctx as u256) });
 
         emit(ComputeNextLayer {
-            channel_ptr,
-            fri_queue_ptr,
-            merkle_queue_ptr,
-            n_queries,
-            fri_ctx,
+            channel_ptr: (channel_ptr as u256),
+            fri_queue_ptr: (fri_queue_ptr as u256),
+            merkle_queue_ptr: (merkle_queue_ptr as u256),
+            n_queries: (n_queries as u256),
+            fri_ctx: (fri_ctx as u256),
             evaluation_point,
             fri_coset_size,
         });
 
         emit(RegisterFactVerifyFri {
-            data_to_hash,
-            fri_queue_ptr
+            data_to_hash: (data_to_hash as u256),
+            fri_queue_ptr: (data_to_hash as u256),
         });
     }
 
     public entry fun register_fact_verify_fri(s: &signer, data_to_hash: u256, fri_queue_ptr: u256, n_queries: u256) {
+        let data_to_hash = (data_to_hash as u64);
+        let fri_queue_ptr = (fri_queue_ptr as u64);
+        let n_queries = (n_queries as u64);
+
         let ffri = get_fri(address_of(s));
         let fri = &mut ffri;
 
-
         let input_hash = vector::empty();
-        let idx_hash = 0;
+        let idx_hash: u64 = 0;
 
         //input_hash has range from friQueuePtr to n_queries * 3.
         while (idx_hash < n_queries * 3) {
             vector::append(
                 &mut input_hash,
-                u256_to_bytes32(*smart_table::borrow(fri, fri_queue_ptr + idx_hash))
+                u256_to_bytes32(*vector::borrow(fri, fri_queue_ptr + idx_hash))
             );
             idx_hash = idx_hash + 1;
         };
 
-        upsert(fri, data_to_hash + 3, 84241376148295076446008953468843664082878024901512454930369344105179764196503);
+        *vector::borrow_mut(
+            fri,
+            data_to_hash + 3
+        ) = 84241376148295076446008953468843664082878024901512454930369344105179764196503;
 
         input_hash = vector::empty();
         let idx_hash = 0;
@@ -139,12 +143,11 @@ module verifier_addr::fri_statement_contract {
         while (idx_hash < 5) {
             vector::append(
                 &mut input_hash,
-                u256_to_bytes32(*smart_table::borrow(fri, data_to_hash + idx_hash))
+                u256_to_bytes32(*vector::borrow(fri, data_to_hash + idx_hash))
             );
             idx_hash = idx_hash + 1;
         };
         register_fact(s, keccak256(input_hash));
-        smart_table::destroy(ffri);
     }
 
     fun validate_fri_queue(fri_queue: vector<u256>) {

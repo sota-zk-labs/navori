@@ -1,6 +1,6 @@
 module verifier_addr::fri {
     use std::signer::address_of;
-    use aptos_std::smart_table::{new, SmartTable};
+    use std::vector;
 
     friend verifier_addr::fri_statement_contract;
     friend verifier_addr::fri_layer;
@@ -14,6 +14,11 @@ module verifier_addr::fri {
     public(friend) fun new_fri(signer: &signer): vector<u256> acquires Fri {
         if (!exists<Fri>(address_of(signer))) {
             let fri = vector[];
+            let i = 0;
+            while (i < 500) {
+                i = i + 1;
+                vector::push_back(&mut fri, 0_u256);
+            };
             move_to(signer, Fri { fri });
         };
         get_fri(address_of(signer))
