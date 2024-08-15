@@ -52,7 +52,7 @@ module verifier_addr::fri_statement_contract {
         fri_step_size: u256,
         expected_root: u256
     ) {
-        let ffri = new_fri(signer);
+        let ffri = new_fri();
         let fri = &mut ffri;
 
         // must <= FRI_MAX_STEPS_SIZE
@@ -85,7 +85,7 @@ module verifier_addr::fri_statement_contract {
         let idx_hash = 0;
 
         while (idx_hash < n_queries * 3) {
-            vector::append(&mut hash, u256_to_bytes32(*vector::borrow(fri, fri_queue_ptr + idx_hash)));
+            vector::append(&mut hash, u256_to_bytes32(vector::borrow(fri, fri_queue_ptr + idx_hash)));
             idx_hash = idx_hash + 1;
         };
 
@@ -126,7 +126,7 @@ module verifier_addr::fri_statement_contract {
         while (idx_hash < n_queries * 3) {
             vector::append(
                 &mut input_hash,
-                u256_to_bytes32(*vector::borrow(fri, fri_queue_ptr + idx_hash))
+                u256_to_bytes32(vector::borrow(fri, fri_queue_ptr + idx_hash))
             );
             idx_hash = idx_hash + 1;
         };
@@ -143,7 +143,7 @@ module verifier_addr::fri_statement_contract {
         while (idx_hash < 5) {
             vector::append(
                 &mut input_hash,
-                u256_to_bytes32(*vector::borrow(fri, data_to_hash + idx_hash))
+                u256_to_bytes32(vector::borrow(fri, data_to_hash + idx_hash))
             );
             idx_hash = idx_hash + 1;
         };

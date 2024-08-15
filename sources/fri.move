@@ -1,5 +1,4 @@
 module verifier_addr::fri {
-    use std::signer::address_of;
     use std::vector;
 
     friend verifier_addr::fri_statement_contract;
@@ -11,17 +10,14 @@ module verifier_addr::fri {
         fri: vector<u256>
     }
 
-    public(friend) fun new_fri(signer: &signer): vector<u256> acquires Fri {
-        if (!exists<Fri>(address_of(signer))) {
-            let fri = vector[];
-            let i = 0;
-            while (i < 500) {
-                i = i + 1;
-                vector::push_back(&mut fri, 0_u256);
-            };
-            move_to(signer, Fri { fri });
+    public(friend) fun new_fri(): vector<u256> {
+        let fri = vector[];
+        let i = 0;
+        while (i < 500) {
+            i = i + 1;
+            vector::push_back(&mut fri, 0_u256);
         };
-        get_fri(address_of(signer))
+        fri
     }
 
     public(friend) fun get_fri(signer: address): vector<u256> acquires Fri {

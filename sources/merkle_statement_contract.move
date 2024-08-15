@@ -54,7 +54,7 @@ module verifier_addr::merkle_statement_contract {
         assert!(height < 200, EHEIGHT_MUST_BE_LESS_THAN_200);
         assert!(length(&initial_merkle_queue) <= MAX_N_MERKLE_VERIFIER_QUERIES * 2, ETOO_MANY_MERKLE_QUERIES);
         //init
-        let ffri = new_fri(s);
+        let ffri = new_fri();
         let fri = &mut ffri;
 
         // Let merkleViewPtr point to a free space in fri.
@@ -92,20 +92,17 @@ module verifier_addr::merkle_statement_contract {
         // First index needs to be >= 2**height.
         let idx_lower_limit = ((pow(2, height) / 32) as u256);
 
-        let bad_input = 0;
-
-
         // Basically just copying all initial_merkle_queue into other memory slot
         // Then the sanity check that the indices are sorted and the overflow check
         while (merkle_queue_ptr < initial_merkle_queue_end_ptr) {
             let cur_idx = *vector::borrow(fri, merkle_queue_ptr);
 
             // Sanity check that the indices are sorted.
-            bad_input = bad_input | (if (cur_idx < idx_lower_limit) 1u256 else 0u256);
+            assert!(cur_idx >= idx_lower_limit, EINVALID_MERKLE_INDICES);
 
-            // The next idx must be at least curIdx + 1. Ensure it doesn't.txt overflow.
+            // The next idx must be at least curIdx + 1. Ensure it doesn't overflow.
             idx_lower_limit = cur_idx + 1;
-            bad_input = bad_input | (if (idx_lower_limit == 0) 1u256 else 0u256);
+            assert!(idx_lower_limit != 0, EINVALID_MERKLE_INDICES);
 
             // Copy the pair (idx, hash) to the dataToHash array.
             *vector::borrow_mut(fri, data_to_hash_ptr) = cur_idx;
@@ -123,7 +120,7 @@ module verifier_addr::merkle_statement_contract {
         //TODO: confusing logic, need to check but now it work correctly
 
         // Check the last idx_lower_limit must inside the index range.
-        bad_input = bad_input | (if (idx_lower_limit > (pow(2, height + 1) as u256)) 1 else 0);
+        assert!(idx_lower_limit <= (pow(2, height + 1) as u256), EINVALID_MERKLE_INDICES);
 
         // Reset merkleQueuePtr.
         merkle_queue_ptr = initial_merkle_queue_ptr + 1;
@@ -131,7 +128,6 @@ module verifier_addr::merkle_statement_contract {
         // for the root).
         *vector::borrow_mut(fri, 2) = (data_to_hash_ptr + 1 as u256);
 
-        assert!(bad_input == 0, EINVALID_MERKLE_INDICES);
         update_fri(s, ffri);
         // Verify the merkle tree.
         event::emit<VerifyMerkle>(VerifyMerkle {
@@ -173,7 +169,7 @@ module verifier_addr::merkle_statement_contract {
         while (idx_hash < n_queries * 2 + 1) {
             vector::append(
                 &mut input_hash,
-                u256_to_bytes32(*vector::borrow(fri, data_to_hash_ptr + idx_hash))
+                u256_to_bytes32(vector::borrow(fri, data_to_hash_ptr + idx_hash))
             );
             idx_hash = idx_hash + 1;
         };

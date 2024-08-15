@@ -4,10 +4,10 @@ module verifier_addr::merkle_verifier {
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math64::ceil_div;
     use aptos_framework::event;
+    use verifier_addr::vector_helper::append_vector;
 
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
-    use verifier_addr::vector_helper::append_vector;
 
     // This line is used for generating constants DO NOT REMOVE!
     // 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
@@ -148,9 +148,9 @@ module verifier_addr::merkle_verifier {
 
             let new_hash = *vector::borrow(fri, new_hash_ptr);
             *vector::borrow_mut(fri, sibling_offset) = new_hash;
-
+            
             let pre_hash = keccak256(
-                append_vector(u256_to_bytes32(*vector::borrow(fri, 0)), u256_to_bytes32(*vector::borrow(fri, 1)))
+                append_vector(u256_to_bytes32(vector::borrow(fri, 0)), u256_to_bytes32(vector::borrow(fri, 1)))
             );
 
             *vector::borrow_mut(fri, wr_idx + hashes_ptr) = COMMITMENT_MASK & bytes32_to_u256(pre_hash);
@@ -165,7 +165,7 @@ module verifier_addr::merkle_verifier {
         if (index == 1 || index == 0) {
             let hash = *vector::borrow(fri, hashes_ptr + rd_idx);
             assert!(hash == root, EINVALID_MERKLE_PROOF);
-            event::emit<Hash>(Hash { hash: u256_to_bytes32(hash) });
+            event::emit<Hash>(Hash { hash: u256_to_bytes32(&hash) });
 
             *vector::borrow_mut(fri, channel_ptr) = (proof_ptr as u256);
             move_from<Ptr>(address_of(s));
@@ -184,7 +184,7 @@ module verifier_addr::merkle_verifier {
 
         let ffri = get_fri(s);
         let fri = &mut ffri;
-        
+
         assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES, ETOO_MANY_MERKLE_QUERIES);
         let index = *vector::borrow(fri, queue_ptr);
         let rd_idx = 0;

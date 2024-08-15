@@ -238,7 +238,7 @@ module verifier_addr::fri_layer {
             let hash = vector::empty();
             let idx_hash = 0;
             while (idx_hash < fri_coset_size) {
-                vector::append(&mut hash, u256_to_bytes32(*vector::borrow(fri, evaluation_on_coset_ptr + idx_hash)));
+                vector::append(&mut hash, u256_to_bytes32(vector::borrow(fri, evaluation_on_coset_ptr + idx_hash)));
                 idx_hash = idx_hash + 1;
             };
 

@@ -66,7 +66,7 @@ module verifier_addr::memory_page_fact_registry {
         let (fact_hash, memory_hash, prod) = compute_fact_hash(memory_pairs, z, alpha, prime);
         emit(LogMemorypPageFactRegular { fact_hash, memory_hash, prod });
 
-        register_fact(signer, u256_to_bytes32(fact_hash));
+        register_fact(signer, u256_to_bytes32(&fact_hash));
         (fact_hash, memory_hash, prod)
     }
 
