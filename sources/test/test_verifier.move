@@ -13,7 +13,7 @@ module verifier_addr::test_verifier {
         get_fri_step_size_3,
         get_proof_3
     };
-    use verifier_addr::merkle_verifier::{init_verify_merkle, verify_merkle};
+    use verifier_addr::merkle_verifier::{ verify_merkle};
 
     // This line is used for generating constants DO NOT REMOVE!
     // 10
@@ -74,16 +74,14 @@ module verifier_addr::test_verifier {
     fun test_verify_merkle(verifier: &signer) {
         setup_next_layer(verifier);
         let i = 0;
-        init_verify_merkle(verifier, 248, 249);
-        while (i < 2) {
-            verify_merkle(
+
+        verify_merkle(
                 verifier,
                 248,
                 249,
                 9390404794146759926609078012164974184924937654759657766410025620812402262016,
                 13
             );
-        };
         register_fact_verify_fri(verifier, 315, 208, 13);
     }
 }

@@ -1,9 +1,11 @@
 module verifier_addr::fri_statement_contract {
     use std::signer::address_of;
     use std::vector;
-    use std::vector::length;
+    use std::vector::{length, borrow};
     use aptos_std::aptos_hash::keccak256;
+    use aptos_std::debug::print;
     use aptos_std::math128::pow;
+    use aptos_std::smart_vector::borrow_mut;
     use aptos_framework::event::emit;
 
     use verifier_addr::convert_memory::from_vector;
@@ -62,7 +64,8 @@ module verifier_addr::fri_statement_contract {
         validate_fri_queue(fri_queue);
 
         let mm_fri_ctx_size = FRI_CTX_SIZE;
-        let n_queries = vector::length(&fri_queue) / 3; // expected eq 13 (40 /3)
+        let n_queries = vector::length(&fri_queue) / 3;
+
         let fri_queue_ptr = vector::length(&proof) + 6 ;
         let channel_ptr = fri_queue_ptr + length(&fri_queue);
         *vector::borrow_mut(fri, channel_ptr) = 5u256;
@@ -122,6 +125,7 @@ module verifier_addr::fri_statement_contract {
         let input_hash = vector::empty();
         let idx_hash: u64 = 0;
 
+
         //input_hash has range from friQueuePtr to n_queries * 3.
         while (idx_hash < n_queries * 3) {
             vector::append(
@@ -134,8 +138,8 @@ module verifier_addr::fri_statement_contract {
         *vector::borrow_mut(
             fri,
             data_to_hash + 3
-        ) = 84241376148295076446008953468843664082878024901512454930369344105179764196503;
-
+        ) = bytes32_to_u256(keccak256(input_hash));
+        print(&bytes32_to_u256(keccak256(input_hash)));
         input_hash = vector::empty();
         let idx_hash = 0;
 
@@ -147,6 +151,7 @@ module verifier_addr::fri_statement_contract {
             );
             idx_hash = idx_hash + 1;
         };
+        print(&keccak256(input_hash));
         register_fact(s, keccak256(input_hash));
     }
 

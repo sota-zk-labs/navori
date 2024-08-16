@@ -2,6 +2,7 @@ module verifier_addr::fri_layer {
     use std::signer::address_of;
     use std::vector;
     use aptos_std::aptos_hash::keccak256;
+    use aptos_std::debug::print;
     use aptos_std::math128::pow;
     use aptos_std::math64::ceil_div;
 
@@ -182,6 +183,7 @@ module verifier_addr::fri_layer {
         move_to<Ptr>(
             s,
             Ptr {
+
                 input_ptr: fri_queue_ptr,
                 input_end: fri_queue_ptr + (FRI_QUEUE_SLOT_SIZE * n_queries),
                 output_ptr: fri_queue_ptr,
@@ -201,8 +203,7 @@ module verifier_addr::fri_layer {
         let channel_ptr = (channel_ptr as u64);
         let fri_coset_size = (fri_coset_size as u64);
 
-        let ffri = get_fri(address_of(s));
-        let fri = &mut ffri;
+        let fri = &mut get_fri(address_of(s));
         assert!(exists<Ptr>(address_of(s)), ECOMPUTE_NEXT_LAYER_NOT_INITIATED);
         let ptr = borrow_global_mut<Ptr>(address_of(s));
         let evaluation_on_coset_ptr = fri_ctx + FRI_CTX_TO_COSET_EVALUATIONS_OFFSET;
@@ -236,6 +237,7 @@ module verifier_addr::fri_layer {
             *vector::borrow_mut(fri, merkle_queue_ptr) = (index as u256);
 
             let hash = vector::empty();
+
             let idx_hash = 0;
             while (idx_hash < fri_coset_size) {
                 vector::append(&mut hash, u256_to_bytes32(vector::borrow(fri, evaluation_on_coset_ptr + idx_hash)));
@@ -243,7 +245,6 @@ module verifier_addr::fri_layer {
             };
 
             *vector::borrow_mut(fri, merkle_queue_ptr + 1) = COMMITMENT_MASK & bytes32_to_u256(keccak256(hash));
-
 
             merkle_queue_ptr = merkle_queue_ptr + 2;
 
@@ -259,11 +260,12 @@ module verifier_addr::fri_layer {
             *vector::borrow_mut(fri, output_ptr) = (index as u256);
             *vector::borrow_mut(fri, output_ptr + 1) = fri_value;
             *vector::borrow_mut(fri, output_ptr + 2) = fri_inversed_point;
-            output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
-            ptr.output_ptr = output_ptr;
+
+            ptr.output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
             ptr.merkle_queue_ptr = merkle_queue_ptr;
+
         };
-        update_fri(s, ffri);
+        update_fri(s, *fri);
     }
 
     #[view]
