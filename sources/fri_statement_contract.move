@@ -1,11 +1,9 @@
 module verifier_addr::fri_statement_contract {
     use std::signer::address_of;
     use std::vector;
-    use std::vector::{length, borrow};
+    use std::vector::length;
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::debug::print;
     use aptos_std::math128::pow;
-    use aptos_std::smart_vector::borrow_mut;
     use aptos_framework::event::emit;
 
     use verifier_addr::convert_memory::from_vector;
@@ -54,8 +52,7 @@ module verifier_addr::fri_statement_contract {
         fri_step_size: u256,
         expected_root: u256
     ) {
-        let ffri = new_fri();
-        let fri = &mut ffri;
+        let fri = &mut new_fri();
 
         // must <= FRI_MAX_STEPS_SIZE
         assert!(fri_step_size <= FRI_MAX_STEP_SIZE, 1);
@@ -94,7 +91,7 @@ module verifier_addr::fri_statement_contract {
 
         *vector::borrow_mut(fri, data_to_hash + 2) = bytes32_to_u256(keccak256(hash));
         let fri_coset_size = (pow(2, (fri_step_size as u128)) as u256);
-        update_fri(signer, ffri);
+        update_fri(signer, *fri);
 
         emit(FriCtx { fri_ctx: (fri_ctx as u256) });
 
@@ -139,7 +136,8 @@ module verifier_addr::fri_statement_contract {
             fri,
             data_to_hash + 3
         ) = bytes32_to_u256(keccak256(input_hash));
-        print(&bytes32_to_u256(keccak256(input_hash)));
+
+
         input_hash = vector::empty();
         let idx_hash = 0;
 
@@ -151,7 +149,6 @@ module verifier_addr::fri_statement_contract {
             );
             idx_hash = idx_hash + 1;
         };
-        print(&keccak256(input_hash));
         register_fact(s, keccak256(input_hash));
     }
 

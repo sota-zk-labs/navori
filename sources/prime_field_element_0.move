@@ -1,6 +1,9 @@
 module verifier_addr::prime_field_element_0 {
     use aptos_std::from_bcs;
 
+    #[test_only]
+    use aptos_std::debug::print;
+
     // This line is used for generating constants DO NOT REMOVE!
     // 3
     const GENERATOR_VAL: u256 = 0x3;
@@ -18,12 +21,13 @@ module verifier_addr::prime_field_element_0 {
         let res = 0;
         a = a % K_MODULUS;
         while (b > 0) {
-            if (b % 2 == 1) {
-                res = (res + a) % K_MODULUS;
+            let aa = b & 15;
+            if (aa != 0) {
+                res = (res + a * aa) % K_MODULUS;
             };
 
-            a = (a * 2) % K_MODULUS;
-            b = b / 2;
+            a = (a << 4) % K_MODULUS;
+            b = b >> 4;
         };
         res
     }
@@ -72,18 +76,6 @@ module verifier_addr::prime_field_element_0 {
         res
     }
 
-    public fun left_shift(val: u256, shift: u256): u256 {
-        let res = val;
-        let count = shift;
-
-        while (count > 0) {
-            res = res * 2;
-            count = count - 1;
-        };
-
-        res
-    }
-
     public fun inverse(val: u256): u256 {
         expmod(val, K_MODULUS - 2, K_MODULUS)
     }
@@ -99,6 +91,16 @@ module verifier_addr::prime_field_element_0 {
     fun test_expmod() {
         let res = expmod(0x5ec467b88826aba4537602d514425f3b0bdf467bbf302458337c45f6021e539, 15, K_MODULUS);
         assert!(res == 2607735469685256064975697808597423000021425046638838630471627721324227832437, 1);
+    }
+
+    #[test(s = @verifier_addr)]
+    fun tes_mulmod() {
+        let res = fmul(
+            16,
+            101
+        );
+        print(&res);
+        assert!(res == 6, 1);
     }
 }
 

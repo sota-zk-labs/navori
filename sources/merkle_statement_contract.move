@@ -18,6 +18,8 @@ module verifier_addr::merkle_statement_contract {
     const EINVALID_MERKLE_INDICES: u64 = 0x2;
     // 1
     const ETOO_MANY_MERKLE_QUERIES: u64 = 0x1;
+    // 3
+    const ODD_MERKLE_QUEUE_SIZE: u64 = 0x3;
     // 128
     const MAX_N_MERKLE_VERIFIER_QUERIES: u64 = 0x80;
     // 2
@@ -49,13 +51,13 @@ module verifier_addr::merkle_statement_contract {
         height: u256,
         expected_root: u256
     ) {
-        let height = (height as u64);
-
         assert!(height < 200, EHEIGHT_MUST_BE_LESS_THAN_200);
         assert!(length(&initial_merkle_queue) <= MAX_N_MERKLE_VERIFIER_QUERIES * 2, ETOO_MANY_MERKLE_QUERIES);
+        assert!(length(&initial_merkle_queue) % 2 == 0, ODD_MERKLE_QUEUE_SIZE);
+
+        let height = (height as u64);
         //init
-        let ffri = new_fri();
-        let fri = &mut ffri;
+        let fri = &mut new_fri();
 
         // Let merkleViewPtr point to a free space in fri.
         let merkle_view_ptr = 4;
@@ -72,7 +74,7 @@ module verifier_addr::merkle_statement_contract {
         // Skip 0x20 bytes length at the beginning of the merkleView.
         merkle_view_ptr = merkle_view_ptr + 1;
         // Let channelPtr point to a free space.
-        let channel_ptr: u64 = 339;
+        let channel_ptr: u64 = initial_merkle_queue_ptr + length(&initial_merkle_queue) + 1;
         // channelPtr will point to the merkleViewPtr since the 'verify' function expects
         // a pointer to the proofPtr.
         *vector::borrow_mut(fri, channel_ptr) = (merkle_view_ptr as u256);
@@ -117,7 +119,6 @@ module verifier_addr::merkle_statement_contract {
         // => fail if lastIdx >= 2**(height+1)
         // => fail if (lastIdx + 1) > 2**(height+1)
         // => fail if idxLowerLimit > 2**(height+1).
-        //TODO: confusing logic, need to check but now it work correctly
 
         // Check the last idx_lower_limit must inside the index range.
         assert!(idx_lower_limit <= (pow(2, height + 1) as u256), EINVALID_MERKLE_INDICES);
@@ -128,7 +129,7 @@ module verifier_addr::merkle_statement_contract {
         // for the root).
         *vector::borrow_mut(fri, 2) = (data_to_hash_ptr + 1 as u256);
 
-        update_fri(s, ffri);
+        update_fri(s, *fri);
         // Verify the merkle tree.
         event::emit<VerifyMerkle>(VerifyMerkle {
             channel_ptr: (channel_ptr as u256),
@@ -156,16 +157,14 @@ module verifier_addr::merkle_statement_contract {
         let channel_ptr = (channel_ptr as u64);
         let n_queries = (n_queries as u64);
 
-        let ffri = get_fri(address_of(s));
-        let fri = &mut ffri;
+        let fri = &mut get_fri(address_of(s));
 
         *vector::borrow_mut(fri, data_to_hash_ptr) = res_root;
         data_to_hash_ptr = channel_ptr + 1;
 
+        //input_hash has range from data_to_hash_ptr to data_to_hash_ptr + n_queries * 2.
         let input_hash = vector::empty();
         let idx_hash: u64 = 0;
-
-        //input_hash has range from data_to_hash_ptr to data_to_hash_ptr + n_queries * 2.
         while (idx_hash < n_queries * 2 + 1) {
             vector::append(
                 &mut input_hash,
@@ -174,7 +173,6 @@ module verifier_addr::merkle_statement_contract {
             idx_hash = idx_hash + 1;
         };
         // register fact
-
         register_fact(s, keccak256(input_hash));
     }
 }

@@ -1,7 +1,12 @@
 #[test_only]
 module verifier_addr::full_flow_verifier_test {
 
-        use verifier_addr::merkle_statement_contract::verify_merkle;
+        use aptos_std::debug::print;
+        use aptos_framework::event::emitted_events;
+        use verifier_addr::merkle_verifier;
+        use verifier_addr::merkle_statement_contract::{verify_merkle, VerifyMerkle, RegisterFactVerifyMerkle,
+                register_fact_verify_merkle
+        };
 
         public fun get_merkle_view_data(): vector<u256> {
         vector
@@ -348,14 +353,21 @@ module verifier_addr::full_flow_verifier_test {
     }
 
 
-    #[test(user = @verifier_addr)]
-    fun test(user: &signer) {
-        verify_merkle(user,
+    #[test(s = @verifier_addr)]
+    fun test(s: &signer) {
+        verify_merkle(s,
             get_merkle_view_data(),
             get_initial_merkle_queue(),
             32,
             66279586371982341056910360864513599119118930197222666183661655062851553853440
         );
+            // let e = emitted_events<VerifyMerkle>();
+            // print(&e);
+            // let e = emitted_events<RegisterFactVerifyMerkle>();
+            // print(&e);
+
+            merkle_verifier::verify_merkle(s,339,317, 66279586371982341056910360864513599119118930197222666183661655062851553853440, 11);
+            register_fact_verify_merkle(s,339,362, 11, 66279586371982341056910360864513599119118930197222666183661655062851553853440 );
 
     }
 }

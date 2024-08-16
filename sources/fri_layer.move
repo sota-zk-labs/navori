@@ -2,9 +2,7 @@ module verifier_addr::fri_layer {
     use std::signer::address_of;
     use std::vector;
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::debug::print;
     use aptos_std::math128::pow;
-    use aptos_std::math64::ceil_div;
 
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::fri_transform::transform_coset;
@@ -136,7 +134,7 @@ module verifier_addr::fri_layer {
 
         *vector::borrow_mut(fri, fri_half_inv_group_ptr) = last_val_inv;
         *vector::borrow_mut(fri, fri_group_ptr) = last_val;
-        *vector::borrow_mut(fri, fri_group_ptr) = K_MODULUS - last_val;
+        *vector::borrow_mut(fri, fri_group_ptr+1) = K_MODULUS - last_val;
 
         let half_coset_size = MAX_COSET_SIZE / 2;
         let i = 1;
@@ -167,58 +165,31 @@ module verifier_addr::fri_layer {
       the previous layer for Merkle verification.
     */
 
-    public entry fun init_compute_next_layer(
-        s: &signer,
-        fri_queue_ptr: u256,
-        merkle_queue_ptr: u256,
-        n_queries: u256
-    ) acquires Ptr {
-        if (exists<Ptr>(address_of(s))) {
-            move_from<Ptr>(address_of(s));
-        };
-        let fri_queue_ptr = (fri_queue_ptr as u64);
-        let merkle_queue_ptr = (merkle_queue_ptr as u64);
-        let n_queries = (n_queries as u64);
-
-        move_to<Ptr>(
-            s,
-            Ptr {
-
-                input_ptr: fri_queue_ptr,
-                input_end: fri_queue_ptr + (FRI_QUEUE_SLOT_SIZE * n_queries),
-                output_ptr: fri_queue_ptr,
-                merkle_queue_ptr,
-            }
-        );
-    }
-
     public entry fun compute_next_layer(
         s: &signer,
         channel_ptr: u256,
+        fri_queue_ptr: u256,
+        merkle_queue_ptr: u256,
+        n_queries: u256,
         fri_ctx: u256,
         fri_eval_point: u256,
         fri_coset_size: u256,
-    ) acquires Ptr {
+    ) {
         let fri_ctx = (fri_ctx as u64);
         let channel_ptr = (channel_ptr as u64);
         let fri_coset_size = (fri_coset_size as u64);
+        let fri_queue_ptr = (fri_queue_ptr as u64);
+        let n_queries = (n_queries as u64);
+        let merkle_queue_ptr = (merkle_queue_ptr as u64);
 
         let fri = &mut get_fri(address_of(s));
-        assert!(exists<Ptr>(address_of(s)), ECOMPUTE_NEXT_LAYER_NOT_INITIATED);
-        let ptr = borrow_global_mut<Ptr>(address_of(s));
-        let evaluation_on_coset_ptr = fri_ctx + FRI_CTX_TO_COSET_EVALUATIONS_OFFSET;
 
-        let input_ptr = ptr.input_ptr;
-        let input_end = ptr.input_end;
-        let output_ptr = ptr.output_ptr;
-        let merkle_queue_ptr = ptr.merkle_queue_ptr;
-        let i = 0;
-        while (i < MAX_CYCLES) {
-            i = i + 1;
-            if (input_ptr >= input_end) {
-                move_from<Ptr>(address_of(s));
-                break
-            };
+        let evaluation_on_coset_ptr = fri_ctx + FRI_CTX_TO_COSET_EVALUATIONS_OFFSET;
+        let input_ptr = fri_queue_ptr;
+        let input_end = input_ptr + (FRI_QUEUE_SLOT_SIZE * n_queries);
+        let output_ptr = fri_queue_ptr;
+
+        while (input_ptr < input_end) {
             let coset_offset;
             let index;
             (input_ptr, index, coset_offset) = gather_coset_inputs(
@@ -230,7 +201,6 @@ module verifier_addr::fri_layer {
                 fri_coset_size
             );
 
-            ptr.input_ptr = input_ptr;
             // Compute the index of the coset evaluations in the Merkle queue.
             index = index / fri_coset_size;
             // Add (index, keccak256(evaluationsOnCoset)) to the Merkle queue.
@@ -260,46 +230,16 @@ module verifier_addr::fri_layer {
             *vector::borrow_mut(fri, output_ptr) = (index as u256);
             *vector::borrow_mut(fri, output_ptr + 1) = fri_value;
             *vector::borrow_mut(fri, output_ptr + 2) = fri_inversed_point;
-
-            ptr.output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
-            ptr.merkle_queue_ptr = merkle_queue_ptr;
-
+            output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
         };
         update_fri(s, *fri);
     }
 
-    #[view]
-    public fun count_next_layer_cycles(
-        s: address,
-        channel_ptr: u256,
-        fri_queue_ptr: u256,
-        n_queries: u256,
-        fri_ctx: u256,
-        fri_coset_size: u256,
-    ): u64 {
-        let fri_ctx = (fri_ctx as u64);
-        let channel_ptr = (channel_ptr as u64);
-        let n_queries = (n_queries as u64);
-        let fri_queue_ptr = (fri_queue_ptr as u64);
-        let fri_coset_size = (fri_coset_size as u64);
-
-        let ffri = get_fri(s);
-        let fri = &mut ffri;
-        let evaluation_on_coset_ptr = fri_ctx + FRI_CTX_TO_COSET_EVALUATIONS_OFFSET;
-        let input_ptr = fri_queue_ptr;
-        let input_end = input_ptr + (FRI_QUEUE_SLOT_SIZE * n_queries);
-        let count: u64 = 0;
-        while (input_ptr < input_end) {
-            count = count + 1;
-            (input_ptr, _, _) = gather_coset_inputs(
-                fri,
-                channel_ptr,
-                fri_ctx + FRI_CTX_TO_FRI_GROUP_OFFSET,
-                evaluation_on_coset_ptr,
-                input_ptr,
-                fri_coset_size
-            );
-        };
-        ceil_div(count, MAX_CYCLES)
+    public entry fun mul_mod() {
+        let a = 61350858418801960195844859341278187035213662231404265076491570526182629703680;
+        let b = 25746574691019060605232571945066060649008414083974737005280818694904740839424;
+        for (i in 1..100) {
+            fmul(a,b)
+        }
     }
 }
