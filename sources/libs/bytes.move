@@ -58,12 +58,16 @@ module verifier_addr::bytes {
         bytes
     }
 
-    public fun num_to_bytes_be<Element>(v: &Element): vector<u8> {
-        reverse(to_bytes(v))
+    public fun u256_to_bytes32<Element>(v: &Element): vector<u8> {
+        let result = to_bytes(v);
+        vector::reverse(&mut result);
+        result
     }
 
-    public fun u256_from_bytes_be(bytes: &vector<u8>): u256 {
-        to_u256(reverse(*bytes))
+
+    public fun bytes32_to_u256(bytes: vector<u8>): u256 {
+        vector::reverse(&mut bytes);
+        to_u256(bytes)
     }
 }
 

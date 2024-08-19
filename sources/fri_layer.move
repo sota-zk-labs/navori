@@ -4,10 +4,10 @@ module verifier_addr::fri_layer {
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math128::pow;
 
+    use verifier_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::fri_transform::transform_coset;
     use verifier_addr::prime_field_element_0::{fmul, fpow};
-    use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
 
     // This line is used for generating constants DO NOT REMOVE!
     // 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
@@ -33,15 +33,6 @@ module verifier_addr::fri_layer {
     // 3618502788666131213697322783095070105623107215331596699973092056135872020481
     const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
     // End of generating constants!
-
-    const MAX_CYCLES: u64 = 6;
-
-    struct Ptr has key, store, copy, drop {
-        input_ptr: u64,
-        input_end: u64,
-        output_ptr: u64,
-        merkle_queue_ptr: u64
-    }
 
     public fun gather_coset_inputs(
         fri: &mut vector<u256>,
@@ -134,7 +125,7 @@ module verifier_addr::fri_layer {
 
         *vector::borrow_mut(fri, fri_half_inv_group_ptr) = last_val_inv;
         *vector::borrow_mut(fri, fri_group_ptr) = last_val;
-        *vector::borrow_mut(fri, fri_group_ptr+1) = K_MODULUS - last_val;
+        *vector::borrow_mut(fri, fri_group_ptr + 1) = K_MODULUS - last_val;
 
         let half_coset_size = MAX_COSET_SIZE / 2;
         let i = 1;
@@ -233,13 +224,5 @@ module verifier_addr::fri_layer {
             output_ptr = output_ptr + FRI_QUEUE_SLOT_SIZE;
         };
         update_fri(s, *fri);
-    }
-
-    public entry fun mul_mod() {
-        let a = 61350858418801960195844859341278187035213662231404265076491570526182629703680;
-        let b = 25746574691019060605232571945066060649008414083974737005280818694904740839424;
-        for (i in 1..100) {
-            fmul(a,b)
-        }
     }
 }

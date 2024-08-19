@@ -6,10 +6,10 @@ module verifier_addr::fri_statement_contract {
     use aptos_std::math128::pow;
     use aptos_framework::event::emit;
 
-    use verifier_addr::convert_memory::from_vector;
+    use verifier_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
+    use verifier_addr::convert_memory::from_vector_to_memory;
     use verifier_addr::fact_registry::register_fact;
     use verifier_addr::fri::{get_fri, new_fri, update_fri};
-    use verifier_addr::u256_to_byte32::{bytes32_to_u256, u256_to_bytes32};
 
     // This line is used for generating constants DO NOT REMOVE!
     // FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET + (FRI_GROUP_SIZE / 2)
@@ -69,11 +69,10 @@ module verifier_addr::fri_statement_contract {
         let merkle_queue_ptr = channel_ptr + 1;
         let fri_ctx = merkle_queue_ptr + n_queries * 2;
         *vector::borrow_mut(fri, 4) = (vector::length(&proof) as u256);
-        from_vector(proof, fri, 5);
+        from_vector_to_memory(proof, fri, 5);
 
         *vector::borrow_mut(fri, 4 + vector::length(&proof) + 1) = (vector::length(&fri_queue) as u256);
-
-        from_vector(fri_queue, fri, fri_queue_ptr);
+        from_vector_to_memory(fri_queue, fri, fri_queue_ptr);
 
         let data_to_hash = fri_ctx + mm_fri_ctx_size;
 
@@ -121,7 +120,6 @@ module verifier_addr::fri_statement_contract {
 
         let input_hash = vector::empty();
         let idx_hash: u64 = 0;
-
 
         //input_hash has range from friQueuePtr to n_queries * 3.
         while (idx_hash < n_queries * 3) {

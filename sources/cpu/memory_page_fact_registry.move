@@ -4,10 +4,9 @@ module verifier_addr::memory_page_fact_registry {
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event::emit;
 
-    use verifier_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
+    use verifier_addr::bytes::{bytes32_to_u256, u256_to_bytes32, vec_to_bytes_be};
     use verifier_addr::fact_registry::register_fact;
     use verifier_addr::math_mod::{mod_add, mod_mul};
-    use verifier_addr::u256_to_byte32::u256_to_bytes32;
 
     // This line is used for generating constants DO NOT REMOVE!
     // 1
@@ -98,8 +97,8 @@ module verifier_addr::memory_page_fact_registry {
             memory_ptr = memory_ptr + 2;
         };
 
-        let memory_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&memory_pairs)));
-        let fact_hash = u256_from_bytes_be(&keccak256(
+        let memory_hash = bytes32_to_u256(keccak256(vec_to_bytes_be(&memory_pairs)));
+        let fact_hash = bytes32_to_u256(keccak256(
             vec_to_bytes_be(&vector[REGULAR_PAGE, prime, (memory_size as u256), z, alpha, prod, memory_hash, 0u256])
         ));
         (fact_hash, memory_hash, prod)
@@ -187,7 +186,7 @@ module verifier_addr::memory_page_fact_registry {
             value_ptr = value_ptr + 1;
         };
 
-        let memory_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&values)));
+        let memory_hash = bytes32_to_u256(keccak256(vec_to_bytes_be(&values)));
         let fact_hash = keccak256(
             vec_to_bytes_be(&vector[CONTINUOUS_PAGE, prime, n_values, z, alpha, prod, memory_hash, start_address])
         );
@@ -296,7 +295,7 @@ module verifier_addr::memory_page_fact_registry {
             value_ptr = value_ptr + 1;
         };
 
-        let memory_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&values)));
+        let memory_hash = bytes32_to_u256(keccak256(vec_to_bytes_be(&values)));
         let fact_hash = keccak256(
             vec_to_bytes_be(&vector[CONTINUOUS_PAGE, prime, n_values, z, alpha, prod, memory_hash, start_address])
         );

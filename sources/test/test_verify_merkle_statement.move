@@ -1,14 +1,17 @@
 #[test_only]
 module verifier_addr::full_flow_verifier_test {
 
-        use aptos_std::debug::print;
-        use aptos_framework::event::emitted_events;
-        use verifier_addr::merkle_verifier;
-        use verifier_addr::merkle_statement_contract::{verify_merkle, VerifyMerkle, RegisterFactVerifyMerkle,
-                register_fact_verify_merkle
-        };
+    use std::signer::address_of;
+    use aptos_std::debug::print;
+    use aptos_framework::event::emitted_events;
 
-        public fun get_merkle_view_data(): vector<u256> {
+    use verifier_addr::fact_registry::{FactRegistered, has_registered_fact};
+    use verifier_addr::merkle_statement_contract::{register_fact_verify_merkle,
+        verify_merkle
+    };
+    use verifier_addr::merkle_verifier;
+
+    public fun get_merkle_view_data(): vector<u256> {
         vector
             [
                 61350858418801960195844859341278187035213662231404265076491570526182629703680,
@@ -361,13 +364,22 @@ module verifier_addr::full_flow_verifier_test {
             32,
             66279586371982341056910360864513599119118930197222666183661655062851553853440
         );
-            // let e = emitted_events<VerifyMerkle>();
-            // print(&e);
-            // let e = emitted_events<RegisterFactVerifyMerkle>();
-            // print(&e);
-
-            merkle_verifier::verify_merkle(s,339,317, 66279586371982341056910360864513599119118930197222666183661655062851553853440, 11);
-            register_fact_verify_merkle(s,339,362, 11, 66279586371982341056910360864513599119118930197222666183661655062851553853440 );
-
+        merkle_verifier::verify_merkle(
+            s,
+            339,
+            317,
+            66279586371982341056910360864513599119118930197222666183661655062851553853440,
+            11
+        );
+        register_fact_verify_merkle(
+            s,
+            339,
+            362,
+            11,
+            66279586371982341056910360864513599119118930197222666183661655062851553853440
+        );
+        let g = emitted_events<FactRegistered>();
+        print(&g);
+        assert!(has_registered_fact(address_of(s)), 1);
     }
 }

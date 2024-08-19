@@ -6,10 +6,10 @@ module verifier_addr::merkle_statement_contract {
     use aptos_std::math64::pow;
     use aptos_framework::event;
 
-    use verifier_addr::convert_memory::from_vector;
+    use verifier_addr::bytes::u256_to_bytes32;
+    use verifier_addr::convert_memory::from_vector_to_memory;
     use verifier_addr::fact_registry::register_fact;
     use verifier_addr::fri::{get_fri, new_fri, update_fri};
-    use verifier_addr::u256_to_byte32::u256_to_bytes32;
 
     // This line is used for generating constants DO NOT REMOVE!
     // 1
@@ -66,10 +66,10 @@ module verifier_addr::merkle_statement_contract {
 
         // Copy the merkleView and initialMerkleQueue to fri.
         *vector::borrow_mut(fri, merkle_view_ptr) = (length(&merkle_view) as u256);
-        from_vector(merkle_view, fri, 5);
+        from_vector_to_memory(merkle_view, fri, 5);
 
         *vector::borrow_mut(fri, initial_merkle_queue_ptr) = (vector::length(&initial_merkle_queue) as u256);
-        from_vector(initial_merkle_queue, fri, initial_merkle_queue_ptr + 1);
+        from_vector_to_memory(initial_merkle_queue, fri, initial_merkle_queue_ptr + 1);
 
         // Skip 0x20 bytes length at the beginning of the merkleView.
         merkle_view_ptr = merkle_view_ptr + 1;

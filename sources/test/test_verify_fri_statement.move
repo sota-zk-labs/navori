@@ -47,23 +47,6 @@ module verifier_addr::test_verifier {
         );
     }
 
-
-    #[test(verifier = @verifier_addr)]
-    #[expected_failure(abort_code = ECOMPUTE_NEXT_LAYER_NOT_INITIATED, location = verifier_addr::fri_layer)]
-    fun test_compute_next_layer_finished(verifier: &signer) {
-        setup_next_layer(verifier);
-        compute_next_layer(
-            verifier,
-            248,
-            208,
-            249,
-            13,
-            275,
-            1127319757609087129328200675198280716580310204088624481346247862057464086751,
-            8,
-        );
-    }
-
     #[test(verifier = @verifier_addr)]
     fun test_verify_merkle(verifier: &signer) {
         verify_fri(
