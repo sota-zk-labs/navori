@@ -2,7 +2,6 @@ module verifier_addr::fri_layer {
     use std::signer::address_of;
     use std::vector;
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::math128::pow;
 
     use verifier_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
     use verifier_addr::fri::{get_fri, update_fri};
@@ -12,8 +11,6 @@ module verifier_addr::fri_layer {
     // This line is used for generating constants DO NOT REMOVE!
     // 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
     const COMMITMENT_MASK: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
-    // 10
-    const ECOMPUTE_NEXT_LAYER_NOT_INITIATED: u64 = 0xa;
     // 0
     const FRI_CTX_TO_COSET_EVALUATIONS_OFFSET: u64 = 0x0;
     // FRI_GROUP_SIZE
@@ -26,12 +23,12 @@ module verifier_addr::fri_layer {
     const FRI_MAX_STEP_SIZE: u256 = 0x4;
     // 3
     const FRI_QUEUE_SLOT_SIZE: u64 = 0x3;
+    // 3618502788666131213697322783095070105623107215331596699973092056135872020481
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
     // 2^FRI_MAX_STEP_SIZE
     const MAX_COSET_SIZE: u256 = 0x10;
     // 0xffffffffffffffff
-    const NOT_NUM: u64 = 0xffffffffffffffff;
-    // 3618502788666131213697322783095070105623107215331596699973092056135872020481
-    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    const MAX_U64: u64 = 0xffffffffffffffff;
     // End of generating constants!
 
     public fun gather_coset_inputs(
@@ -43,9 +40,8 @@ module verifier_addr::fri_layer {
         coset_size: u64
     ): (u64, u64, u256) {
         let queue_item_idx = (*vector::borrow(fri, fri_queue_head) as u64);
-        let max_bit_index = (coset_size - 1) ^ NOT_NUM;
         // The coset index is represented by the most significant bits of the queue item index.
-        let coset_idx = queue_item_idx & max_bit_index;
+        let coset_idx = queue_item_idx & (MAX_U64 - coset_size + 1);
         let next_coset_idx = coset_idx + coset_size;
         // Get the algebraic coset offset:
         // I.e. given c*g^(-k) compute c, where
@@ -91,16 +87,13 @@ module verifier_addr::fri_layer {
 
     public fun bit_reverse(
         num: u256,
-        number_of_bits: u256
+        number_of_bits: u8
     ): u256 {
-        assert!((number_of_bits == 256 || num < (pow(2, (number_of_bits as u128)) as u256)), 1);
-        let n = num;
+        assert!(num < (1 << number_of_bits), 1);
         let r = 0 ;
-        let k = 0;
-        while (k < number_of_bits) {
-            r = (r * 2) | (n % 2);
-            n = n / 2;
-            k = k + 1;
+        for (i in 0..number_of_bits) {
+            r = (r * 2) | (num % 2);
+            num = num / 2;
         };
         r
     }
@@ -109,12 +102,9 @@ module verifier_addr::fri_layer {
     */
     public entry fun init_fri_group(
         signer: &signer,
-        fri_ctx: u256
+        fri_ctx: u64
     ) {
-        let fri_ctx = (fri_ctx as u64);
-
-        let ffri = get_fri(address_of(signer));
-        let fri = &mut ffri;
+        let fri = &mut get_fri(address_of(signer));
 
         let fri_group_ptr = fri_ctx + FRI_CTX_TO_FRI_GROUP_OFFSET;
         let fri_half_inv_group_ptr = fri_ctx + FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET;
@@ -132,13 +122,13 @@ module verifier_addr::fri_layer {
         while (i < half_coset_size) {
             last_val = fmul(last_val, gen_fri_group);
             last_val_inv = fmul(last_val_inv, gen_fri_group_inv);
-            let idx = (bit_reverse(i, FRI_MAX_STEP_SIZE - 1) as u64);
+            let idx = (bit_reverse(i, (FRI_MAX_STEP_SIZE - 1 as u8)) as u64);
             *vector::borrow_mut(fri, fri_half_inv_group_ptr + idx) = last_val_inv;
             *vector::borrow_mut(fri, fri_group_ptr + idx * 2) = last_val;
             *vector::borrow_mut(fri, fri_group_ptr + idx * 2 + 1) = K_MODULUS - last_val;
             i = i + 1;
         };
-        update_fri(signer, ffri);
+        update_fri(signer, *fri);
     }
     /*
       Computes the FRI step with eta = log2(friCosetSize) for all the live queries.
@@ -158,21 +148,14 @@ module verifier_addr::fri_layer {
 
     public entry fun compute_next_layer(
         s: &signer,
-        channel_ptr: u256,
-        fri_queue_ptr: u256,
-        merkle_queue_ptr: u256,
-        n_queries: u256,
-        fri_ctx: u256,
+        channel_ptr: u64,
+        fri_queue_ptr: u64,
+        merkle_queue_ptr: u64,
+        n_queries: u64,
+        fri_ctx: u64,
         fri_eval_point: u256,
-        fri_coset_size: u256,
+        fri_coset_size: u64,
     ) {
-        let fri_ctx = (fri_ctx as u64);
-        let channel_ptr = (channel_ptr as u64);
-        let fri_coset_size = (fri_coset_size as u64);
-        let fri_queue_ptr = (fri_queue_ptr as u64);
-        let n_queries = (n_queries as u64);
-        let merkle_queue_ptr = (merkle_queue_ptr as u64);
-
         let fri = &mut get_fri(address_of(s));
 
         let evaluation_on_coset_ptr = fri_ctx + FRI_CTX_TO_COSET_EVALUATIONS_OFFSET;
@@ -198,11 +181,8 @@ module verifier_addr::fri_layer {
             *vector::borrow_mut(fri, merkle_queue_ptr) = (index as u256);
 
             let hash = vector::empty();
-
-            let idx_hash = 0;
-            while (idx_hash < fri_coset_size) {
-                vector::append(&mut hash, u256_to_bytes32(vector::borrow(fri, evaluation_on_coset_ptr + idx_hash)));
-                idx_hash = idx_hash + 1;
+            for (i in 0..fri_coset_size) {
+                vector::append(&mut hash, u256_to_bytes32(vector::borrow(fri, evaluation_on_coset_ptr + i)));
             };
 
             *vector::borrow_mut(fri, merkle_queue_ptr + 1) = COMMITMENT_MASK & bytes32_to_u256(keccak256(hash));

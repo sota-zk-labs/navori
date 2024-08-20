@@ -6,8 +6,8 @@ module verifier_addr::merkle_statement_contract {
     use aptos_std::math64::pow;
     use aptos_framework::event;
 
-    use verifier_addr::bytes::u256_to_bytes32;
-    use verifier_addr::convert_memory::from_vector_to_memory;
+    use verifier_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
+    use verifier_addr::convert_memory::copy_vec_to_memory;
     use verifier_addr::fact_registry::register_fact;
     use verifier_addr::fri::{get_fri, new_fri, update_fri};
 
@@ -16,30 +16,29 @@ module verifier_addr::merkle_statement_contract {
     const EHEIGHT_MUST_BE_LESS_THAN_200: u64 = 0x1;
     // 2
     const EINVALID_MERKLE_INDICES: u64 = 0x2;
+    // 6
+    const EODD_MERKLE_QUEUE_SIZE: u64 = 0x6;
     // 1
     const ETOO_MANY_MERKLE_QUERIES: u64 = 0x1;
-    // 3
-    const ODD_MERKLE_QUEUE_SIZE: u64 = 0x3;
     // 128
     const MAX_N_MERKLE_VERIFIER_QUERIES: u64 = 0x80;
     // 2
     const MERKLE_SLOT_SIZE: u64 = 0x2;
     // End of generating constants!
 
-
     #[event]
     struct VerifyMerkle has store, drop {
-        channel_ptr: u256,
-        merkle_queue_ptr: u256,
+        channel_ptr: u64,
+        merkle_queue_ptr: u64,
         expected_root: u256,
-        n_queries: u256
+        n_queries: u64
     }
 
     #[event]
     struct RegisterFactVerifyMerkle has store, drop {
-        channel_ptr: u256,
-        data_to_hash_ptr: u256,
-        n_queries: u256,
+        channel_ptr: u64,
+        data_to_hash_ptr: u64,
+        n_queries: u64,
         res_root: u256
     }
 
@@ -48,14 +47,13 @@ module verifier_addr::merkle_statement_contract {
         s: &signer,
         merkle_view: vector<u256>,
         initial_merkle_queue: vector<u256>,
-        height: u256,
+        height: u64,
         expected_root: u256
     ) {
         assert!(height < 200, EHEIGHT_MUST_BE_LESS_THAN_200);
         assert!(length(&initial_merkle_queue) <= MAX_N_MERKLE_VERIFIER_QUERIES * 2, ETOO_MANY_MERKLE_QUERIES);
-        assert!(length(&initial_merkle_queue) % 2 == 0, ODD_MERKLE_QUEUE_SIZE);
+        assert!(length(&initial_merkle_queue) % 2 == 0, EODD_MERKLE_QUEUE_SIZE);
 
-        let height = (height as u64);
         //init
         let fri = &mut new_fri();
 
@@ -66,10 +64,10 @@ module verifier_addr::merkle_statement_contract {
 
         // Copy the merkleView and initialMerkleQueue to fri.
         *vector::borrow_mut(fri, merkle_view_ptr) = (length(&merkle_view) as u256);
-        from_vector_to_memory(merkle_view, fri, 5);
+        copy_vec_to_memory(merkle_view, fri, 5);
 
         *vector::borrow_mut(fri, initial_merkle_queue_ptr) = (vector::length(&initial_merkle_queue) as u256);
-        from_vector_to_memory(initial_merkle_queue, fri, initial_merkle_queue_ptr + 1);
+        copy_vec_to_memory(initial_merkle_queue, fri, initial_merkle_queue_ptr + 1);
 
         // Skip 0x20 bytes length at the beginning of the merkleView.
         merkle_view_ptr = merkle_view_ptr + 1;
@@ -132,31 +130,27 @@ module verifier_addr::merkle_statement_contract {
         update_fri(s, *fri);
         // Verify the merkle tree.
         event::emit<VerifyMerkle>(VerifyMerkle {
-            channel_ptr: (channel_ptr as u256),
-            merkle_queue_ptr: (merkle_queue_ptr as u256),
+            channel_ptr,
+            merkle_queue_ptr,
             expected_root,
-            n_queries: (n_queries as u256)
+            n_queries
         });
 
         event::emit<RegisterFactVerifyMerkle>(RegisterFactVerifyMerkle {
-            channel_ptr: (channel_ptr as u256),
-            data_to_hash_ptr: (data_to_hash_ptr as u256),
-            n_queries: (n_queries as u256),
+            channel_ptr,
+            data_to_hash_ptr,
+            n_queries,
             res_root: expected_root
         });
     }
 
     public entry fun register_fact_verify_merkle(
         s: &signer,
-        channel_ptr: u256,
-        data_to_hash_ptr: u256,
-        n_queries: u256,
+        channel_ptr: u64,
+        data_to_hash_ptr: u64,
+        n_queries: u64,
         res_root: u256
     ) {
-        let data_to_hash_ptr = (data_to_hash_ptr as u64);
-        let channel_ptr = (channel_ptr as u64);
-        let n_queries = (n_queries as u64);
-
         let fri = &mut get_fri(address_of(s));
 
         *vector::borrow_mut(fri, data_to_hash_ptr) = res_root;
@@ -164,15 +158,13 @@ module verifier_addr::merkle_statement_contract {
 
         //input_hash has range from data_to_hash_ptr to data_to_hash_ptr + n_queries * 2.
         let input_hash = vector::empty();
-        let idx_hash: u64 = 0;
-        while (idx_hash < n_queries * 2 + 1) {
+        for (i in 0..(n_queries * 2 + 1)) {
             vector::append(
                 &mut input_hash,
-                u256_to_bytes32(vector::borrow(fri, data_to_hash_ptr + idx_hash))
+                u256_to_bytes32(vector::borrow(fri, data_to_hash_ptr + i))
             );
-            idx_hash = idx_hash + 1;
         };
         // register fact
-        register_fact(s, keccak256(input_hash));
+        register_fact(s, bytes32_to_u256(keccak256(input_hash)));
     }
 }

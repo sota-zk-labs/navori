@@ -7,7 +7,6 @@ module verifier_addr::merkle_verifier {
 
     use verifier_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
     use verifier_addr::fri::{get_fri, update_fri};
-    use verifier_addr::vector_helper::append_vector;
 
     // This line is used for generating constants DO NOT REMOVE!
     // 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
@@ -15,13 +14,11 @@ module verifier_addr::merkle_verifier {
     // 1
     const COMMITMENT_SIZE: u256 = 0x1;
     // 32
-    const COMMITMENT_SIZE_IN_BYTES: u256 = 0x20;
+    const COMMITMENT_SIZE_IN_BYTES: u64 = 0x20;
     // 2
     const EINVALID_MERKLE_PROOF: u64 = 0x2;
     // 1
     const ETOO_MANY_MERKLE_QUERIES: u64 = 0x1;
-    // 4
-    const EVERIFY_MERKLE_NOT_INITIATED: u64 = 0x4;
     // 1
     const INDEX_SIZE: u64 = 0x1;
     // 128
@@ -34,7 +31,6 @@ module verifier_addr::merkle_verifier {
     const TWO_COMMITMENTS_SIZE: u256 = 0x2;
     // End of generating constants!
 
-
     #[event]
     struct Hash has store, drop {
         hash: vector<u8>
@@ -42,15 +38,11 @@ module verifier_addr::merkle_verifier {
 
     public entry fun verify_merkle(
         s: &signer,
-        channel_ptr: u256,
-        queue_ptr: u256,
+        channel_ptr: u64,
+        queue_ptr: u64,
         root: u256,
-        n: u256
+        n: u64
     ) {
-        let queue_ptr = (queue_ptr as u64);
-        let channel_ptr = (channel_ptr as u64);
-        let n = (n as u64);
-
         let fri = &mut get_fri(address_of(s));
 
         assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES, ETOO_MANY_MERKLE_QUERIES);
@@ -113,10 +105,10 @@ module verifier_addr::merkle_verifier {
             let new_hash = *vector::borrow(fri, (new_hash_ptr as u64));
             *vector::borrow_mut(fri, (sibling_offset as u64)) = new_hash;
 
-            let pre_hash = keccak256(append_vector(
-                u256_to_bytes32(borrow(fri, 0)),
-                u256_to_bytes32(borrow(fri, 1))
-            ));
+            let hash = u256_to_bytes32(borrow(fri, 0));
+            vector::append(&mut hash, u256_to_bytes32(borrow(fri, 1)));
+
+            let pre_hash = keccak256(hash);
 
             *vector::borrow_mut(fri, wr_idx + hashes_ptr) = COMMITMENT_MASK & bytes32_to_u256(pre_hash);
             wr_idx = (wr_idx + MERKLE_SLOT_SIZE) % queue_size;

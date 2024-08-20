@@ -4,12 +4,11 @@ module verifier_addr::fri_transform {
     use verifier_addr::prime_field_element_0::fmul;
 
     // This line is used for generating constants DO NOT REMOVE!
-    // 57896044618658099419157164529521121689969715445305547199569472898173952327696
-    const K_MODULUS_TIMES_16: u256 = 0x8000000000000110000000000000000000000000000000000000000000000010;
     // 3618502788666131213697322783095070105623107215331596699973092056135872020481
     const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // 57896044618658099419157164529521121689969715445305547199569472898173952327696
+    const K_MODULUS_TIMES_16: u256 = 0x8000000000000110000000000000000000000000000000000000000000000010;
     // End of generating constants!
-
 
     public fun transform_coset(
         fri: &mut vector<u256>,
@@ -109,7 +108,6 @@ module verifier_addr::fri_transform {
         fri_eval_point: u256
     ): (u256, u256) {
         let f0 = *vector::borrow(fri, evaluations_on_coset_ptr);
-        // print(&f0);
 
         let fri_eval_point_div_by_x = fmul(
             fri_eval_point,

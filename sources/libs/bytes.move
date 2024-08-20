@@ -75,7 +75,6 @@ module verifier_addr::bytes {
 module verifier_addr::bytes_test {
     use std::bcs::to_bytes;
     use std::vector;
-    use aptos_std::debug::print;
 
     use verifier_addr::bytes::{pad, vec_to_bytes_be};
 
@@ -83,9 +82,7 @@ module verifier_addr::bytes_test {
     fun test_padding() {
         let value = 0x123456;
         let v = to_bytes(&value);
-        print(&v);
         let padded = pad(v, 32, 0x00, true);
-        // Debug print or other test verification steps can be added here
         assert!(vector::length(&padded) == 32, 1);
         assert!(padded == to_bytes(&0x123456u256), 1);
     }
