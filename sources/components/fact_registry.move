@@ -16,7 +16,10 @@ module verifier_addr::fact_registry {
 
     public fun is_valid(signer: &signer, fact: u256): bool acquires VerifierFact {
         let verifier_fact = borrow_global<VerifierFact>(address_of(signer));
-        *table::borrow(&verifier_fact.verified_fact, fact)
+        if (table::contains(&verifier_fact.verified_fact, fact)) {
+            return true
+        };
+        false
     }
 
     public fun fast_check(signer: &signer, fact: u256): bool acquires VerifierFact {

@@ -9,7 +9,7 @@ module verifier_addr::cairo_verifier_contract {
         proof_params: &vector<u256>,
         proof: &mut vector<u256>,
         public_input: &vector<u256>
-    ): Option<bool> {
+    ): bool {
         cpu_verifier_7::verify_proof_external(signer, proof_params, proof, public_input)
     }
 

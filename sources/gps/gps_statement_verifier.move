@@ -3,16 +3,17 @@ module verifier_addr::gps_statement_verifier {
     use std::option::Option;
     use std::signer::address_of;
     use std::vector::{borrow, borrow_mut, length, slice};
-    use aptos_std::debug::print;
     use aptos_std::math64::min;
 
-    use cpu_addr::cairo_bootloader_program::{get_compiled_program};
-    use verifier_addr::cairo_verifier_contract::{get_layout_info, verify_proof_external};
-    use verifier_addr::gps_output_parser::register_gps_facts;
-    use verifier_addr::memory_page_fact_registry::register_regular_memorypage;
-
+    use cpu_addr::cairo_bootloader_program::get_compiled_program;
     use lib_addr::vector::{assign, set_el};
+    use verifier_addr::stark_verifier_7;
+
+    use verifier_addr::cairo_verifier_contract::{get_layout_info, verify_proof_external};
+    use verifier_addr::gps_output_parser;
+    use verifier_addr::gps_output_parser::register_gps_facts;
     use verifier_addr::memory_page_fact_registry;
+    use verifier_addr::memory_page_fact_registry::register_regular_memorypage;
 
     // This line is used for generating constants DO NOT REMOVE!
     // 0x800000000000011000000000000000000000000000000000000000000000001
@@ -119,8 +120,10 @@ module verifier_addr::gps_statement_verifier {
             output_address: 0,
             first_invoking: true
         });
-        
+
         memory_page_fact_registry::init_data_type(signer);
+        gps_output_parser::init_data_type(signer);
+        stark_verifier_7::init_data_type(signer);
     }
 
     public entry fun prepush_data_to_verify_proof_and_register(
@@ -264,25 +267,32 @@ module verifier_addr::gps_statement_verifier {
             return
         };
 
-        // let Cache2 {
-        //     cairo_public_input,
-        //     public_memory_pages
-        // } = borrow_global<Cache2>(signer_addr);
-        // // NOLINTNEXTLINE: reentrancy-benign.
-        // if (*checkpoint == VERIFY_PROOF_EXTERNAL) {
-        //     if (option::is_some(&verify_proof_external(signer, proof_params, proof, cairo_public_input))) {
-        //         *checkpoint = REGISTER_GPS_FACT;
-        //     };
-        //     return
-        // };
-        //
-        // if (*checkpoint == REGISTER_GPS_FACT) {
-        //     register_gps_facts(signer, task_metadata, public_memory_pages, *borrow(cairo_aux_input,
-        //         OFFSET_OUTPUT_BEGIN_ADDR
-        //     ));
-        //
-        //     *checkpoint = END_VERIFY_PROOF_AND_REGISTER;
-        // }
+        let Cache2 {
+            selected_builtins,
+            cairo_public_input,
+            public_memory_pages,
+            n_pages,
+            first_invoking
+        } = borrow_global_mut<Cache2>(signer_addr);
+        // NOLINTNEXTLINE: reentrancy-benign.
+        if (*checkpoint == VERIFY_PROOF_EXTERNAL) {
+            if (verify_proof_external(signer, proof_params, proof, cairo_public_input)) {
+                *checkpoint = REGISTER_GPS_FACT;
+            };
+            return
+        };
+
+        if (*checkpoint == REGISTER_GPS_FACT) {
+            if (register_gps_facts(
+                signer, 
+                task_metadata, 
+                public_memory_pages, 
+                *borrow(cairo_aux_input, OFFSET_OUTPUT_BEGIN_ADDR)
+            )) {
+                return
+            };
+            *checkpoint = END_VERIFY_PROOF_AND_REGISTER;
+        };
         *first_invoking_1 = true;
     }
 
@@ -510,8 +520,7 @@ module verifier_addr::gps_statement_verifier {
                 signer,
                 public_memory,
                 z,
-                alpha,
-                K_MODULUS
+                alpha
             );
             if (option::is_none(&tmp)) {
                 return option::none<vector<u256>>()
@@ -519,7 +528,7 @@ module verifier_addr::gps_statement_verifier {
             let tmp = option::borrow(&tmp);
             let (memory_hash, prod) = (*borrow(tmp, 1), *borrow(tmp, 2));
             let public_memory_length = *public_memory_length;
-            
+
             *first_invoking_checkpoint = true;
 
             return option::some(vector[public_memory_length, memory_hash, prod])
@@ -579,7 +588,6 @@ module verifier_addr::gps_statement_verifier {
     }
 
     // Data of the function `register_public_memory_main_page`
-
     // checkpoints
     const CHECKPOINT1: u8 = 1;
     const CHECKPOINT2: u8 = 2;
@@ -611,8 +619,8 @@ module verifier_addr::gps_statement_verifier {
 module verifier_addr::test_gps {
 
     use verifier_addr::constructor::init_all;
-    use verifier_addr::gps_statement_verifier::{verify_proof_and_register, prepush_task_metadata,
-        prepush_data_to_verify_proof_and_register
+    use verifier_addr::gps_statement_verifier::{prepush_data_to_verify_proof_and_register, prepush_task_metadata,
+        verify_proof_and_register
     };
 
     // test data is taken from https://dashboard.tenderly.co/tx/mainnet/0x587790da89108585d1400d7156416b62ca3079f55fd71b873b50d2af39c03d75/debugger?trace=0.1.1

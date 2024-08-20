@@ -3,8 +3,7 @@ module verifier_addr::verifier_channel {
     use aptos_std::aptos_hash::keccak256;
 
     use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be, vec_to_bytes_be};
-    use lib_addr::math_mod::mod_mul;
-    use lib_addr::prime_field_element_0::from_montgomery;
+    use lib_addr::prime_field_element_0::{from_montgomery, fmul};
     use verifier_addr::prng::{get_random_bytes, init_prng};
     use lib_addr::vector::{append_vector, set_el};
 
@@ -54,7 +53,7 @@ module verifier_addr::verifier_channel {
                 set_el(ctx, channel_ptr + 2, counter + 1);
             };
             // *targetPtr = fromMontgomery(fieldElement);
-            set_el(ctx, i, mod_mul(field_element, K_MONTGOMERY_R_INV, K_MODULUS));
+            set_el(ctx, i, fmul(field_element, K_MONTGOMERY_R_INV));
         }
     }
 

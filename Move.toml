@@ -1,19 +1,19 @@
 
-        [package]
-        name = "navori"
-        version = "1.0.0"
-        authors = []
+[package]
+name = "navori"
+version = "1.0.0"
+authors = []
 
-        [addresses]
-        verifier_addr = "700b1fa268cf66073944bd94e13179bf7be70822b5a25c375db1acfaa9e40de0"
-        err_addr = "700b1fa268cf66073944bd94e13179bf7be70822b5a25c375db1acfaa9e40de0"
-        test_signer = "c4e4ef65ffc72f988daa3e3ec39d73bf115b345825fc6967d3a0caa63dcfd07c"
+[addresses]
+verifier_addr = "aefce31441c018216ab3f639c5fe6d2b65dea2872e39fe9489802c9891ab3e27"
+err_addr = "aefce31441c018216ab3f639c5fe6d2b65dea2872e39fe9489802c9891ab3e27"
+test_signer = "c4e4ef65ffc72f988daa3e3ec39d73bf115b345825fc6967d3a0caa63dcfd07c"
 
-        [dependencies.AptosFramework]
-        git = "https://github.com/aptos-labs/aptos-core.git"
-        rev = "mainnet"
-        subdir = "aptos-move/framework/aptos-framework"
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "mainnet"
+subdir = "aptos-move/framework/aptos-framework"
 
-        [dependencies]
-        libs = { git = "https://github.com/hduoc2003/navori-libs", rev = "main" }
-        cpu = { git = "https://github.com/hduoc2003/navori-cpu", rev = "main" }
+[dependencies]
+libs = { git = "https://github.com/hduoc2003/navori-libs", rev = "main" }
+cpu = { git = "https://github.com/hduoc2003/navori-cpu", rev = "main" }

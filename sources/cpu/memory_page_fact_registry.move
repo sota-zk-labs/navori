@@ -17,7 +17,8 @@ module verifier_addr::memory_page_fact_registry {
     use lib_addr::event::log_event;
 
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be, long_vec_to_bytes_be};
-    use lib_addr::math_mod::{mod_add, mod_mul};
+    use lib_addr::math_mod::{mod_add};
+    use lib_addr::prime_field_element_0::fmul;
     use verifier_addr::fact_registry::register_fact;
 
     friend verifier_addr::gps_statement_verifier;
@@ -31,6 +32,8 @@ module verifier_addr::memory_page_fact_registry {
     const REGULAR_PAGE: u256 = 0x0;
     // 1
     const CONTINUOUS_PAGE: u256 = 0x1;
+    // 0x800000000000011000000000000000000000000000000000000000000000001
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
     // End of generating constants!
 
     //Errors
@@ -71,15 +74,14 @@ module verifier_addr::memory_page_fact_registry {
         signer: &signer,
         memory_pairs: &vector<u256>,
         z: u256,
-        alpha: u256,
-        prime: u256
+        alpha: u256
     ): Option<vector<u256>> acquires ComputeFactHashCheckpoint, IterationCache {
         assert!(length(memory_pairs) < (1 << 20), TOO_MANY_MEMORY_VALUES);
         assert!((length(memory_pairs) & 1) == 0, SIZE_OF_MEMORYPAIRS_MUST_BE_EVEN);
-        assert!(z < prime, INVALID_VALUE_OF_Z);
-        assert!(alpha < prime, INVALID_VALUE_OF_ALPHA);
+        assert!(z < K_MODULUS, INVALID_VALUE_OF_Z);
+        assert!(alpha < K_MODULUS, INVALID_VALUE_OF_ALPHA);
 
-        let tmp = compute_fact_hash(signer, memory_pairs, z, alpha, prime);
+        let tmp = compute_fact_hash(signer, memory_pairs, z, alpha);
         if (option::is_none(&tmp)) {
             return option::none<vector<u256>>()
         };
@@ -95,8 +97,7 @@ module verifier_addr::memory_page_fact_registry {
         signer: &signer,
         memory_pairs: &vector<u256>,
         z: u256,
-        alpha: u256,
-        prime: u256
+        alpha: u256
     ): Option<vector<u256>> acquires ComputeFactHashCheckpoint, IterationCache {
         let signer_addr = address_of(signer);
         let ComputeFactHashCheckpoint {
@@ -127,15 +128,14 @@ module verifier_addr::memory_page_fact_registry {
                 let address_value_lin_comb = mod_add(
                     // address
                     *borrow(memory_pairs, *memory_ptr),
-                    mod_mul(
+                    fmul(
                         // value
                         *borrow(memory_pairs, *memory_ptr + 1),
-                        alpha,
-                        prime
+                        alpha
                     ),
-                    prime
+                    K_MODULUS
                 );
-                *prod = mod_mul(*prod, z + prime - address_value_lin_comb, prime);
+                *prod = fmul(*prod, z + K_MODULUS - address_value_lin_comb);
                 *memory_ptr = *memory_ptr + 2;
                 count = count + 1;
             };
@@ -153,7 +153,7 @@ module verifier_addr::memory_page_fact_registry {
         let memory_hash = u256_from_bytes_be(&keccak256(*memory_pairs_bytes));
         let prod = *prod;
         let fact_hash = u256_from_bytes_be(&keccak256(
-            vec_to_bytes_be(&vector[REGULAR_PAGE, prime, (memory_size as u256), z, alpha, prod, memory_hash, 0u256])
+            vec_to_bytes_be(&vector[REGULAR_PAGE, K_MODULUS, (memory_size as u256), z, alpha, prod, memory_hash, 0u256])
         ));
         *first_invoking_checkpoint = true;
         *first_invoking_iter = true;
@@ -170,8 +170,7 @@ module verifier_addr::memory_page_fact_registry {
         start_address: u256,
         values: vector<u256>,
         z: u256,
-        alpha: u256,
-        prime: u256
+        alpha: u256
     ): (u256, u256, u256) {
         // assert!(length(&values) < (1 << 20), TOO_MANY_MEMORY_VALUES);
         // assert!(prime < (1u256 << 254), PRIME_IS_TOO_BIG);
@@ -186,7 +185,7 @@ module verifier_addr::memory_page_fact_registry {
         // Initialize valuesPtr to point to the first value in the array.
         let value_ptr = 0u64;
 
-        let minus_z = (prime - z) % prime;
+        let minus_z = (K_MODULUS - z) % K_MODULUS;
 
         // Start by processing full batches of 8 cells, addr represents the last address in each
         // batch.
@@ -197,19 +196,16 @@ module verifier_addr::memory_page_fact_registry {
             // Compute the product of (lin_comb - z) instead of (z - lin_comb), since we're
             // doing an even number of iterations, the result is the same.
             for_each(vector[0u64, 2u64, 4u64, 8u64], |offset| {
-                prod = mod_mul(prod, mod_mul(
-                    alpha - 7 + (offset as u256) + mod_mul(
+                prod = fmul(prod, fmul(
+                    alpha - 7 + (offset as u256) + fmul(
                         alpha,
-                        *borrow(&values, value_ptr + offset),
-                        prime
+                        *borrow(&values, value_ptr + offset)
                     ) + minus_z,
-                    alpha - 7 + (offset as u256) + 1 + mod_mul(
+                    alpha - 7 + (offset as u256) + 1 + fmul(
                         alpha,
-                        *borrow(&values, value_ptr + offset + 1),
-                        prime
-                    ) + minus_z,
-                    prime
-                ), prime);
+                        *borrow(&values, value_ptr + offset + 1)
+                    ) + minus_z
+                ));
             });
             value_ptr = value_ptr + 5;
             addr = addr + 8;
@@ -219,15 +215,15 @@ module verifier_addr::memory_page_fact_registry {
         // Translate addr to the beginning of the last incomplete batch.
         addr = addr - 7;
         while (addr < last_addr) {
-            let address_value_lin_comb = mod_add(addr, mod_mul(*borrow(&values, value_ptr), alpha, prime), prime);
-            prod = mod_mul(prod, z + prime - address_value_lin_comb, prime);
+            let address_value_lin_comb = mod_add(addr, fmul(*borrow(&values, value_ptr), alpha), K_MODULUS);
+            prod = fmul(prod, z + K_MODULUS - address_value_lin_comb);
             addr = addr + 1;
             value_ptr = value_ptr + 1;
         };
 
         let memory_hash = u256_from_bytes_be(&keccak256(vec_to_bytes_be(&values)));
         let fact_hash = u256_from_bytes_be(&keccak256(
-            vec_to_bytes_be(&vector[CONTINUOUS_PAGE, prime, n_values, z, alpha, prod, memory_hash, start_address])
+            vec_to_bytes_be(&vector[CONTINUOUS_PAGE, K_MODULUS, n_values, z, alpha, prod, memory_hash, start_address])
         ));
         log_event(signer, LogMemoryPageFactContinuous {
             fact_hash,
@@ -276,8 +272,7 @@ module verifier_addr::mpfr_test {
                 0
             ],
             3035248388910680138215389260643346358343414931640145853107361271346254998038,
-            220574768071472005565941019352306850224879407895315608807402130378653737764,
-            3618502788666131213697322783095070105623107215331596699973092056135872020481
+            220574768071472005565941019352306850224879407895315608807402130378653737764
         );
         // let g = emitted_events<LogMemoryPageFactContinuous>();
         // print(&g);

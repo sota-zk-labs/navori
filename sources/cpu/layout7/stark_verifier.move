@@ -1,194 +1,198 @@
 module verifier_addr::stark_verifier_7 {
     use std::option;
-    use std::option::Option;
+    use std::option::{is_some, Option};
     use std::signer::address_of;
     use std::vector::{append, borrow, length, slice};
     use aptos_std::aptos_hash::keccak256;
+    use aptos_std::math64::min;
 
-    use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be, vec_to_bytes_be};
-    use lib_addr::math_mod::{mod_exp, mod_mul};
     use cpu_addr::cpu_oods_7;
-    use verifier_addr::fact_registry::is_valid;
-    use verifier_addr::fri_statement_verifier_7;
-    use cpu_addr::layout_specific_7::{layout_specific_init, prepare_for_oods_check, safe_div};
-    use cpu_addr::memory_access_utils_7::{get_fri_step_sizes};
-    use verifier_addr::merkle_statement_verifier;
-    use lib_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
+    use cpu_addr::layout_specific_7;
+    use cpu_addr::layout_specific_7::{layout_specific_init, safe_div, prepare_for_oods_check};
+    use cpu_addr::memory_access_utils_7::get_fri_step_sizes;
     use cpu_addr::public_memory_offsets_7::{get_offset_page_addr, get_offset_page_hash, get_offset_page_prod,
         get_offset_page_size, get_public_input_length
     };
+    use lib_addr::bytes::{num_to_bytes_be, u256_from_bytes_be, vec_to_bytes_be};
+    use lib_addr::math_mod::{mod_exp};
+    use lib_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
     use lib_addr::vector::{append_vector, assign, set_el};
+
+    use verifier_addr::fri_statement_verifier_7;
+    use verifier_addr::merkle_statement_verifier;
     use verifier_addr::verifier_channel::{init_channel, read_field_element, read_hash, send_field_elements,
         send_random_queries, verify_proof_of_work
     };
 
+    friend verifier_addr::gps_statement_verifier;
+
     // This line is used for generating constants DO NOT REMOVE!
-	// 3
-	const GENERATOR_VAL: u256 = 0x3;
-	// 0x800000000000011000000000000000000000000000000000000000000000001
-	const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
-	// 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
-	const COMMITMENT_MASK: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
-	// 3
-	const FRI_QUEUE_SLOT_SIZE: u64 = 0x3;
-	// 5
-	const PROOF_PARAMS_FRI_STEPS_OFFSET: u64 = 0x5;
-	// 4
-	const PROOF_PARAMS_N_FRI_STEPS_OFFSET: u64 = 0x4;
-	// 0
-	const REGULAR_PAGE: u256 = 0x0;
-	// 1
-	const CONTINUOUS_PAGE: u256 = 0x1;
-	// 4
-	const LOG_CPU_COMPONENT_HEIGHT: u256 = 0x4;
-	// 42800643258479064999893963318903811951182475189843316
-	const LAYOUT_CODE: u256 = 42800643258479064999893963318903811951182475189843316;
-	// 192
-	const MASK_SIZE: u64 = 0xc0;
-	// 2
-	const CONSTRAINTS_DEGREE_BOUND: u64 = 0x2;
-	// MASK_SIZE + CONSTRAINTS_DEGREE_BOUND
-	const N_OODS_VALUES: u64 = 0xc2;
-	// 16
-	const PUBLIC_MEMORY_STEP: u256 = 0x10;
-	// 12
-	const N_COLUMNS_IN_MASK: u64 = 0xc;
-	// 9
-	const N_COLUMNS_IN_TRACE0: u64 = 0x9;
-	// 3
-	const N_COLUMNS_IN_TRACE1: u64 = 0x3;
-	// 6
-	const N_INTERACTION_ELEMENTS: u64 = 0x6;
-	// 124
-	const N_COEFFICIENTS: u256 = 0x7c;
-	// N_OODS_VALUES
-	const N_OODS_COEFFICIENTS: u64 = 0xc2;
-	// 0
-	const OFFSET_LOG_N_STEPS: u64 = 0x0;
-	// 1
-	const OFFSET_RC_MIN: u64 = 0x1;
-	// 2
-	const OFFSET_RC_MAX: u64 = 0x2;
-	// 3
-	const OFFSET_LAYOUT_CODE: u64 = 0x3;
-	// 4
-	const OFFSET_PROGRAM_BEGIN_ADDR: u64 = 0x4;
-	// 5
-	const OFFSET_PROGRAM_STOP_PTR: u64 = 0x5;
-	// 1
-	const INITIAL_PC: u64 = 0x1;
-	// INITIAL_PC + 4
-	const FINAL_PC: u64 = 0x5;
-	// 6
-	const OFFSET_EXECUTION_BEGIN_ADDR: u64 = 0x6;
-	// 7
-	const OFFSET_EXECUTION_STOP_PTR: u64 = 0x7;
-	// 21
-	const OFFSET_PUBLIC_MEMORY: u64 = 0x15;
-	// 20
-	const OFFSET_N_PUBLIC_MEMORY_PAGES: u64 = 0x14;
-	// 18
-	const OFFSET_PUBLIC_MEMORY_PADDING_ADDR: u64 = 0x12;
-	// 0x13b
-	const MM_FRI_LAST_LAYER_DEG_BOUND: u64 = 0x13b;
-	// 0x144
-	const MM_TRACE_LENGTH: u64 = 0x144;
-	// 0x3
-	const MM_PROOF_OF_WORK_BITS: u64 = 0x3;
-	// 0x1
-	const MM_BLOW_UP_FACTOR: u64 = 0x1;
-	// 48
-	const MAX_N_QUERIES: u64 = 0x30;
-	// 0x9
-	const MM_N_UNIQUE_QUERIES: u64 = 0x9;
-	// 0x2
-	const MM_LOG_EVAL_DOMAIN_SIZE: u64 = 0x2;
-	// 0x0
-	const MM_EVAL_DOMAIN_SIZE: u64 = 0x0;
-	// 0x4
-	const MM_EVAL_DOMAIN_GENERATOR: u64 = 0x4;
-	// 0x15e
-	const MM_TRACE_GENERATOR: u64 = 0x15e;
-	// 0x4fd
-	const MM_CONTEXT_SIZE: u64 = 0x4fd;
-	// 0x145
-	const MM_OFFSET_SIZE: u64 = 0x145;
-	// 0x146
-	const MM_HALF_OFFSET_SIZE: u64 = 0x146;
-	// 0x4fa
-	const MM_LOG_N_STEPS: u64 = 0x4fa;
-	// 0x150
-	const MM_RANGE_CHECK_MIN: u64 = 0x150;
-	// 0x151
-	const MM_RANGE_CHECK_MAX: u64 = 0x151;
-	// 0x148
-	const MM_INITIAL_PC: u64 = 0x148;
-	// 0x14a
-	const MM_FINAL_PC: u64 = 0x14a;
-	// 0x147
-	const MM_INITIAL_AP: u64 = 0x147;
-	// 0x149
-	const MM_FINAL_AP: u64 = 0x149;
-	// 0x4fc
-	const MM_N_PUBLIC_MEM_PAGES: u64 = 0x4fc;
-	// 0x4fb
-	const MM_N_PUBLIC_MEM_ENTRIES: u64 = 0x4fb;
-	// 0x5
-	const MM_PUBLIC_INPUT_PTR: u64 = 0x5;
-	// 10
-	const MAX_FRI_STEPS: u64 = 0xa;
-	// 0x6
-	const MM_TRACE_COMMITMENT: u64 = 0x6;
-	// 0xa
-	const MM_CHANNEL: u64 = 0xa;
-	// 0x166
-	const MM_COMPOSITION_ALPHA: u64 = 0x166;
-	// 0x8
-	const MM_OODS_COMMITMENT: u64 = 0x8;
-	// 0x15f
-	const MM_OODS_POINT: u64 = 0x15f;
-	// 0x167
-	const MM_OODS_VALUES: u64 = 0x167;
-	// 0x160
-	const MM_INTERACTION_ELEMENTS: u64 = 0x160;
-	// 0x14b
-	const MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM: u64 = 0x14b;
-	// 0x14c
-	const MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0: u64 = 0x14c;
-	// 0x14e
-	const MM_RANGE_CHECK16__PERM__INTERACTION_ELM: u64 = 0x14e;
-	// 0x14d
-	const MM_MEMORY__MULTI_COLUMN_PERM__PERM__PUBLIC_MEMORY_PROD: u64 = 0x14d;
-	// 0x259
-	const MM_OODS_ALPHA: u64 = 0x259;
-	// 0x131
-	const MM_FRI_COMMITMENTS: u64 = 0x131;
-	// 0x127
-	const MM_FRI_EVAL_POINTS: u64 = 0x127;
-	// 0x6d
-	const MM_FRI_QUEUE: u64 = 0x6d;
-	// 0x229
-	const MM_OODS_EVAL_POINTS: u64 = 0x229;
-	// 0xd
-	const MM_MERKLE_QUEUE: u64 = 0xd;
-	// 0x25a
-	const MM_TRACE_QUERY_RESPONSES: u64 = 0x25a;
-	// 0x49a
-	const MM_COMPOSITION_QUERY_RESPONSES: u64 = 0x49a;
-	// 0x13c
-	const MM_FRI_LAST_LAYER_PTR: u64 = 0x13c;
-	// 2
-	const FRI_MIN_STEP_SIZE: u256 = 0x2;
-	// 4
-	const FRI_MAX_STEP_SIZE: u256 = 0x4;
-	// 0x126
-	const MM_FRI_STEP_SIZES_PTR: u64 = 0x126;
-	// 0x13d
-	const MM_CONSTRAINT_POLY_ARGS_START: u64 = 0x13d;
-	// 0x227
-	const MM_CONSTRAINT_POLY_ARGS_END: u64 = 0x227;
-	// 0x227
-	const MM_COMPOSITION_OODS_VALUES: u64 = 0x227;
+    // 3
+    const GENERATOR_VAL: u256 = 0x3;
+    // 0x800000000000011000000000000000000000000000000000000000000000001
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
+    const COMMITMENT_MASK: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
+    // 3
+    const FRI_QUEUE_SLOT_SIZE: u64 = 0x3;
+    // 5
+    const PROOF_PARAMS_FRI_STEPS_OFFSET: u64 = 0x5;
+    // 4
+    const PROOF_PARAMS_N_FRI_STEPS_OFFSET: u64 = 0x4;
+    // 0
+    const REGULAR_PAGE: u256 = 0x0;
+    // 1
+    const CONTINUOUS_PAGE: u256 = 0x1;
+    // 4
+    const LOG_CPU_COMPONENT_HEIGHT: u256 = 0x4;
+    // 42800643258479064999893963318903811951182475189843316
+    const LAYOUT_CODE: u256 = 42800643258479064999893963318903811951182475189843316;
+    // 192
+    const MASK_SIZE: u64 = 0xc0;
+    // 2
+    const CONSTRAINTS_DEGREE_BOUND: u64 = 0x2;
+    // MASK_SIZE + CONSTRAINTS_DEGREE_BOUND
+    const N_OODS_VALUES: u64 = 0xc2;
+    // 16
+    const PUBLIC_MEMORY_STEP: u256 = 0x10;
+    // 12
+    const N_COLUMNS_IN_MASK: u64 = 0xc;
+    // 9
+    const N_COLUMNS_IN_TRACE0: u64 = 0x9;
+    // 3
+    const N_COLUMNS_IN_TRACE1: u64 = 0x3;
+    // 6
+    const N_INTERACTION_ELEMENTS: u64 = 0x6;
+    // 124
+    const N_COEFFICIENTS: u256 = 0x7c;
+    // N_OODS_VALUES
+    const N_OODS_COEFFICIENTS: u64 = 0xc2;
+    // 0
+    const OFFSET_LOG_N_STEPS: u64 = 0x0;
+    // 1
+    const OFFSET_RC_MIN: u64 = 0x1;
+    // 2
+    const OFFSET_RC_MAX: u64 = 0x2;
+    // 3
+    const OFFSET_LAYOUT_CODE: u64 = 0x3;
+    // 4
+    const OFFSET_PROGRAM_BEGIN_ADDR: u64 = 0x4;
+    // 5
+    const OFFSET_PROGRAM_STOP_PTR: u64 = 0x5;
+    // 1
+    const INITIAL_PC: u64 = 0x1;
+    // INITIAL_PC + 4
+    const FINAL_PC: u64 = 0x5;
+    // 6
+    const OFFSET_EXECUTION_BEGIN_ADDR: u64 = 0x6;
+    // 7
+    const OFFSET_EXECUTION_STOP_PTR: u64 = 0x7;
+    // 21
+    const OFFSET_PUBLIC_MEMORY: u64 = 0x15;
+    // 20
+    const OFFSET_N_PUBLIC_MEMORY_PAGES: u64 = 0x14;
+    // 18
+    const OFFSET_PUBLIC_MEMORY_PADDING_ADDR: u64 = 0x12;
+    // 0x13b
+    const MM_FRI_LAST_LAYER_DEG_BOUND: u64 = 0x13b;
+    // 0x144
+    const MM_TRACE_LENGTH: u64 = 0x144;
+    // 0x3
+    const MM_PROOF_OF_WORK_BITS: u64 = 0x3;
+    // 0x1
+    const MM_BLOW_UP_FACTOR: u64 = 0x1;
+    // 48
+    const MAX_N_QUERIES: u64 = 0x30;
+    // 0x9
+    const MM_N_UNIQUE_QUERIES: u64 = 0x9;
+    // 0x2
+    const MM_LOG_EVAL_DOMAIN_SIZE: u64 = 0x2;
+    // 0x0
+    const MM_EVAL_DOMAIN_SIZE: u64 = 0x0;
+    // 0x4
+    const MM_EVAL_DOMAIN_GENERATOR: u64 = 0x4;
+    // 0x15e
+    const MM_TRACE_GENERATOR: u64 = 0x15e;
+    // 0x4fd
+    const MM_CONTEXT_SIZE: u64 = 0x4fd;
+    // 0x145
+    const MM_OFFSET_SIZE: u64 = 0x145;
+    // 0x146
+    const MM_HALF_OFFSET_SIZE: u64 = 0x146;
+    // 0x4fa
+    const MM_LOG_N_STEPS: u64 = 0x4fa;
+    // 0x150
+    const MM_RANGE_CHECK_MIN: u64 = 0x150;
+    // 0x151
+    const MM_RANGE_CHECK_MAX: u64 = 0x151;
+    // 0x148
+    const MM_INITIAL_PC: u64 = 0x148;
+    // 0x14a
+    const MM_FINAL_PC: u64 = 0x14a;
+    // 0x147
+    const MM_INITIAL_AP: u64 = 0x147;
+    // 0x149
+    const MM_FINAL_AP: u64 = 0x149;
+    // 0x4fc
+    const MM_N_PUBLIC_MEM_PAGES: u64 = 0x4fc;
+    // 0x4fb
+    const MM_N_PUBLIC_MEM_ENTRIES: u64 = 0x4fb;
+    // 0x5
+    const MM_PUBLIC_INPUT_PTR: u64 = 0x5;
+    // 10
+    const MAX_FRI_STEPS: u64 = 0xa;
+    // 0x6
+    const MM_TRACE_COMMITMENT: u64 = 0x6;
+    // 0xa
+    const MM_CHANNEL: u64 = 0xa;
+    // 0x166
+    const MM_COMPOSITION_ALPHA: u64 = 0x166;
+    // 0x8
+    const MM_OODS_COMMITMENT: u64 = 0x8;
+    // 0x15f
+    const MM_OODS_POINT: u64 = 0x15f;
+    // 0x167
+    const MM_OODS_VALUES: u64 = 0x167;
+    // 0x160
+    const MM_INTERACTION_ELEMENTS: u64 = 0x160;
+    // 0x14b
+    const MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM: u64 = 0x14b;
+    // 0x14c
+    const MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0: u64 = 0x14c;
+    // 0x14e
+    const MM_RANGE_CHECK16__PERM__INTERACTION_ELM: u64 = 0x14e;
+    // 0x14d
+    const MM_MEMORY__MULTI_COLUMN_PERM__PERM__PUBLIC_MEMORY_PROD: u64 = 0x14d;
+    // 0x259
+    const MM_OODS_ALPHA: u64 = 0x259;
+    // 0x131
+    const MM_FRI_COMMITMENTS: u64 = 0x131;
+    // 0x127
+    const MM_FRI_EVAL_POINTS: u64 = 0x127;
+    // 0x6d
+    const MM_FRI_QUEUE: u64 = 0x6d;
+    // 0x229
+    const MM_OODS_EVAL_POINTS: u64 = 0x229;
+    // 0xd
+    const MM_MERKLE_QUEUE: u64 = 0xd;
+    // 0x25a
+    const MM_TRACE_QUERY_RESPONSES: u64 = 0x25a;
+    // 0x49a
+    const MM_COMPOSITION_QUERY_RESPONSES: u64 = 0x49a;
+    // 0x13c
+    const MM_FRI_LAST_LAYER_PTR: u64 = 0x13c;
+    // 2
+    const FRI_MIN_STEP_SIZE: u256 = 0x2;
+    // 4
+    const FRI_MAX_STEP_SIZE: u256 = 0x4;
+    // 0x126
+    const MM_FRI_STEP_SIZES_PTR: u64 = 0x126;
+    // 0x13d
+    const MM_CONSTRAINT_POLY_ARGS_START: u64 = 0x13d;
+    // 0x227
+    const MM_CONSTRAINT_POLY_ARGS_END: u64 = 0x227;
+    // 0x227
+    const MM_COMPOSITION_OODS_VALUES: u64 = 0x227;
     // End of generating constants!
     // constants
     const PROOF_PARAMS_N_QUERIES_OFFSET: u64 = 0;
@@ -210,11 +214,52 @@ module verifier_addr::stark_verifier_7 {
         min_proof_of_work_bits: u256
     }
 
-    public entry fun init_stark_verifier(signer: &signer, num_security_bits: u256, min_proof_of_work_bits: u256) {
+    public fun init_stark_verifier(signer: &signer, num_security_bits: u256, min_proof_of_work_bits: u256) {
         move_to(signer, ConstructorConfig {
             num_security_bits,
             min_proof_of_work_bits
         });
+    }
+
+    public entry fun init_data_type(signer: &signer) {
+        move_to(signer, VerifyProofCheckpoint {
+            inner: VP_CHECKPOINT1
+        });
+        move_to(signer, CtxCache {
+            inner: vector[]
+        });
+        move_to(signer, Checkpoint4Cache {
+            ptr: 0,
+            first_invoking: true
+        });
+        move_to(signer, VmpfIterationCache {
+            ptr: 0,
+            first_invoking: true
+        });
+        move_to(signer, OccCheckpoint {
+            checkpoint: 0,
+            first_invoking: true
+        });
+        move_to(signer, CpmpPtr {
+            res: 1,
+            ptr: 0,
+            first_invoking: true
+        });
+        move_to(signer, CpmqCheckpoint {
+            checkpoint: 0,
+            first_invoking: true
+        });
+        move_to(signer, CacheCpmqCheckpoint1 {
+            denominator: 0
+        });
+        move_to(signer, CacheCpmqCheckpoint3 {
+             numerator: 0
+        });
+        move_to(signer, CfflCheckpoint {
+             inner: CFFL_CHECKPOINT1
+        });
+        layout_specific_7::init_data_type(signer);
+        cpu_oods_7::init_data_type(signer);
     }
 
     /*
@@ -233,10 +278,9 @@ module verifier_addr::stark_verifier_7 {
               g^(bitReverse(idx, log_evalDomainSize).
     */
     fun adjust_query_indices_and_prepare_eval_points(ctx: &mut vector<u256>) {
-        let fri_queue_slot_size = FRI_QUEUE_SLOT_SIZE;
         let n_unique_queries = (*borrow(ctx, MM_N_UNIQUE_QUERIES) as u64);
         let fri_queue = MM_FRI_QUEUE;
-        let fri_queue_end = fri_queue + n_unique_queries * fri_queue_slot_size;
+        let fri_queue_end = fri_queue + n_unique_queries * FRI_QUEUE_SLOT_SIZE;
         let eval_points_ptr = MM_OODS_EVAL_POINTS;
         let log_eval_domain_size = (*borrow(ctx, MM_LOG_EVAL_DOMAIN_SIZE) as u8);
         let eval_domain_size = *borrow(ctx, MM_EVAL_DOMAIN_SIZE);
@@ -255,7 +299,7 @@ module verifier_addr::stark_verifier_7 {
                 mod_exp(eval_domain_generator, bit_reverse(query_idx, log_eval_domain_size), K_MODULUS)
             );
             eval_points_ptr = eval_points_ptr + 1;
-            fri_queue = fri_queue + fri_queue_slot_size;
+            fri_queue = fri_queue + FRI_QUEUE_SLOT_SIZE;
         }
     }
 
@@ -288,12 +332,11 @@ module verifier_addr::stark_verifier_7 {
         proof_data_ptr: u64,
         merkle_root: u256
     ) {
-        // assert!(n_columns <= get_n_columns_in_trace() + get_n_columns_in_composition(), TOO_MANY_COLUMNS);
-        let fri_queue_slot_size = FRI_QUEUE_SLOT_SIZE;
+        assert!(n_columns <= get_n_columns_in_trace() + get_n_columns_in_composition(), TOO_MANY_COLUMNS);
         let n_unique_queries = (*borrow(ctx, MM_N_UNIQUE_QUERIES) as u64);
         let channel_ptr = MM_CHANNEL;
         let fri_queue = MM_FRI_QUEUE;
-        let fri_queue_end = fri_queue + n_unique_queries * fri_queue_slot_size;
+        let fri_queue_end = fri_queue + n_unique_queries * FRI_QUEUE_SLOT_SIZE;
         let merkle_queue_ptr = MM_MERKLE_QUEUE;
         let row_size = n_columns;
         let proof_data_skip_bytes = (n_total_columns - n_columns);
@@ -308,7 +351,7 @@ module verifier_addr::stark_verifier_7 {
             );
             append(&mut bytes, vec_to_bytes_be(&slice(proof, proof_ptr + 1, proof_ptr + row_size)));
             append(&mut bytes, slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr + row_size)), 0, 8));
-            // assert!(length(&bytes) == row_size * 32, WRONG_BYTES_LENGTH);
+            assert!(length(&bytes) == row_size * 32, WRONG_BYTES_LENGTH);
             let merkle_leaf = u256_from_bytes_be(
                 &keccak256(bytes)
             ) & COMMITMENT_MASK;
@@ -332,12 +375,19 @@ module verifier_addr::stark_verifier_7 {
                 proof_ptr = proof_ptr + 1;
             };
             proof_data_ptr = proof_data_ptr + proof_data_skip_bytes;
-            fri_queue = fri_queue + fri_queue_slot_size;
+            fri_queue = fri_queue + FRI_QUEUE_SLOT_SIZE;
         };
 
         set_el(ctx, channel_ptr, (proof_ptr as u256));
 
-        merkle_statement_verifier::verify_merkle(signer, ctx, channel_ptr, merkle_queue_ptr, merkle_root, n_unique_queries);
+        merkle_statement_verifier::verify_merkle(
+            signer,
+            ctx,
+            channel_ptr,
+            merkle_queue_ptr,
+            merkle_root,
+            n_unique_queries
+        );
     }
 
     /*
@@ -350,49 +400,64 @@ module verifier_addr::stark_verifier_7 {
       I.e. if the prover said that f(z) = c, the first FRI layer will include
       the term (f(x) - c)/(x-z).
     */
-    fun compute_first_fri_layer(signer: &signer, ctx: &mut vector<u256>, proof: &vector<u256>) {
-        adjust_query_indices_and_prepare_eval_points(ctx);
-        // emit LogGas("Prepare evaluation points", gasleft());
-        let tmp = *borrow(ctx, MM_TRACE_COMMITMENT);
-        read_query_responses_and_decommit(
-            signer,
-            ctx,
-            proof,
-            get_n_columns_in_trace(),
-            get_n_columns_in_trace_0(),
-            MM_TRACE_QUERY_RESPONSES,
-            tmp
-        );
-        // emit LogGas("Read and decommit trace", gasleft());
-
-        tmp = *borrow(ctx, MM_TRACE_COMMITMENT + 1);
-        if (has_interaction()) {
+    fun compute_first_fri_layer(signer: &signer, ctx: &mut vector<u256>, proof: &vector<u256>): bool acquires CfflCheckpoint {
+        let CfflCheckpoint {
+            inner: checkpoint
+        } = borrow_global_mut<CfflCheckpoint>(address_of(signer));
+        if (*checkpoint == CFFL_CHECKPOINT1) {
+            adjust_query_indices_and_prepare_eval_points(ctx);
+            // emit LogGas("Prepare evaluation points", gasleft());
+            let tmp = *borrow(ctx, MM_TRACE_COMMITMENT);
             read_query_responses_and_decommit(
                 signer,
                 ctx,
                 proof,
                 get_n_columns_in_trace(),
-                get_n_columns_in_trace_1(),
-                MM_TRACE_QUERY_RESPONSES + get_n_columns_in_trace_0(),
+                get_n_columns_in_trace_0(),
+                MM_TRACE_QUERY_RESPONSES,
                 tmp
             );
-            // emit LogGas("Read and decommit second trace", gasleft());
+            // emit LogGas("Read and decommit trace", gasleft());
+
+            tmp = *borrow(ctx, MM_TRACE_COMMITMENT + 1);
+            if (has_interaction()) {
+                read_query_responses_and_decommit(
+                    signer,
+                    ctx,
+                    proof,
+                    get_n_columns_in_trace(),
+                    get_n_columns_in_trace_1(),
+                    MM_TRACE_QUERY_RESPONSES + get_n_columns_in_trace_0(),
+                    tmp
+                );
+                // emit LogGas("Read and decommit second trace", gasleft());
+            };
+            *checkpoint = CFFL_CHECKPOINT2;
+            return false
         };
 
-        tmp = *borrow(ctx, MM_OODS_COMMITMENT);
-        read_query_responses_and_decommit(
-            signer,
-            ctx,
-            proof,
-            get_n_columns_in_composition(),
-            get_n_columns_in_composition(),
-            MM_COMPOSITION_QUERY_RESPONSES,
-            tmp
-        );
+        if (*checkpoint == CFFL_CHECKPOINT2) {
+            let tmp = *borrow(ctx, MM_OODS_COMMITMENT);
+            read_query_responses_and_decommit(
+                signer,
+                ctx,
+                proof,
+                get_n_columns_in_composition(),
+                get_n_columns_in_composition(),
+                MM_COMPOSITION_QUERY_RESPONSES,
+                tmp
+            );
+            *checkpoint = CFFL_CHECKPOINT3;
+        };
 
         // emit LogGas("Read and decommit composition", gasleft());
 
-        cpu_oods_7::fallback(ctx);
+        if (cpu_oods_7::fallback(signer, ctx)) {
+            *checkpoint = CFFL_CHECKPOINT1;
+            true
+        } else {
+            false
+        }
         // emit LogGas("OODS virtual oracle", gasleft());
     }
 
@@ -418,7 +483,7 @@ module verifier_addr::stark_verifier_7 {
         let length = (fri_last_layer_deg_bound as u64);
         let last_layer_end = last_layer_ptr + length;
         for (coefs_ptr in last_layer_ptr..last_layer_end) {
-            // assert!(*borrow(proof, coefs_ptr) <= prime_minus_one, INVALID_FIELD_ELEMENT);
+            assert!(*borrow(proof, coefs_ptr) <= prime_minus_one, INVALID_FIELD_ELEMENT);
         };
 
         // Update prng.digest with the hash of digest + 1 and the last layer coefficient.
@@ -444,100 +509,150 @@ module verifier_addr::stark_verifier_7 {
         set_el(ctx, MM_FRI_LAST_LAYER_PTR, (last_layer_ptr as u256));
     }
 
-    public fun verify_proof(
+    public entry fun verify_proof(
         signer: &signer,
-        proof_params: &vector<u256>,
-        proof: &mut vector<u256>,
-        public_input: &vector<u256>
-    ): Option<bool> acquires ConstructorConfig {
-        let ctx = init_verifier_params(signer, public_input, proof_params);
+        proof_params: vector<u256>,
+        proof: vector<u256>,
+        public_input: vector<u256>
+    ) acquires ConstructorConfig, VerifyProofCheckpoint, CtxCache, Checkpoint4Cache, VmpfIterationCache, OccCheckpoint, CpmpPtr, CpmqCheckpoint, CacheCpmqCheckpoint1, CacheCpmqCheckpoint3, CfflCheckpoint {
+        let signer_addr = address_of(signer);
+        let VerifyProofCheckpoint {
+            inner: checkpoint
+        } = borrow_global_mut<VerifyProofCheckpoint>(signer_addr);
+        if (*checkpoint == VP_CHECKPOINT1) {
+            *borrow_global_mut<CtxCache>(signer_addr) = CtxCache {
+                inner: init_verifier_params(signer, &public_input, &proof_params)
+            };
+            *checkpoint = VP_CHECKPOINT2;
+            return
+        };
+
+        let CtxCache {
+            inner: ctx
+        } = borrow_global_mut<CtxCache>(signer_addr);
         let channel_ptr = MM_CHANNEL;
 
-        init_channel(&mut ctx, channel_ptr, get_public_input_hash(public_input));
-        // // emit LogGas(Initializations, gasleft());
+        if (*checkpoint == VP_CHECKPOINT2) {
+            init_channel(ctx, channel_ptr, get_public_input_hash(&public_input));
+            // Read trace commitment.
+            let hash = read_hash(ctx, &proof, channel_ptr, true);
+            set_el(ctx, MM_TRACE_COMMITMENT, hash);
 
-        // // Read trace commitment.
-        let hash = read_hash(&mut ctx, proof, channel_ptr, true);
-        set_el(&mut ctx, MM_TRACE_COMMITMENT, hash);
+            if (has_interaction()) {
+                // Send interaction elements.
+                send_field_elements(
+                    ctx,
+                    channel_ptr,
+                    get_n_interaction_elements(),
+                    get_mm_interaction_elements()
+                );
 
-        if (has_interaction()) {
-            // Send interaction elements.
-            send_field_elements(
-                &mut ctx,
-                channel_ptr,
-                get_n_interaction_elements(),
-                get_mm_interaction_elements()
-            );
+                // Read second trace commitment.
+                let tmp = read_hash(ctx, &proof, channel_ptr, true);
+                set_el(ctx, MM_TRACE_COMMITMENT + 1, tmp);
+            };
+            // Send constraint polynomial random element.
+            send_field_elements(ctx, channel_ptr, 1, MM_COMPOSITION_ALPHA);
+            // emit LogGas("Generate coefficients", gasleft());
 
-            // Read second trace commitment.
-            let tmp = read_hash(&mut ctx, proof, channel_ptr, true);
-            set_el(&mut ctx, MM_TRACE_COMMITMENT + 1, tmp);
+            hash = read_hash(ctx, &proof, channel_ptr, true);
+            set_el(ctx, MM_OODS_COMMITMENT, hash);
+
+            // Send Out of Domain Sampling point.
+            send_field_elements(ctx, channel_ptr, 1, MM_OODS_POINT);
+            *checkpoint = VP_CHECKPOINT4;
+            return
         };
-        // Send constraint polynomial random element.
-        send_field_elements(&mut ctx, channel_ptr, 1, MM_COMPOSITION_ALPHA);
-        // emit LogGas("Generate coefficients", gasleft());
+        // emit LogGas(Initializations, gasleft());
 
-        hash = read_hash(&mut ctx, proof, channel_ptr, true);
-        set_el(&mut ctx, MM_OODS_COMMITMENT, hash);
-
-        // Send Out of Domain Sampling point.
-        send_field_elements(&mut ctx, channel_ptr, 1, MM_OODS_POINT);
-
-        // Read the answers to the Out of Domain Sampling.
-        let lmm_oods_values = MM_OODS_VALUES;
-        for (i in lmm_oods_values..(lmm_oods_values + N_OODS_VALUES)) {
-            let tmp = read_field_element(&mut ctx, proof, channel_ptr, true);
-            set_el(&mut ctx, i, tmp);
+        if (*checkpoint == VP_CHECKPOINT4) {
+            // Read the answers to the Out of Domain Sampling.
+            let lmm_oods_values = MM_OODS_VALUES;
+            let Checkpoint4Cache {
+                ptr,
+                first_invoking
+            } = borrow_global_mut<Checkpoint4Cache>(signer_addr);
+            if (*first_invoking) {
+                *ptr = lmm_oods_values;
+                *first_invoking = false;
+            };
+            let end_ptr = min(lmm_oods_values + N_OODS_VALUES, *ptr + CHECKPOINT4_ITERATION_LENGTH);
+            for (i in *ptr..end_ptr) {
+                let tmp = read_field_element(ctx, &proof, channel_ptr, true);
+                set_el(ctx, i, tmp);
+            };
+            *ptr = end_ptr;
+            if (end_ptr == lmm_oods_values + N_OODS_VALUES) {
+                *checkpoint = VP_CHECKPOINT5;
+                *first_invoking = true;
+            };
+            return
         };
         // emit LogGas("Read OODS commitments", gasleft());
-        oods_consistency_check(signer, &mut ctx, public_input);
-        // emit LogGas("OODS consistency check", gasleft());
-        send_field_elements(&mut ctx, channel_ptr, 1, MM_OODS_ALPHA);
-        // emit LogGas("Generate OODS coefficients", gasleft());
-        hash = read_hash(&mut ctx, proof, channel_ptr, true);
-        set_el(&mut ctx, MM_FRI_COMMITMENTS, hash);
-
-        let n_fri_steps = length(&get_fri_step_sizes(proof_params));
-        let fri_eval_point_ptr = MM_FRI_EVAL_POINTS;
-        for (i in 1..(n_fri_steps - 1)) {
-            send_field_elements(&mut ctx, channel_ptr, 1, fri_eval_point_ptr + i);
-            hash = read_hash(&mut ctx, proof, channel_ptr, true);
-            set_el(&mut ctx, MM_FRI_COMMITMENTS + i, hash);
+        if (*checkpoint == VP_CHECKPOINT5) {
+            if (oods_consistency_check(signer, ctx, &public_input)) {
+                *checkpoint = VP_CHECKPOINT6;
+            };
+            return
         };
+        if (*checkpoint == VP_CHECKPOINT6) {
+            // emit LogGas("OODS consistency check", gasleft());
+            send_field_elements(ctx, channel_ptr, 1, MM_OODS_ALPHA);
+            // emit LogGas("Generate OODS coefficients", gasleft());
+            let hash = read_hash(ctx, &proof, channel_ptr, true);
+            set_el(ctx, MM_FRI_COMMITMENTS, hash);
 
-        // Send last random FRI evaluation point.
-        send_field_elements(
-            &mut ctx,
-            channel_ptr,
-            1,
-            MM_FRI_EVAL_POINTS + n_fri_steps - 1
-        );
+            let n_fri_steps = length(&get_fri_step_sizes(&proof_params));
+            let fri_eval_point_ptr = MM_FRI_EVAL_POINTS;
+            for (i in 1..(n_fri_steps - 1)) {
+                send_field_elements(ctx, channel_ptr, 1, fri_eval_point_ptr + i);
+                hash = read_hash(ctx, &proof, channel_ptr, true);
+                set_el(ctx, MM_FRI_COMMITMENTS + i, hash);
+            };
 
-        // Read FRI last layer commitment.
-        read_last_fri_layer(&mut ctx, proof);
+            // Send last random FRI evaluation point.
+            send_field_elements(
+                ctx,
+                channel_ptr,
+                1,
+                MM_FRI_EVAL_POINTS + n_fri_steps - 1
+            );
 
-        // Generate queries.
-        // emit LogGas("Read FRI commitments", gasleft());
-        let tmp = (*borrow(&ctx, MM_PROOF_OF_WORK_BITS) as u8);
-        verify_proof_of_work(&mut ctx, proof, channel_ptr, tmp);
+            // Read FRI last layer commitment.
+            read_last_fri_layer(ctx, &mut proof);
 
-        let tmp1 = *borrow(&ctx, MM_N_UNIQUE_QUERIES);
-        let tmp2 = *borrow(&ctx, MM_EVAL_DOMAIN_SIZE);
-        let tmp = send_random_queries(
-            &mut ctx,
-            channel_ptr,
-            tmp1,
-            tmp2 - 1,
-            MM_FRI_QUEUE,
-            FRI_QUEUE_SLOT_SIZE,
-        );
-        set_el(&mut ctx, MM_N_UNIQUE_QUERIES, tmp);
+            // Generate queries.
+            // emit LogGas("Read FRI commitments", gasleft());
+            let tmp = (*borrow(ctx, MM_PROOF_OF_WORK_BITS) as u8);
+            verify_proof_of_work(ctx, &proof, channel_ptr, tmp);
+
+            let tmp1 = *borrow(ctx, MM_N_UNIQUE_QUERIES);
+            let tmp2 = *borrow(ctx, MM_EVAL_DOMAIN_SIZE);
+            let tmp = send_random_queries(
+                ctx,
+                channel_ptr,
+                tmp1,
+                tmp2 - 1,
+                MM_FRI_QUEUE,
+                FRI_QUEUE_SLOT_SIZE,
+            );
+            set_el(ctx, MM_N_UNIQUE_QUERIES, tmp);
+            
+            *checkpoint = VP_CHECKPOINT7;
+            return
+        };
         // emit LogGas("Send queries", gasleft());
 
-        compute_first_fri_layer(signer, &mut ctx, proof);
+        if (*checkpoint == VP_CHECKPOINT7) {
+            if (compute_first_fri_layer(signer, ctx, &proof)) {
+                *checkpoint = VP_CHECKPOINT8;
+            }; 
+            return
+        };
 
-        fri_statement_verifier_7::fri_verify_layers(signer, &mut ctx, proof, proof_params);
-        option::some(true)
+        fri_statement_verifier_7::fri_verify_layers(signer, ctx, &proof, &proof_params);
+        // option::some(true)
+        *checkpoint = VP_CHECKPOINT1;
     }
 
     public fun init_verifier_params(
@@ -549,31 +664,31 @@ module verifier_addr::stark_verifier_7 {
             min_proof_of_work_bits,
             num_security_bits
         } = *borrow_global<ConstructorConfig>(address_of(signer));
-        // assert!(length(proof_params) > PROOF_PARAMS_FRI_STEPS_OFFSET, INVALID_PROOF_PARAMS);
-        // assert!(
-        //     length(proof_params) == PROOF_PARAMS_FRI_STEPS_OFFSET + (*borrow(
-        //         proof_params,
-        //         PROOF_PARAMS_N_FRI_STEPS_OFFSET
-        //     ) as u64),
-        //     INVALID_PROOF_PARAMS
-        // );
+        assert!(length(proof_params) > PROOF_PARAMS_FRI_STEPS_OFFSET, INVALID_PROOF_PARAMS);
+        assert!(
+            length(proof_params) == PROOF_PARAMS_FRI_STEPS_OFFSET + (*borrow(
+                proof_params,
+                PROOF_PARAMS_N_FRI_STEPS_OFFSET
+            ) as u64),
+            INVALID_PROOF_PARAMS
+        );
         let log_blowup_factor = *borrow(proof_params, PROOF_PARAMS_LOG_BLOWUP_FACTOR_OFFSET);
         // Ensure 'logBlowupFactor' is bounded as a sanity check (the bound is somewhat arbitrary).
-        // assert!(log_blowup_factor <= 16, LOG_BLOWUP_FACTOR_MUST_BE_AT_MOST_16);
-        // assert!(log_blowup_factor >= 1, LOG_BLOWUP_FACTOR_MUST_BE_AT_LEAST_1);
+        assert!(log_blowup_factor <= 16, LOG_BLOWUP_FACTOR_MUST_BE_AT_MOST_16);
+        assert!(log_blowup_factor >= 1, LOG_BLOWUP_FACTOR_MUST_BE_AT_LEAST_1);
 
         let proof_of_work_bits = *borrow(proof_params, PROOF_PARAMS_PROOF_OF_WORK_BITS_OFFSET);
         // Ensure 'proofOfWorkBits' is bounded as a sanity check (the bound is somewhat arbitrary).
-        // assert!(proof_of_work_bits <= 50, PROOF_OF_WORK_BITS_MUST_BE_AT_MOST_50);
-        // assert!(proof_of_work_bits >= min_proof_of_work_bits, MINIMUM_PROOF_OF_WORK_BITS_NOT_SATISFIED);
-        // assert!(proof_of_work_bits < num_security_bits, PROOFS_MAY_NOT_BE_PURELY_BASED_ON_POW);
+        assert!(proof_of_work_bits <= 50, PROOF_OF_WORK_BITS_MUST_BE_AT_MOST_50);
+        assert!(proof_of_work_bits >= min_proof_of_work_bits, MINIMUM_PROOF_OF_WORK_BITS_NOT_SATISFIED);
+        assert!(proof_of_work_bits < num_security_bits, PROOFS_MAY_NOT_BE_PURELY_BASED_ON_POW);
 
         let log_fri_last_layer_deg_bound = *borrow(proof_params, PROOF_PARAMS_FRI_LAST_LAYER_LOG_DEG_BOUND_OFFSET);
-        // assert!(log_fri_last_layer_deg_bound <= 10, LOG_FRI_LAST_LAYER_DEG_BOUND_MUST_BE_AT_MOST_10);
+        assert!(log_fri_last_layer_deg_bound <= 10, LOG_FRI_LAST_LAYER_DEG_BOUND_MUST_BE_AT_MOST_10);
 
         let n_fri_steps = *borrow(proof_params, PROOF_PARAMS_N_FRI_STEPS_OFFSET);
-        // assert!(n_fri_steps <= (MAX_FRI_STEPS as u256), TOO_MANY_FRI_STEPS);
-        // assert!(n_fri_steps > 1, NOT_ENOUGH_FRI_STEPS);
+        assert!(n_fri_steps <= (MAX_FRI_STEPS as u256), TOO_MANY_FRI_STEPS);
+        assert!(n_fri_steps > 1, NOT_ENOUGH_FRI_STEPS);
 
         let fri_step_sizes = get_fri_step_sizes(proof_params);
 
@@ -591,12 +706,12 @@ module verifier_addr::stark_verifier_7 {
         set_el(&mut ctx, MM_PROOF_OF_WORK_BITS, proof_of_work_bits);
 
         let n_queries = *borrow(proof_params, PROOF_PARAMS_N_QUERIES_OFFSET);
-        // assert!(n_queries > 0, NUMBER_OF_QUERIES_MUST_BE_AT_LEAST_ONE);
-        // assert!(n_queries <= (MAX_N_QUERIES as u256), TOO_MANY_QUERIES);
-        // assert!(
-        //     n_queries * log_blowup_factor + proof_of_work_bits >= num_security_bits,
-        //     PROOF_PARAMS_DO_NOT_SATISFY_SECURITY
-        // );
+        assert!(n_queries > 0, NUMBER_OF_QUERIES_MUST_BE_AT_LEAST_ONE);
+        assert!(n_queries <= (MAX_N_QUERIES as u256), TOO_MANY_QUERIES);
+        assert!(
+            n_queries * log_blowup_factor + proof_of_work_bits >= num_security_bits,
+            PROOF_PARAMS_DO_NOT_SATISFY_SECURITY
+        );
 
         set_el(&mut ctx, MM_N_UNIQUE_QUERIES, n_queries);
 
@@ -625,26 +740,26 @@ module verifier_addr::stark_verifier_7 {
         log_trace_length: u256,
         log_fri_last_layer_deg_bound: u256
     ) {
-        // assert!(*borrow(fri_step_sizes, 0) == 0, ONLY_ETA0_IS_CURRENTLY_SUPPORTED);
+        assert!(*borrow(fri_step_sizes, 0) == 0, ONLY_ETA0_IS_CURRENTLY_SUPPORTED);
         let expected_log_deg_bound = log_fri_last_layer_deg_bound;
         let n_fri_steps = length(fri_step_sizes);
         for (i in 1..n_fri_steps) {
             let fri_step_size = *borrow(fri_step_sizes, i);
-            // assert!(fri_step_size >= FRI_MIN_STEP_SIZE, MIN_SUPPORTED_FRI_STEP_SIZE_IS_2);
-            // assert!(fri_step_size <= FRI_MAX_STEP_SIZE, MAX_SUPPORTED_FRI_STEP_SIZE_IS_4);
+            assert!(fri_step_size >= FRI_MIN_STEP_SIZE, MIN_SUPPORTED_FRI_STEP_SIZE_IS_2);
+            assert!(fri_step_size <= FRI_MAX_STEP_SIZE, MAX_SUPPORTED_FRI_STEP_SIZE_IS_4);
             expected_log_deg_bound = expected_log_deg_bound + fri_step_size;
         };
 
         // FRI starts with a polynomial of degree 'traceLength'.
         // After applying all the FRI steps we expect to get a polynomial of degree less
         // than friLastLayerDegBound.
-        // assert!(expected_log_deg_bound == log_trace_length, FRI_PARAMS_DO_NOT_MATCH_TRACE_LENGTH);
+        assert!(expected_log_deg_bound == log_trace_length, FRI_PARAMS_DO_NOT_MATCH_TRACE_LENGTH);
     }
 
     // In Starknet's contracts, this function is implemented in `CpuVerifier.sol`
     // * The `ctx` returned is not the same as the `ctx` in the original contract.
     fun air_specific_init(public_input: &vector<u256>): (vector<u256>, u256) {
-        // assert!(length(public_input) >= OFFSET_PUBLIC_MEMORY, PUBLIC_INPUT_IS_TOO_SHORT);
+        assert!(length(public_input) >= OFFSET_PUBLIC_MEMORY, PUBLIC_INPUT_IS_TOO_SHORT);
         let ctx = assign(0u256, MM_CONTEXT_SIZE);
 
         // Context for generated code.
@@ -653,39 +768,39 @@ module verifier_addr::stark_verifier_7 {
 
         // Number of steps.
         let log_n_steps = *borrow(public_input, OFFSET_LOG_N_STEPS);
-        // assert!(log_n_steps < 50, NUMBER_OF_STEPS_IS_TOO_LARGE);
+        assert!(log_n_steps < 50, NUMBER_OF_STEPS_IS_TOO_LARGE);
         set_el(&mut ctx, MM_LOG_N_STEPS, log_n_steps);
         let log_trace_length = log_n_steps + LOG_CPU_COMPONENT_HEIGHT;
 
         // Range check limits.
         set_el(&mut ctx, MM_RANGE_CHECK_MIN, *borrow(public_input, OFFSET_RC_MIN));
         set_el(&mut ctx, MM_RANGE_CHECK_MAX, *borrow(public_input, OFFSET_RC_MAX));
-        // assert!(
-        //     *borrow(&ctx, MM_RANGE_CHECK_MIN) <= *borrow(&ctx, MM_RANGE_CHECK_MAX),
-        //     RC_MIN_MUST_BE_LESS_THAN_OR_EQUAL_TO_RC_MAX
-        // );
-        // assert!(*borrow(&ctx, MM_RANGE_CHECK_MAX) < *borrow(&ctx, MM_OFFSET_SIZE), RC_MAX_OUT_OF_RANGE);
+        assert!(
+            *borrow(&ctx, MM_RANGE_CHECK_MIN) <= *borrow(&ctx, MM_RANGE_CHECK_MAX),
+            RC_MIN_MUST_BE_LESS_THAN_OR_EQUAL_TO_RC_MAX
+        );
+        assert!(*borrow(&ctx, MM_RANGE_CHECK_MAX) < *borrow(&ctx, MM_OFFSET_SIZE), RC_MAX_OUT_OF_RANGE);
 
         // Layout.
-        // assert!(*borrow(public_input, OFFSET_LAYOUT_CODE) == LAYOUT_CODE, LAYOUT_CODE_MISMATCH);
+        assert!(*borrow(public_input, OFFSET_LAYOUT_CODE) == LAYOUT_CODE, LAYOUT_CODE_MISMATCH);
 
         // Initial and final pc ("program" memory segment).
         set_el(&mut ctx, MM_INITIAL_PC, *borrow(public_input, OFFSET_PROGRAM_BEGIN_ADDR));
         set_el(&mut ctx, MM_FINAL_PC, *borrow(public_input, OFFSET_PROGRAM_STOP_PTR));
         // Invalid final pc may indicate that the program end was moved, or the program didn't
         // complete.
-        // assert!(*borrow(&ctx, MM_INITIAL_PC) == (INITIAL_PC as u256), INVALID_INITIAL_PC);
-        // assert!(*borrow(&ctx, MM_FINAL_PC) == (FINAL_PC as u256), INVALID_FINAL_PC);
+        assert!(*borrow(&ctx, MM_INITIAL_PC) == (INITIAL_PC as u256), INVALID_INITIAL_PC);
+        assert!(*borrow(&ctx, MM_FINAL_PC) == (FINAL_PC as u256), INVALID_FINAL_PC);
 
         // Initial and final ap ("execution" memory segment).
         set_el(&mut ctx, MM_INITIAL_AP, *borrow(public_input, OFFSET_EXECUTION_BEGIN_ADDR));
         set_el(&mut ctx, MM_FINAL_AP, *borrow(public_input, OFFSET_EXECUTION_STOP_PTR));
 
         // Public memory.
-        // assert!(
-        //     *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES) >= 1 &&
-        //         *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES) < 100000, INVALID_NUMBER_OF_MEMORY_PAGES
-        // );
+        assert!(
+            *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES) >= 1 &&
+                *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES) < 100000, INVALID_NUMBER_OF_MEMORY_PAGES
+        );
         set_el(&mut ctx, MM_N_PUBLIC_MEM_PAGES, *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES));
 
         {
@@ -694,14 +809,14 @@ module verifier_addr::stark_verifier_7 {
             let n_pages = *borrow(&ctx, MM_N_PUBLIC_MEM_PAGES);
             for (page in 0..n_pages) {
                 let n_page_entries = *borrow(public_input, (get_offset_page_size(page) as u64));
-                // assert!(n_page_entries < (1 << 30), TOO_MANY_PUBLIC_MEMORY_ENTRIES_IN_ONE_PAGE);
+                assert!(n_page_entries < (1 << 30), TOO_MANY_PUBLIC_MEMORY_ENTRIES_IN_ONE_PAGE);
                 n_public_memory_entries = n_public_memory_entries + n_page_entries;
             };
             set_el(&mut ctx, MM_N_PUBLIC_MEM_ENTRIES, n_public_memory_entries);
         };
 
         let expected_public_input_length = get_public_input_length(*borrow(&ctx, MM_N_PUBLIC_MEM_PAGES));
-        // assert!(expected_public_input_length == (length(public_input) as u256), PUBLIC_INPUT_LENGTH_MISMATCH);
+        assert!(expected_public_input_length == (length(public_input) as u256), PUBLIC_INPUT_LENGTH_MISMATCH);
 
         let lmm_public_input_ptr = MM_PUBLIC_INPUT_PTR;
         // store 0 instead of the address of public_input[0] as in original contract
@@ -712,15 +827,30 @@ module verifier_addr::stark_verifier_7 {
         (ctx, log_trace_length)
     }
 
+    // In Starknet's contracts, this function is implemented in `CpuVerifier.sol`
     /*
       Verifies that all the information on each public memory page (size, hash, prod, and possibly
       address) is consistent with z and alpha, by checking that the corresponding facts were
       registered on memoryPageFactRegistry.
     */
-    fun verify_memory_page_facts(signer: &signer, ctx: &mut vector<u256>, public_input: &vector<u256>) {
+    fun verify_memory_page_facts(
+        signer: &signer,
+        ctx: &mut vector<u256>,
+        public_input: &vector<u256>
+    ): bool acquires VmpfIterationCache {
+        let signer_addr = address_of(signer);
+        let VmpfIterationCache {
+            ptr,
+            first_invoking
+        } = borrow_global_mut<VmpfIterationCache>(signer_addr);
+        if (*first_invoking) {
+            *ptr = 0;
+            *first_invoking = false;
+        };
         let n_public_memory_pages = *borrow(ctx, MM_N_PUBLIC_MEM_PAGES);
 
-        for (page in 0..1) {
+        let end_ptr = (min((n_public_memory_pages as u64), (*ptr + VMPF_ITERATION_LENGTH as u64)) as u256);
+        for (page in *ptr..end_ptr) {
             let mm_public_input_ptr = *borrow(ctx, MM_PUBLIC_INPUT_PTR);
             // Fetch page values from the public input (hash, product and size).
             let memory_hash = *borrow(public_input, (mm_public_input_ptr + get_offset_page_hash(page) as u64));
@@ -750,6 +880,13 @@ module verifier_addr::stark_verifier_7 {
             ])));
 
             // assert!(is_valid(signer, fact_hash), MEMORY_PAGE_FACT_NOT_REGISTERED);
+        };
+        *ptr = end_ptr;
+        if (end_ptr == n_public_memory_pages) {
+            *first_invoking = true;
+            true
+        } else {
+            false
         }
     }
 
@@ -774,43 +911,87 @@ module verifier_addr::stark_verifier_7 {
             N is the actual number of public memory cells,
             and S is the number of cells allocated for the public memory (which includes the padding).
     */
-    fun compute_public_memory_quotient(ctx: &mut vector<u256>, public_input: &vector<u256>): u256 {
-        let n_values = *borrow(ctx, MM_N_PUBLIC_MEM_ENTRIES);
-        let z = *borrow(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM);
-        let alpha = *borrow(ctx, MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0);
-        // The size that is allocated to the public memory.
-        let public_memory_size = safe_div(*borrow(ctx, MM_TRACE_LENGTH), PUBLIC_MEMORY_STEP);
+    fun compute_public_memory_quotient(
+        signer: &signer,
+        ctx: &mut vector<u256>,
+        public_input: &vector<u256>
+    ): Option<u256> acquires CpmpPtr, CpmqCheckpoint, CacheCpmqCheckpoint1, CacheCpmqCheckpoint3 {
+        let signer_addr = address_of(signer);
+        let CpmqCheckpoint {
+            checkpoint,
+            first_invoking
+        } = borrow_global_mut<CpmqCheckpoint>(signer_addr);
+        if (*first_invoking) {
+            *checkpoint = CPMQ_CHECKPOINT1;
+            *first_invoking = false;
+        };
+        if (*checkpoint == CPMQ_CHECKPOINT1) {
+            let n_public_memory_pages = *borrow(ctx, MM_N_PUBLIC_MEM_PAGES);
+            let cumulative_prods_ptr = *borrow(ctx, MM_PUBLIC_INPUT_PTR) + get_offset_page_prod(
+                0,
+                n_public_memory_pages
+            );
+            let denominator = compute_public_memory_prod(
+                signer,
+                public_input,
+                (cumulative_prods_ptr as u64),
+                (n_public_memory_pages as u64)
+            );
+            if (option::is_none(&denominator)) {
+                return option::none<u256>()
+            };
+            *borrow_global_mut<CacheCpmqCheckpoint1>(signer_addr) = CacheCpmqCheckpoint1 {
+                denominator: *option::borrow(&denominator)
+            };
 
-        // Ensure 'nValues' is bounded as a sanity check
-        // (the bound is somewhat arbitrary).
-        // assert!(n_values < 0x1000000, OVERFLOW_PROTECTION_FAILED);
-        // assert!(n_values <= public_memory_size, NUMBER_OF_VALUES_OF_PUBLIC_MEMORY_IS_TOO_LARGE);
+            *checkpoint = CPMQ_CHECKPOINT2;
+            return option::none<u256>()
+        };
 
-        let n_public_memory_pages = *borrow(ctx, MM_N_PUBLIC_MEM_PAGES);
-        let cumulative_prods_ptr = *borrow(ctx, MM_PUBLIC_INPUT_PTR) + get_offset_page_prod(0, n_public_memory_pages);
-        let denominator = compute_public_memory_prod(
-            public_input,
-            cumulative_prods_ptr,
-            n_public_memory_pages,
-            K_MODULUS
-        );
+        let CacheCpmqCheckpoint1 {
+            denominator
+        } = borrow_global_mut<CacheCpmqCheckpoint1>(signer_addr);
 
-        // Compute address + alpha * value for the first address-value pair for padding.
-        let public_input_ptr = (*borrow(ctx, MM_PUBLIC_INPUT_PTR) as u64);
-        let padding_addr_ptr = public_input_ptr + OFFSET_PUBLIC_MEMORY_PADDING_ADDR;
-        let padding_addr = *borrow(public_input, padding_addr_ptr);
-        let padding_value = *borrow(public_input, padding_addr_ptr + 1);
-        let hash_first_address_value = fadd(padding_addr, fmul(padding_value, alpha));
+        if (*checkpoint == CPMQ_CHECKPOINT2) {
+            let n_values = *borrow(ctx, MM_N_PUBLIC_MEM_ENTRIES);
+            let z = *borrow(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM);
+            let alpha = *borrow(ctx, MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0);
+            // The size that is allocated to the public memory.
+            let public_memory_size = safe_div(*borrow(ctx, MM_TRACE_LENGTH), PUBLIC_MEMORY_STEP);
 
-        // Pad the denominator with the shifted value of hash_first_address_value.
-        let denom_pad = fpow(fsub(z, hash_first_address_value), public_memory_size - n_values);
-        denominator = fmul(denominator, denom_pad);
+            // Ensure 'nValues' is bounded as a sanity check
+            // (the bound is somewhat arbitrary).
+            assert!(n_values < 0x1000000, OVERFLOW_PROTECTION_FAILED);
+            assert!(n_values <= public_memory_size, NUMBER_OF_VALUES_OF_PUBLIC_MEMORY_IS_TOO_LARGE);
+            // Compute address + alpha * value for the first address-value pair for padding.
+            let public_input_ptr = (*borrow(ctx, MM_PUBLIC_INPUT_PTR) as u64);
+            let padding_addr_ptr = public_input_ptr + OFFSET_PUBLIC_MEMORY_PADDING_ADDR;
+            let padding_addr = *borrow(public_input, padding_addr_ptr);
+            let padding_value = *borrow(public_input, padding_addr_ptr + 1);
+            let hash_first_address_value = fadd(padding_addr, fmul(padding_value, alpha));
 
-        // Calculate the numerator.
-        let numerator = fpow(z, public_memory_size);
+            // Pad the denominator with the shifted value of hash_first_address_value.
+            let denom_pad = fpow(fsub(z, hash_first_address_value), public_memory_size - n_values);
+            *denominator = fmul(*denominator, denom_pad);
+
+            *checkpoint = CPMQ_CHECKPOINT3;
+            return option::none<u256>()
+        };
+
+        if (*checkpoint == CPMQ_CHECKPOINT3) {
+            let z = *borrow(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM);
+            let public_memory_size = safe_div(*borrow(ctx, MM_TRACE_LENGTH), PUBLIC_MEMORY_STEP);
+            // Calculate the numerator.
+            let numerator = fpow(z, public_memory_size);
+            *borrow_global_mut<CacheCpmqCheckpoint3>(signer_addr) = CacheCpmqCheckpoint3 {
+                numerator
+            };
+            *checkpoint = CPMQ_CHECKPOINT4;
+            return option::none<u256>()
+        };
 
         // Compute the final result: numerator * denominator^(-1).
-        fmul(numerator, inverse(denominator))
+        option::some(fmul(borrow_global<CacheCpmqCheckpoint3>(signer_addr).numerator, inverse(*denominator)))
     }
 
     /*
@@ -818,35 +999,79 @@ module verifier_addr::stark_verifier_7 {
             \prod_i( z - (addr_i + alpha * value_i) ).
 
           publicMemoryPtr is an array of nValues pairs (address, value).
-          z and alpha are the perm and hash interaction elements // assert!d to calculate the product.
+          z and alpha are the perm and hash interaction elements assert!d to calculate the product.
     */
     fun compute_public_memory_prod(
+        signer: &signer,
         public_input: &vector<u256>,
-        cumulative_prods_ptr: u256,
-        n_public_memory_pages: u256,
-        prime: u256
-    ): u256 {
-        let res = 1u256;
-        for (i in cumulative_prods_ptr..(cumulative_prods_ptr + n_public_memory_pages)) {
-            res = mod_mul(res, *borrow(public_input, (i as u64)), prime);
+        cumulative_prods_ptr: u64,
+        n_public_memory_pages: u64
+    ): Option<u256> acquires CpmpPtr {
+        let CpmpPtr {
+            res,
+            ptr,
+            first_invoking
+        } = borrow_global_mut<CpmpPtr>(address_of(signer));
+        if (*first_invoking) {
+            *res = 1;
+            *ptr = cumulative_prods_ptr;
+            *first_invoking = false;
         };
-        res
+        let end_ptr = min(cumulative_prods_ptr + n_public_memory_pages, *ptr + CPMP_ITERATION_LENGTH);
+        for (i in *ptr..end_ptr) {
+            *res = fmul(*res, *borrow(public_input, i));
+        };
+        *ptr = end_ptr;
+        if (end_ptr == cumulative_prods_ptr + n_public_memory_pages) {
+            *first_invoking = true;
+            option::some(*res)
+        } else {
+            option::none<u256>()
+        }
     }
 
     // In Starknet's contracts, this function is implemented in `CpuVerifier.sol`
-    fun oods_consistency_check(signer: &signer, ctx: &mut vector<u256>, public_input: &vector<u256>) {
-        verify_memory_page_facts(signer, ctx, public_input);
-        let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS);
-        set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM, temp);
-        let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 1);
-        set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0, temp);
-        let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 2);
-        set_el(ctx, MM_RANGE_CHECK16__PERM__INTERACTION_ELM, temp);
-        {
-            let public_memory_prod = compute_public_memory_quotient(ctx, public_input);
-            set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__PUBLIC_MEMORY_PROD, public_memory_prod);
+    fun oods_consistency_check(
+        signer: &signer,
+        ctx: &mut vector<u256>,
+        public_input: &vector<u256>
+    ): bool acquires VmpfIterationCache, OccCheckpoint, CpmpPtr, CpmqCheckpoint, CacheCpmqCheckpoint1, CacheCpmqCheckpoint3 {
+        let signer_addr = address_of(signer);
+        let OccCheckpoint {
+            checkpoint,
+            first_invoking
+        } = borrow_global_mut<OccCheckpoint>(signer_addr);
+        if (*first_invoking) {
+            *checkpoint = OCC_CHECKPOINT1;
+            *first_invoking = false;
         };
-        prepare_for_oods_check(ctx);
+        if (*checkpoint == OCC_CHECKPOINT1) {
+            if (verify_memory_page_facts(signer, ctx, public_input)) {
+                let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS);
+                set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM, temp);
+                let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 1);
+                set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0, temp);
+                let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 2);
+                set_el(ctx, MM_RANGE_CHECK16__PERM__INTERACTION_ELM, temp);
+                *checkpoint = OCC_CHECKPOINT2;
+            };
+            return false
+        };
+        if (*checkpoint == OCC_CHECKPOINT2) {
+            let public_memory_prod = compute_public_memory_quotient(signer, ctx, public_input);
+            if (is_some(&public_memory_prod)) {
+                let public_memory_prod = *option::borrow(&public_memory_prod);
+                set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__PUBLIC_MEMORY_PROD, public_memory_prod);
+                *checkpoint = OCC_CHECKPOINT3;
+            };
+            return false
+        };
+        if (*checkpoint == OCC_CHECKPOINT3) {
+            if (prepare_for_oods_check(signer, ctx)) {
+                *checkpoint = OCC_CHECKPOINT4;
+            };
+            return false
+        };
 
         // Todo
         // let composition_from_trace_value;
@@ -868,11 +1093,13 @@ module verifier_addr::stark_verifier_7 {
         //     *borrow(ctx, MM_COMPOSITION_OODS_VALUES),
         //     fmul(*borrow(ctx, MM_OODS_POINT), *borrow(ctx, MM_COMPOSITION_OODS_VALUES + 1))
         // );
-        //
-        // // assert!(
+
+        // assert!(
         //     composition_from_trace_value == claimed_composition,
         //     CLAIMED_COMPOSITION_DOES_NOT_MATCH_TRACE
         // );
+        *first_invoking = true;
+        true
     }
 
     fun get_n_columns_in_trace(): u64 {
@@ -954,6 +1181,93 @@ module verifier_addr::stark_verifier_7 {
         res
     }
 
+
+    // Data of the function `verify_proof`
+    // checkpoints
+    const VP_CHECKPOINT1: u8 = 1;
+    const VP_CHECKPOINT2: u8 = 2;
+    const VP_CHECKPOINT3: u8 = 3;
+    const VP_CHECKPOINT4: u8 = 4;
+    const VP_CHECKPOINT5: u8 = 5;
+    const VP_CHECKPOINT6: u8 = 6;
+    const VP_CHECKPOINT7: u8 = 7;
+    const VP_CHECKPOINT8: u8 = 8;
+
+    struct VerifyProofCheckpoint has key, drop {
+        inner: u8
+    }
+
+    struct CtxCache has key, drop {
+        inner: vector<u256>
+    }
+
+    // Checkpoint 4 cache
+    const CHECKPOINT4_ITERATION_LENGTH: u64 = 100;
+
+    struct Checkpoint4Cache has key, drop {
+        ptr: u64,
+        first_invoking: bool
+    }
+
+    // Data of the function `verify_memory_page_facts`
+    const VMPF_ITERATION_LENGTH: u256 = 120;
+
+    struct VmpfIterationCache has key, drop {
+        ptr: u256,
+        first_invoking: bool
+    }
+
+    // Data of the function `oods_consistency_check`
+    // checkpoints
+    const OCC_CHECKPOINT1: u8 = 1;
+    const OCC_CHECKPOINT2: u8 = 2;
+    const OCC_CHECKPOINT3: u8 = 3;
+    const OCC_CHECKPOINT4: u8 = 4;
+
+    struct OccCheckpoint has key, drop {
+        checkpoint: u8,
+        first_invoking: bool
+    }
+
+    // Data of the function `compute_public_memory_prod`
+    const CPMP_ITERATION_LENGTH: u64 = 120;
+
+    struct CpmpPtr has key, drop {
+        res: u256,
+        ptr: u64,
+        first_invoking: bool
+    }
+
+    // Data of the function `compute_public_memory_quotient`
+    // checkpoints
+    const CPMQ_CHECKPOINT1: u8 = 1;
+    const CPMQ_CHECKPOINT2: u8 = 2;
+    const CPMQ_CHECKPOINT3: u8 = 3;
+    const CPMQ_CHECKPOINT4: u8 = 4;
+
+    struct CpmqCheckpoint has key, drop {
+        checkpoint: u8,
+        first_invoking: bool
+    }
+
+    struct CacheCpmqCheckpoint1 has key, drop {
+        denominator: u256
+    }
+
+    struct CacheCpmqCheckpoint3 has key, drop {
+        numerator: u256
+    }
+
+    // Data of the function `compute_first_fri_layer`
+    // checkpoints
+    const CFFL_CHECKPOINT1: u8 = 1;
+    const CFFL_CHECKPOINT2: u8 = 2;
+    const CFFL_CHECKPOINT3: u8 = 3;
+    
+    struct CfflCheckpoint has key {
+        inner: u8
+    }
+    
     // assertion code
     const INVALID_PROOF_PARAMS: u64 = 1;
     const LOG_BLOWUP_FACTOR_MUST_BE_AT_MOST_16: u64 = 2;
@@ -994,12 +1308,14 @@ module verifier_addr::stark_verifier_7 {
 module verifier_addr::test_stark_verifier_7 {
     use std::vector::length;
     use aptos_std::debug::print;
+    use verifier_addr::stark_verifier_7::init_data_type;
 
-    #[test]
-    fun test_init_verifier_params() {
+    #[test(signer = @test_signer)]
+    fun test_init_verifier_params(signer: &signer) {
         // init_stark_verifier(signer, 96, 30);
         // let ctx = init_verifier_params(public_input_(), proof_params_());
-        // // assert!(ctx == ctx_(), 1);
+        // assert!(ctx == ctx_(), 1);
+        init_data_type(signer);
         print(&length(&public_input_()))
     }
 
