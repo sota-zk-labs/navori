@@ -509,22 +509,22 @@ module verifier_addr::stark_verifier_7 {
         set_el(ctx, MM_FRI_LAST_LAYER_PTR, (last_layer_ptr as u256));
     }
 
-    public entry fun verify_proof(
+    public fun verify_proof(
         signer: &signer,
-        proof_params: vector<u256>,
-        proof: vector<u256>,
-        public_input: vector<u256>
-    ) acquires ConstructorConfig, VerifyProofCheckpoint, CtxCache, Checkpoint4Cache, VmpfIterationCache, OccCheckpoint, CpmpPtr, CpmqCheckpoint, CacheCpmqCheckpoint1, CacheCpmqCheckpoint3, CfflCheckpoint {
+        proof_params: &vector<u256>,
+        proof: &mut vector<u256>,
+        public_input: &vector<u256>
+    ): bool acquires ConstructorConfig, VerifyProofCheckpoint, CtxCache, Checkpoint4Cache, VmpfIterationCache, OccCheckpoint, CpmpPtr, CpmqCheckpoint, CacheCpmqCheckpoint1, CacheCpmqCheckpoint3, CfflCheckpoint {
         let signer_addr = address_of(signer);
         let VerifyProofCheckpoint {
             inner: checkpoint
         } = borrow_global_mut<VerifyProofCheckpoint>(signer_addr);
         if (*checkpoint == VP_CHECKPOINT1) {
             *borrow_global_mut<CtxCache>(signer_addr) = CtxCache {
-                inner: init_verifier_params(signer, &public_input, &proof_params)
+                inner: init_verifier_params(signer, public_input, proof_params)
             };
             *checkpoint = VP_CHECKPOINT2;
-            return
+            return false
         };
 
         let CtxCache {
@@ -533,9 +533,9 @@ module verifier_addr::stark_verifier_7 {
         let channel_ptr = MM_CHANNEL;
 
         if (*checkpoint == VP_CHECKPOINT2) {
-            init_channel(ctx, channel_ptr, get_public_input_hash(&public_input));
+            init_channel(ctx, channel_ptr, get_public_input_hash(public_input));
             // Read trace commitment.
-            let hash = read_hash(ctx, &proof, channel_ptr, true);
+            let hash = read_hash(ctx, proof, channel_ptr, true);
             set_el(ctx, MM_TRACE_COMMITMENT, hash);
 
             if (has_interaction()) {
@@ -548,20 +548,20 @@ module verifier_addr::stark_verifier_7 {
                 );
 
                 // Read second trace commitment.
-                let tmp = read_hash(ctx, &proof, channel_ptr, true);
+                let tmp = read_hash(ctx, proof, channel_ptr, true);
                 set_el(ctx, MM_TRACE_COMMITMENT + 1, tmp);
             };
             // Send constraint polynomial random element.
             send_field_elements(ctx, channel_ptr, 1, MM_COMPOSITION_ALPHA);
             // emit LogGas("Generate coefficients", gasleft());
 
-            hash = read_hash(ctx, &proof, channel_ptr, true);
+            hash = read_hash(ctx, proof, channel_ptr, true);
             set_el(ctx, MM_OODS_COMMITMENT, hash);
 
             // Send Out of Domain Sampling point.
             send_field_elements(ctx, channel_ptr, 1, MM_OODS_POINT);
             *checkpoint = VP_CHECKPOINT4;
-            return
+            return false
         };
         // emit LogGas(Initializations, gasleft());
 
@@ -578,7 +578,7 @@ module verifier_addr::stark_verifier_7 {
             };
             let end_ptr = min(lmm_oods_values + N_OODS_VALUES, *ptr + CHECKPOINT4_ITERATION_LENGTH);
             for (i in *ptr..end_ptr) {
-                let tmp = read_field_element(ctx, &proof, channel_ptr, true);
+                let tmp = read_field_element(ctx, proof, channel_ptr, true);
                 set_el(ctx, i, tmp);
             };
             *ptr = end_ptr;
@@ -586,27 +586,27 @@ module verifier_addr::stark_verifier_7 {
                 *checkpoint = VP_CHECKPOINT5;
                 *first_invoking = true;
             };
-            return
+            return false
         };
         // emit LogGas("Read OODS commitments", gasleft());
         if (*checkpoint == VP_CHECKPOINT5) {
-            if (oods_consistency_check(signer, ctx, &public_input)) {
+            if (oods_consistency_check(signer, ctx, public_input)) {
                 *checkpoint = VP_CHECKPOINT6;
             };
-            return
+            return false
         };
         if (*checkpoint == VP_CHECKPOINT6) {
             // emit LogGas("OODS consistency check", gasleft());
             send_field_elements(ctx, channel_ptr, 1, MM_OODS_ALPHA);
             // emit LogGas("Generate OODS coefficients", gasleft());
-            let hash = read_hash(ctx, &proof, channel_ptr, true);
+            let hash = read_hash(ctx, proof, channel_ptr, true);
             set_el(ctx, MM_FRI_COMMITMENTS, hash);
 
-            let n_fri_steps = length(&get_fri_step_sizes(&proof_params));
+            let n_fri_steps = length(&get_fri_step_sizes(proof_params));
             let fri_eval_point_ptr = MM_FRI_EVAL_POINTS;
             for (i in 1..(n_fri_steps - 1)) {
                 send_field_elements(ctx, channel_ptr, 1, fri_eval_point_ptr + i);
-                hash = read_hash(ctx, &proof, channel_ptr, true);
+                hash = read_hash(ctx, proof, channel_ptr, true);
                 set_el(ctx, MM_FRI_COMMITMENTS + i, hash);
             };
 
@@ -619,12 +619,12 @@ module verifier_addr::stark_verifier_7 {
             );
 
             // Read FRI last layer commitment.
-            read_last_fri_layer(ctx, &mut proof);
+            read_last_fri_layer(ctx, proof);
 
             // Generate queries.
             // emit LogGas("Read FRI commitments", gasleft());
             let tmp = (*borrow(ctx, MM_PROOF_OF_WORK_BITS) as u8);
-            verify_proof_of_work(ctx, &proof, channel_ptr, tmp);
+            verify_proof_of_work(ctx, proof, channel_ptr, tmp);
 
             let tmp1 = *borrow(ctx, MM_N_UNIQUE_QUERIES);
             let tmp2 = *borrow(ctx, MM_EVAL_DOMAIN_SIZE);
@@ -639,20 +639,21 @@ module verifier_addr::stark_verifier_7 {
             set_el(ctx, MM_N_UNIQUE_QUERIES, tmp);
             
             *checkpoint = VP_CHECKPOINT7;
-            return
+            return false
         };
         // emit LogGas("Send queries", gasleft());
 
         if (*checkpoint == VP_CHECKPOINT7) {
-            if (compute_first_fri_layer(signer, ctx, &proof)) {
+            if (compute_first_fri_layer(signer, ctx, proof)) {
                 *checkpoint = VP_CHECKPOINT8;
-            }; 
-            return
+            };
+            return false
         };
 
-        fri_statement_verifier_7::fri_verify_layers(signer, ctx, &proof, &proof_params);
+        fri_statement_verifier_7::fri_verify_layers(signer, ctx, proof, proof_params);
         // option::some(true)
         *checkpoint = VP_CHECKPOINT1;
+        true
     }
 
     public fun init_verifier_params(
@@ -945,7 +946,7 @@ module verifier_addr::stark_verifier_7 {
             };
 
             *checkpoint = CPMQ_CHECKPOINT2;
-            return option::none<u256>()
+            // return option::none<u256>()
         };
 
         let CacheCpmqCheckpoint1 {
@@ -975,7 +976,7 @@ module verifier_addr::stark_verifier_7 {
             *denominator = fmul(*denominator, denom_pad);
 
             *checkpoint = CPMQ_CHECKPOINT3;
-            return option::none<u256>()
+            // return option::none<u256>()
         };
 
         if (*checkpoint == CPMQ_CHECKPOINT3) {
@@ -987,7 +988,7 @@ module verifier_addr::stark_verifier_7 {
                 numerator
             };
             *checkpoint = CPMQ_CHECKPOINT4;
-            return option::none<u256>()
+            // return option::none<u256>()
         };
 
         // Compute the final result: numerator * denominator^(-1).

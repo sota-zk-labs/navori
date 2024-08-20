@@ -57,16 +57,13 @@ module verifier_addr::memory_page_fact_registry {
         memory_hash: u256,
         prod: u256
     }
-    
+
     public(friend) fun init_data_type(signer: &signer) {
-        move_to(signer, ComputeFactHashCheckpoint {
-            checkpoint: 0,
-            first_invoking: true
+        move_to(signer, CfhCheckpoint {
+            inner: CFH_CHECKPOINT1
         });
-        move_to(signer, IterationCache {
-            prod: 0,
-            memory_ptr: 0,
-            first_invoking: true
+        move_to(signer, CfhCache {
+            prod: 0
         });
     }
 
@@ -75,7 +72,7 @@ module verifier_addr::memory_page_fact_registry {
         memory_pairs: &vector<u256>,
         z: u256,
         alpha: u256
-    ): Option<vector<u256>> acquires ComputeFactHashCheckpoint, IterationCache {
+    ): Option<vector<u256>> acquires CfhCheckpoint, CfhCache {
         assert!(length(memory_pairs) < (1 << 20), TOO_MANY_MEMORY_VALUES);
         assert!((length(memory_pairs) & 1) == 0, SIZE_OF_MEMORYPAIRS_MUST_BE_EVEN);
         assert!(z < K_MODULUS, INVALID_VALUE_OF_Z);
@@ -98,50 +95,35 @@ module verifier_addr::memory_page_fact_registry {
         memory_pairs: &vector<u256>,
         z: u256,
         alpha: u256
-    ): Option<vector<u256>> acquires ComputeFactHashCheckpoint, IterationCache {
+    ): Option<vector<u256>> acquires CfhCheckpoint, CfhCache {
         let signer_addr = address_of(signer);
-        let ComputeFactHashCheckpoint {
-            checkpoint,
-            first_invoking: first_invoking_checkpoint
-        } = borrow_global_mut<ComputeFactHashCheckpoint>(signer_addr);
-        if (*first_invoking_checkpoint) {
-            *checkpoint = IN_ITERATION;
-            *first_invoking_checkpoint = false;
-        };
+        let CfhCheckpoint {
+            inner: checkpoint
+        } = borrow_global_mut<CfhCheckpoint>(signer_addr);
         let n = length(memory_pairs);
         let memory_size = n / 2; // NOLINT: divide-before-multiply.
-
-        let IterationCache {
-            prod,
-            memory_ptr,
-            first_invoking: first_invoking_iter
-        } = borrow_global_mut<IterationCache>(signer_addr);
-        if (*first_invoking_iter) {
-            *prod = 1;
-            *memory_ptr = 0;
-            *first_invoking_iter = false;
-        };
-        if (*checkpoint == IN_ITERATION) {
-            let count = 0;
-            while (*memory_ptr < n && count < ITERATION_LENGTH) {
+        if (*checkpoint == CFH_CHECKPOINT1) {
+            let prod = 1;
+            let memory_ptr = 0;
+            while (memory_ptr < n) {
                 // Compute address + alpha * value.
                 let address_value_lin_comb = mod_add(
                     // address
-                    *borrow(memory_pairs, *memory_ptr),
+                    *borrow(memory_pairs, memory_ptr),
                     fmul(
                         // value
-                        *borrow(memory_pairs, *memory_ptr + 1),
+                        *borrow(memory_pairs, memory_ptr + 1),
                         alpha
                     ),
                     K_MODULUS
                 );
-                *prod = fmul(*prod, z + K_MODULUS - address_value_lin_comb);
-                *memory_ptr = *memory_ptr + 2;
-                count = count + 1;
+                prod = fmul(prod, z + K_MODULUS - address_value_lin_comb);
+                memory_ptr = memory_ptr + 2;
             };
-            if (*memory_ptr >= n) {
-                *checkpoint = END_ITERATION;
+            *borrow_global_mut<CfhCache>(signer_addr) = CfhCache {
+                prod
             };
+            *checkpoint = CFH_CHECKPOINT2;
             return option::none<vector<u256>>()
         };
 
@@ -151,12 +133,11 @@ module verifier_addr::memory_page_fact_registry {
         };
         let memory_pairs_bytes = option::borrow(&memory_pairs_bytes);
         let memory_hash = u256_from_bytes_be(&keccak256(*memory_pairs_bytes));
-        let prod = *prod;
+        let prod = borrow_global<CfhCache>(signer_addr).prod;
         let fact_hash = u256_from_bytes_be(&keccak256(
             vec_to_bytes_be(&vector[REGULAR_PAGE, K_MODULUS, (memory_size as u256), z, alpha, prod, memory_hash, 0u256])
         ));
-        *first_invoking_checkpoint = true;
-        *first_invoking_iter = true;
+        *checkpoint = CFH_CHECKPOINT1;
         option::some(vector[fact_hash, memory_hash, prod])
     }
 
@@ -236,20 +217,17 @@ module verifier_addr::memory_page_fact_registry {
 
     // Data of the function `compute_fact_hash`
     // checkpoints
-    const IN_ITERATION: u8 = 1;
-    const END_ITERATION: u8 = 2;
+    const CFH_CHECKPOINT1: u8 = 1;
+    const CFH_CHECKPOINT2: u8 = 2;
 
-    const ITERATION_LENGTH: u64 = 50;
+    const ITERATION_LENGTH: u64 = 1500;
 
-    struct ComputeFactHashCheckpoint has key, drop {
-        checkpoint: u8,
-        first_invoking: bool
+    struct CfhCheckpoint has key {
+        inner: u8
     }
 
-    struct IterationCache has key, drop {
-        prod: u256,
-        memory_ptr: u64,
-        first_invoking: bool
+    struct CfhCache has key, drop {
+        prod: u256
     }
 }
 

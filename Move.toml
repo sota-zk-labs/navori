@@ -5,8 +5,8 @@ version = "1.0.0"
 authors = []
 
 [addresses]
-verifier_addr = "aefce31441c018216ab3f639c5fe6d2b65dea2872e39fe9489802c9891ab3e27"
-err_addr = "aefce31441c018216ab3f639c5fe6d2b65dea2872e39fe9489802c9891ab3e27"
+verifier_addr = "29c66da77fcdb50236405ecf62b4f1a64419d9a98eb42eeb02b7c0ce67644839"
+err_addr = "29c66da77fcdb50236405ecf62b4f1a64419d9a98eb42eeb02b7c0ce67644839"
 test_signer = "c4e4ef65ffc72f988daa3e3ec39d73bf115b345825fc6967d3a0caa63dcfd07c"
 
 [dependencies.AptosFramework]

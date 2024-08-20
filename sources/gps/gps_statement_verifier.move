@@ -474,16 +474,16 @@ module verifier_addr::gps_statement_verifier {
 
                     // Ensure 'outputSize' is at least 2 and bounded from above as a sanity check
                     // (the bound is somewhat arbitrary).
-                    // assert!(2 <= output_size && output_size < (1 << 30), INVALID_TASK_OUTPUT_SIZE);
+                    assert!(2 <= output_size && output_size < (1 << 30), INVALID_TASK_OUTPUT_SIZE);
                     let program_hash = *borrow(task_metadata_slice, METADATA_OFFSET_TASK_PROGRAM_HASH);
                     let n_tree_pairs = *borrow(task_metadata_slice, METADATA_OFFSET_TASK_N_TREE_PAIRS);
 
                     // Ensure 'nTreePairs' is at least 1 and bounded from above as a sanity check
                     // (the bound is somewhat arbitrary).
-                    // assert!(
-                    //     1 <= n_tree_pairs && n_tree_pairs < (1 << 20),
-                    //     INVALID_NUMBER_OF_PAIRS_IN_MERKLE_TREE_STRUCTURE
-                    // );
+                    assert!(
+                        1 <= n_tree_pairs && n_tree_pairs < (1 << 20),
+                        INVALID_NUMBER_OF_PAIRS_IN_MERKLE_TREE_STRUCTURE
+                    );
                     // Force that memory[outputAddress] = outputSize.
                     set_el(public_memory, *offset + 0, *output_address);
                     set_el(public_memory, *offset + 1, output_size);
@@ -513,7 +513,7 @@ module verifier_addr::gps_statement_verifier {
         };
 
         if (*checkpoint == CHECKPOINT3) {
-            // assert!(length(&public_memory) == offset, NOT_ALL_CAIRO_PUBLIC_INPUTS_WERE_WRITTEN);
+            assert!(length(public_memory) == *offset, NOT_ALL_CAIRO_PUBLIC_INPUTS_WERE_WRITTEN);
             let z = *borrow(cairo_aux_input, length(cairo_aux_input) - 2);
             let alpha = *borrow(cairo_aux_input, length(cairo_aux_input) - 1);
             let tmp = register_regular_memorypage(
