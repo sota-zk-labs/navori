@@ -13,8 +13,6 @@ module verifier_addr::merkle_verifier {
     const COMMITMENT_MASK: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
     // 1
     const COMMITMENT_SIZE: u256 = 0x1;
-    // 32
-    const COMMITMENT_SIZE_IN_BYTES: u64 = 0x20;
     // 2
     const EINVALID_MERKLE_PROOF: u64 = 0x2;
     // 1
@@ -25,8 +23,6 @@ module verifier_addr::merkle_verifier {
     const MAX_N_MERKLE_VERIFIER_QUERIES: u64 = 0x80;
     // 2
     const MERKLE_SLOT_SIZE: u64 = 0x2;
-    // 64
-    const MERKLE_SLOT_SIZE_IN_BYTES: u64 = 0x40;
     // 2
     const TWO_COMMITMENTS_SIZE: u256 = 0x2;
     // End of generating constants!
