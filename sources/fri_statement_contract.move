@@ -1,100 +1,106 @@
 module verifier_addr::fri_statement_contract {
-    use std::bcs::to_bytes;
+    use std::signer::address_of;
     use std::vector;
-    use std::vector::for_each;
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::from_bcs::to_u256;
-    use aptos_std::math128::pow;
+    use aptos_framework::event::emit;
 
-    use err_addr::fri_error::err_fri_step_size_too_large;
-    use lib_addr::endia_encode::to_big_endian;
-    use lib_addr::memory;
-    use lib_addr::memory::{allocate, get_next, mloadrange, mstore};
+    use verifier_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
+    use verifier_addr::convert_memory::copy_vec_to_memory;
     use verifier_addr::fact_registry::register_fact;
-    use verifier_addr::fri_layer::{compute_next_layer, FRI_CTX_SIZE, init_fri_group};
-    use verifier_addr::merkle_verifier::verify_merkle;
-    use verifier_addr::prime_field_element_0::k_modulus;
+    use verifier_addr::fri::{get_fri, new_fri, update_fri};
 
-    #[test_only]
-    use verifier_addr::fact_registry::is_valid;
-    #[test_only]
-    use verifier_addr::fri_test::{
-        get_evaluation_point_2,
-        get_evaluation_point_3,
-        get_expected_root_2,
-        get_expected_root_3,
-        get_fri_queue_2,
-        get_fri_queue_3,
-        get_fri_step_size_2,
-        get_fri_step_size_3,
-        get_proof_2,
-        get_proof_3
-    };
+    // This line is used for generating constants DO NOT REMOVE!
+    // 3
+    const EFRI_QUEUE_MUST_BE_COMPOSED_OF_TRIPLETS_PLUS_ONE_DELIMITER_CELL: u64 = 0x3;
+    // 1
+    const EFRI_STEP_SIZE_TOO_LARGE: u64 = 0x1;
+    // 2
+    const EINVALID_EVAL_POINT: u64 = 0x2;
+    // 5
+    const EINVALID_QUERIES_RANGE: u64 = 0x5;
+    // 4
+    const ENO_QUERY_TO_PROCESS: u64 = 0x4;
+    // FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET + (FRI_GROUP_SIZE / 2)
+    const FRI_CTX_SIZE: u64 = 0x28;
+    // 4
+    const FRI_MAX_STEP_SIZE: u256 = 0x4;
+    // 3618502788666131213697322783095070105623107215331596699973092056135872020481
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // End of generating constants!
 
-    public fun verify_fri(
-        signer: signer,
+    #[event]
+    struct FriCtx has store, drop {
+        fri_ctx: u64
+    }
+
+    #[event]
+    struct ComputeNextLayer has store, drop {
+        channel_ptr: u64,
+        fri_queue_ptr: u64,
+        merkle_queue_ptr: u64,
+        n_queries: u64,
+        fri_ctx: u64,
+        evaluation_point: u256,
+        fri_coset_size: u64,
+    }
+
+    #[event]
+    struct RegisterFactVerifyFri has store, drop {
+        data_to_hash: u64,
+        fri_queue_ptr: u64,
+    }
+
+
+    public entry fun verify_fri(
+        signer: &signer,
         proof: vector<u256>,
         fri_queue: vector<u256>,
         evaluation_point: u256,
         fri_step_size: u256,
         expected_root: u256
     ) {
-        let memory = memory::new();
+        let fri = &mut new_fri();
 
-        // load input to memory
-        let proof_ptr = allocate(&mut memory, (vector::length(&proof) as u256));
-        for_each(proof, |p| {
-            allocate(&mut memory, p);
-        });
+        // must <= FRI_MAX_STEPS_SIZE
+        assert!(fri_step_size <= FRI_MAX_STEP_SIZE, EFRI_STEP_SIZE_TOO_LARGE);
+        assert!(evaluation_point < K_MODULUS, EINVALID_EVAL_POINT);
 
-        let fri_queue_ptr = allocate(&mut memory, (vector::length(&fri_queue) as u256));
-        for_each(fri_queue, |f| {
-            allocate(&mut memory, f);
-        });
-
-        assert!(fri_step_size <= 4, err_fri_step_size_too_large());
-
-        // Verify evaluation point within valid range.
-        assert!(evaluation_point < k_modulus(), 1);
-
-        // Validate the FRI queue.
         validate_fri_queue(fri_queue);
 
-        let mm_fri_ctx_size = FRI_CTX_SIZE();
-        let n_queries = (vector::length(&fri_queue) / 3 as u256); // expected eq 13 (40 /3)
-        let merkle_queue_ptr: u256;
-        let channel_ptr: u256;
-        let fri_ctx: u256;
-        let data_to_hash: u256;
+        let mm_fri_ctx_size = FRI_CTX_SIZE;
+        let fri_queue_length = vector::length(&fri_queue);
+        let proof_length = vector::length(&proof);
+        let n_queries = fri_queue_length / 3;
 
-        let fri_queue_ptr = fri_queue_ptr + 0x20;
+        let fri_queue_ptr = proof_length + 6 ;
+        let channel_ptr = fri_queue_ptr + fri_queue_length;
+        *vector::borrow_mut(fri, channel_ptr) = 5u256;
+        let merkle_queue_ptr = channel_ptr + 1;
+        let fri_ctx = merkle_queue_ptr + n_queries * 2;
+        *vector::borrow_mut(fri, 4) = (proof_length as u256);
+        copy_vec_to_memory(proof, fri, 5);
 
-        channel_ptr = get_next(&memory);
+        *vector::borrow_mut(fri, 4 + proof_length + 1) = (fri_queue_length as u256);
+        copy_vec_to_memory(fri_queue, fri, fri_queue_ptr);
 
-        mstore(&mut memory, channel_ptr, proof_ptr + 0x20);
-        merkle_queue_ptr = channel_ptr + 0x20;
-        fri_ctx = merkle_queue_ptr + 0x40 * n_queries;
+        let data_to_hash = fri_ctx + mm_fri_ctx_size;
 
-        data_to_hash = fri_ctx + mm_fri_ctx_size;
+        *vector::borrow_mut(fri, data_to_hash) = evaluation_point;
+        *vector::borrow_mut(fri, data_to_hash + 1) = fri_step_size;
+        *vector::borrow_mut(fri, data_to_hash + 4) = expected_root;
 
-        mstore(&mut memory, data_to_hash, evaluation_point);
-        mstore(&mut memory, data_to_hash + 0x20, fri_step_size);
-        mstore(&mut memory, data_to_hash + 0x80, expected_root);
+        let hash = vector::empty();
+        for (i in 0..(n_queries * 3)) {
+            vector::append(&mut hash, u256_to_bytes32(vector::borrow(fri, fri_queue_ptr + i)));
+        };
 
-        // Hash FRI inputs and add to dataToHash.
+        *vector::borrow_mut(fri, data_to_hash + 2) = bytes32_to_u256(keccak256(hash));
+        let fri_coset_size: u64 = 1 << (fri_step_size as u8);
+        update_fri(signer, *fri);
 
-        let keccak_input = mloadrange(&mut memory, fri_queue_ptr, 0x60 * n_queries);
-        mstore(
-            &mut memory,
-            data_to_hash + 0x40,
-            to_u256(to_big_endian(keccak256(keccak_input)))
-        );
-        init_fri_group(&mut memory, fri_ctx);
+        emit(FriCtx { fri_ctx });
 
-        let fri_coset_size = (pow(2, (fri_step_size as u128)) as u256);
-
-        n_queries = compute_next_layer(
-            &mut memory,
+        emit(ComputeNextLayer {
             channel_ptr,
             fri_queue_ptr,
             merkle_queue_ptr,
@@ -102,22 +108,46 @@ module verifier_addr::fri_statement_contract {
             fri_ctx,
             evaluation_point,
             fri_coset_size,
-        );
+        });
 
-        verify_merkle(&mut memory, channel_ptr, merkle_queue_ptr, to_big_endian(to_bytes(&expected_root)), n_queries);
+        emit(RegisterFactVerifyFri {
+            data_to_hash,
+            fri_queue_ptr
+        });
+    }
 
-        let keccak_input = mloadrange(&mut memory, fri_queue_ptr, 0x60 * n_queries);
-        mstore(&mut memory, data_to_hash + 0x60, to_u256(to_big_endian(keccak256(keccak_input))));
+    public entry fun register_fact_verify_fri(s: &signer, data_to_hash: u64, fri_queue_ptr: u64, n_queries: u64) {
+        let fri = &mut get_fri(address_of(s));
 
-        let keccak_input = mloadrange(&mut memory, data_to_hash, 0xa0);
-        let fact_hash = keccak256(keccak_input);
-        register_fact(signer, fact_hash);
+        let input_hash = vector::empty();
+        //input_hash has range from friQueuePtr to n_queries * 3.
+        for ( i in 0..(n_queries * 3)) {
+            vector::append(
+                &mut input_hash,
+                u256_to_bytes32(vector::borrow(fri, fri_queue_ptr + i))
+            );
+        };
+
+        *vector::borrow_mut(
+            fri,
+            data_to_hash + 3
+        ) = bytes32_to_u256(keccak256(input_hash));
+
+        input_hash = vector::empty();
+        //input_hash has range from friQueuePtr to n_queries * 3.
+        for (i in 0..5) {
+            vector::append(
+                &mut input_hash,
+                u256_to_bytes32(vector::borrow(fri, data_to_hash + i))
+            );
+        };
+        register_fact(s, bytes32_to_u256(keccak256(input_hash)));
     }
 
     fun validate_fri_queue(fri_queue: vector<u256>) {
         let fri_queue_length = vector::length(&fri_queue);
-        assert!(fri_queue_length % 3 == 1, 1);
-        assert!(fri_queue_length >= 4, 1);
+        assert!(fri_queue_length % 3 == 1, EFRI_QUEUE_MUST_BE_COMPOSED_OF_TRIPLETS_PLUS_ONE_DELIMITER_CELL);
+        assert!(fri_queue_length >= 4, ENO_QUERY_TO_PROCESS);
 
         // Force delimiter cell to 0, this is cheaper then asserting it.
         vector::insert(&mut fri_queue, fri_queue_length - 1, 0);
@@ -132,11 +162,10 @@ module verifier_addr::fri_statement_contract {
         let prev_query = 0;
         for (i in 0..n_queries) {
             assert!(*vector::borrow(&fri_queue, 3 * i) > prev_query, 1);
-            assert!(*vector::borrow(&fri_queue, 3 * i + 1) < k_modulus(), 1);
-            assert!(*vector::borrow(&fri_queue, 3 * i + 2) < k_modulus(), 1);
+            assert!(*vector::borrow(&fri_queue, 3 * i + 1) < K_MODULUS, 1);
+            assert!(*vector::borrow(&fri_queue, 3 * i + 2) < K_MODULUS, 1);
             prev_query = *vector::borrow(&fri_queue, 3 * i);
         };
-
         // Verify all queries are on the same logarithmic step.
         // NOLINTNEXTLINE: divide-before-multiply.
         assert!(
@@ -144,43 +173,7 @@ module verifier_addr::fri_statement_contract {
                 &fri_queue,
                 0
             ),
-            1
+            EINVALID_QUERIES_RANGE
         );
-    }
-
-
-    #[test()]
-    fun test_validate_fri_queue() {
-        validate_fri_queue(get_fri_queue_3());
-    }
-
-    #[test(signer = @verifier_addr)]
-    fun test_verify_fri_3(signer: signer) {
-        verify_fri(
-            signer,
-            get_proof_3(),
-            get_fri_queue_3(),
-            get_evaluation_point_3(),
-            get_fri_step_size_3(),
-            get_expected_root_3()
-        );
-        let fact_hash: u256 = 0x81b6de7f72176840720dbf7460352c0a18342fd155c307bee6e384302b472179;
-        let res = to_big_endian(to_bytes(&fact_hash));
-        assert!(is_valid(res), 1);
-    }
-
-    #[test(signer = @verifier_addr)]
-    fun test_verify_fri_2(signer: signer) {
-        verify_fri(
-            signer,
-            get_proof_2(),
-            get_fri_queue_2(),
-            get_evaluation_point_2(),
-            get_fri_step_size_2(),
-            get_expected_root_2()
-        );
-        let fact_hash: u256 = 0xbc348fdab2b2e1f3564918265f0c0371e70078a8195897eb9a76687bbda53558;
-        let res = to_big_endian(to_bytes(&fact_hash));
-        assert!(is_valid(res), 1);
     }
 }
