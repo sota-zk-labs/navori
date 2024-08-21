@@ -14,7 +14,6 @@ module verifier_addr::memory_page_fact_registry {
     use std::vector::{borrow, for_each, length};
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event::emit;
-    use lib_addr::event::log_event;
 
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be, long_vec_to_bytes_be};
     use lib_addr::math_mod::{mod_add};
@@ -206,7 +205,7 @@ module verifier_addr::memory_page_fact_registry {
         let fact_hash = u256_from_bytes_be(&keccak256(
             vec_to_bytes_be(&vector[CONTINUOUS_PAGE, K_MODULUS, n_values, z, alpha, prod, memory_hash, start_address])
         ));
-        log_event(signer, LogMemoryPageFactContinuous {
+        emit(LogMemoryPageFactContinuous {
             fact_hash,
             memory_hash,
             prod
@@ -254,8 +253,8 @@ module verifier_addr::mpfr_test {
         );
         // let g = emitted_events<LogMemoryPageFactContinuous>();
         // print(&g);
-        // assert!(fact_hash == 0xeb243f0981ec93a0090da83d2351b8d4b2e5cd9cc44be8d4b1119450eac54a6du256, 1);
-        // assert!(memory_hash == 48239457587525216759117913177237902366978204066031868156075383439591598548182, 1);
-        // assert!(prod == 3254870901738389658383135104000411656134098647702871823979226499371705469217, 1);
+        assert!(fact_hash == 0xeb243f0981ec93a0090da83d2351b8d4b2e5cd9cc44be8d4b1119450eac54a6du256, 1);
+        assert!(memory_hash == 48239457587525216759117913177237902366978204066031868156075383439591598548182, 1);
+        assert!(prod == 3254870901738389658383135104000411656134098647702871823979226499371705469217, 1);
     }
 }

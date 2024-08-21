@@ -4,6 +4,7 @@ module verifier_addr::gps_statement_verifier {
     use std::signer::address_of;
     use std::vector::{borrow, borrow_mut, length, slice};
     use aptos_std::math64::min;
+    use aptos_framework::event::emit;
 
     use cpu_addr::cairo_bootloader_program::get_compiled_program;
     use lib_addr::vector::{assign, set_el};
@@ -135,7 +136,7 @@ module verifier_addr::gps_statement_verifier {
         *borrow_global_mut<VparParams>(signer_addr) = VparParams {
             proof_params,
             proof,
-            task_metadata: borrow_global<TaskMetaData>(address_of(signer)).inner,
+            task_metadata: borrow_global<TaskMetaData>(signer_addr).inner,
             cairo_aux_input,
             cairo_verifier_id
         };
@@ -283,6 +284,9 @@ module verifier_addr::gps_statement_verifier {
                 *borrow(cairo_aux_input, OFFSET_OUTPUT_BEGIN_ADDR)
             )) {
                 *checkpoint = REGISTER_PUBLIC_MEMORY_MAIN_PAGE;
+                emit(VparFinished {
+                    ok: true
+                });
                 return
             };
         };
@@ -572,6 +576,11 @@ module verifier_addr::gps_statement_verifier {
         first_invoking: bool
     }
 
+    #[event]
+    struct VparFinished has store, drop {
+        ok: bool
+    }
+    
     // Data of the function `register_public_memory_main_page`
     // checkpoints
     const RPMMP_CHECKPOINT1: u8 = 1;
@@ -602,10 +611,12 @@ module verifier_addr::gps_statement_verifier {
 #[test_only]
 module verifier_addr::test_gps {
 
+    use aptos_std::debug::print;
+    use aptos_framework::event;
     use verifier_addr::gps_statement_verifier_test_data::{task_meta_data_, proof_params_, proof_, cairo_aux_input_};
     use verifier_addr::constructor::init_all;
     use verifier_addr::gps_statement_verifier::{prepush_data_to_verify_proof_and_register, prepush_task_metadata,
-        verify_proof_and_register
+        verify_proof_and_register, VparFinished
     };
 
     #[test(signer = @test_signer)]
@@ -672,6 +683,8 @@ module verifier_addr::test_gps {
         verify_proof_and_register(signer);
         // console.log(`register_gps_facts, loop 2`)
         verify_proof_and_register(signer);
+        
+        print(&event::emitted_events<VparFinished>());
     }
 
 }

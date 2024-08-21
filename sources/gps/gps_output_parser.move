@@ -8,7 +8,7 @@ module verifier_addr::gps_output_parser {
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math64::min;
     use aptos_std::vector;
-    use lib_addr::event::log_event;
+    use aptos_framework::event::emit;
 
     use lib_addr::bytes::{u256_from_bytes_be, vec_to_bytes_be};
     use verifier_addr::fact_registry::register_fact;
@@ -233,10 +233,10 @@ module verifier_addr::gps_output_parser {
                 // set_el(&mut page_hashed_log_data, 0, program_output_fact);
                 let length = *cur_page - first_page_of_task;
                 set_el(page_hashed_log_data, 2, (length as u256));
-                log_event(signer, LogMemoryPagesHashes {
+                emit(LogMemoryPagesHashes {
                     program_output_fact,
                     pages_hashes: slice(page_hashed_log_data, 1, length + 3),
-                })
+                });
             };
 
             register_fact(signer, fact);
