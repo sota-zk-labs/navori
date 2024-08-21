@@ -1,22 +1,22 @@
 module verifier_addr::fact_registry {
     use std::signer::address_of;
-    use aptos_std::table::{Self, borrow, Table, upsert};
+    use aptos_std::smart_table::{Self, borrow, SmartTable, upsert};
 
     struct VerifierFact has key, store {
-        verified_fact: Table<u256, bool>,
+        verified_fact: SmartTable<u256, bool>,
         any_fact_registered: bool
     }
 
     public fun init_fact_registry(signer: &signer) {
         move_to(signer, VerifierFact {
-            verified_fact: table::new<u256, bool>(),
+            verified_fact: smart_table::new<u256, bool>(),
             any_fact_registered: false
         });
     }
 
     public fun is_valid(signer: &signer, fact: u256): bool acquires VerifierFact {
         let verifier_fact = borrow_global<VerifierFact>(address_of(signer));
-        if (table::contains(&verifier_fact.verified_fact, fact)) {
+        if (smart_table::contains(&verifier_fact.verified_fact, fact)) {
             return true
         };
         false

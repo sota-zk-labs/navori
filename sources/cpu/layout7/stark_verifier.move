@@ -1,13 +1,10 @@
 module verifier_addr::stark_verifier_7 {
-    use std::option;
-    use std::option::{is_some, Option};
     use std::signer::address_of;
     use std::vector::{append, borrow, length, slice};
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::math64::min;
 
     use cpu_addr::cpu_oods_7;
-    use cpu_addr::layout_specific_7;
     use cpu_addr::layout_specific_7::{layout_specific_init, safe_div, prepare_for_oods_check};
     use cpu_addr::memory_access_utils_7::get_fri_step_sizes;
     use cpu_addr::public_memory_offsets_7::{get_offset_page_addr, get_offset_page_hash, get_offset_page_prod,
@@ -222,43 +219,22 @@ module verifier_addr::stark_verifier_7 {
     }
 
     public entry fun init_data_type(signer: &signer) {
-        move_to(signer, VerifyProofCheckpoint {
+        move_to(signer, VpCheckpoint {
             inner: VP_CHECKPOINT1
         });
         move_to(signer, CtxCache {
             inner: vector[]
-        });
-        move_to(signer, Checkpoint4Cache {
-            ptr: 0,
-            first_invoking: true
         });
         move_to(signer, VmpfIterationCache {
             ptr: 0,
             first_invoking: true
         });
         move_to(signer, OccCheckpoint {
-            checkpoint: 0,
-            first_invoking: true
-        });
-        move_to(signer, CpmpPtr {
-            res: 1,
-            ptr: 0,
-            first_invoking: true
-        });
-        move_to(signer, CpmqCheckpoint {
-            checkpoint: 0,
-            first_invoking: true
-        });
-        move_to(signer, CacheCpmqCheckpoint1 {
-            denominator: 0
-        });
-        move_to(signer, CacheCpmqCheckpoint3 {
-             numerator: 0
+            inner: OCC_CHECKPOINT1
         });
         move_to(signer, CfflCheckpoint {
-             inner: CFFL_CHECKPOINT1
+            inner: CFFL_CHECKPOINT1
         });
-        layout_specific_7::init_data_type(signer);
         cpu_oods_7::init_data_type(signer);
     }
 
@@ -296,7 +272,7 @@ module verifier_addr::stark_verifier_7 {
             set_el(
                 ctx,
                 eval_points_ptr,
-                mod_exp(eval_domain_generator, bit_reverse(query_idx, log_eval_domain_size), K_MODULUS)
+                fpow(eval_domain_generator, bit_reverse(query_idx, log_eval_domain_size))
             );
             eval_points_ptr = eval_points_ptr + 1;
             fri_queue = fri_queue + FRI_QUEUE_SLOT_SIZE;
@@ -400,7 +376,11 @@ module verifier_addr::stark_verifier_7 {
       I.e. if the prover said that f(z) = c, the first FRI layer will include
       the term (f(x) - c)/(x-z).
     */
-    fun compute_first_fri_layer(signer: &signer, ctx: &mut vector<u256>, proof: &vector<u256>): bool acquires CfflCheckpoint {
+    fun compute_first_fri_layer(
+        signer: &signer,
+        ctx: &mut vector<u256>,
+        proof: &vector<u256>
+    ): bool acquires CfflCheckpoint {
         let CfflCheckpoint {
             inner: checkpoint
         } = borrow_global_mut<CfflCheckpoint>(address_of(signer));
@@ -514,11 +494,11 @@ module verifier_addr::stark_verifier_7 {
         proof_params: &vector<u256>,
         proof: &mut vector<u256>,
         public_input: &vector<u256>
-    ): bool acquires ConstructorConfig, VerifyProofCheckpoint, CtxCache, Checkpoint4Cache, VmpfIterationCache, OccCheckpoint, CpmpPtr, CpmqCheckpoint, CacheCpmqCheckpoint1, CacheCpmqCheckpoint3, CfflCheckpoint {
+    ): bool acquires ConstructorConfig, VpCheckpoint, CtxCache, VmpfIterationCache, OccCheckpoint, CfflCheckpoint {
         let signer_addr = address_of(signer);
-        let VerifyProofCheckpoint {
+        let VpCheckpoint {
             inner: checkpoint
-        } = borrow_global_mut<VerifyProofCheckpoint>(signer_addr);
+        } = borrow_global_mut<VpCheckpoint>(signer_addr);
         if (*checkpoint == VP_CHECKPOINT1) {
             *borrow_global_mut<CtxCache>(signer_addr) = CtxCache {
                 inner: init_verifier_params(signer, public_input, proof_params)
@@ -560,94 +540,79 @@ module verifier_addr::stark_verifier_7 {
 
             // Send Out of Domain Sampling point.
             send_field_elements(ctx, channel_ptr, 1, MM_OODS_POINT);
-            *checkpoint = VP_CHECKPOINT4;
+
+            *checkpoint = VP_CHECKPOINT3;
             return false
         };
         // emit LogGas(Initializations, gasleft());
 
-        if (*checkpoint == VP_CHECKPOINT4) {
+        if (*checkpoint == VP_CHECKPOINT3) {
             // Read the answers to the Out of Domain Sampling.
             let lmm_oods_values = MM_OODS_VALUES;
-            let Checkpoint4Cache {
-                ptr,
-                first_invoking
-            } = borrow_global_mut<Checkpoint4Cache>(signer_addr);
-            if (*first_invoking) {
-                *ptr = lmm_oods_values;
-                *first_invoking = false;
-            };
-            let end_ptr = min(lmm_oods_values + N_OODS_VALUES, *ptr + CHECKPOINT4_ITERATION_LENGTH);
-            for (i in *ptr..end_ptr) {
+            for (i in lmm_oods_values..(lmm_oods_values + N_OODS_VALUES)) {
                 let tmp = read_field_element(ctx, proof, channel_ptr, true);
                 set_el(ctx, i, tmp);
             };
-            *ptr = end_ptr;
-            if (end_ptr == lmm_oods_values + N_OODS_VALUES) {
-                *checkpoint = VP_CHECKPOINT5;
-                *first_invoking = true;
-            };
+            *checkpoint = VP_CHECKPOINT4;
             return false
         };
+
         // emit LogGas("Read OODS commitments", gasleft());
-        if (*checkpoint == VP_CHECKPOINT5) {
+        if (*checkpoint == VP_CHECKPOINT4) {
             if (oods_consistency_check(signer, ctx, public_input)) {
-                *checkpoint = VP_CHECKPOINT6;
+                // emit LogGas("OODS consistency check", gasleft());
+                send_field_elements(ctx, channel_ptr, 1, MM_OODS_ALPHA);
+                // emit LogGas("Generate OODS coefficients", gasleft());
+                let hash = read_hash(ctx, proof, channel_ptr, true);
+                set_el(ctx, MM_FRI_COMMITMENTS, hash);
+
+                let n_fri_steps = length(&get_fri_step_sizes(proof_params));
+                let fri_eval_point_ptr = MM_FRI_EVAL_POINTS;
+                for (i in 1..(n_fri_steps - 1)) {
+                    send_field_elements(ctx, channel_ptr, 1, fri_eval_point_ptr + i);
+                    hash = read_hash(ctx, proof, channel_ptr, true);
+                    set_el(ctx, MM_FRI_COMMITMENTS + i, hash);
+                };
+
+                // Send last random FRI evaluation point.
+                send_field_elements(
+                    ctx,
+                    channel_ptr,
+                    1,
+                    MM_FRI_EVAL_POINTS + n_fri_steps - 1
+                );
+
+                // Read FRI last layer commitment.
+                read_last_fri_layer(ctx, proof);
+
+                // Generate queries.
+                // emit LogGas("Read FRI commitments", gasleft());
+                let tmp = (*borrow(ctx, MM_PROOF_OF_WORK_BITS) as u8);
+                verify_proof_of_work(ctx, proof, channel_ptr, tmp);
+
+                let tmp1 = *borrow(ctx, MM_N_UNIQUE_QUERIES);
+                let tmp2 = *borrow(ctx, MM_EVAL_DOMAIN_SIZE);
+                let tmp = send_random_queries(
+                    ctx,
+                    channel_ptr,
+                    tmp1,
+                    tmp2 - 1,
+                    MM_FRI_QUEUE,
+                    FRI_QUEUE_SLOT_SIZE,
+                );
+                set_el(ctx, MM_N_UNIQUE_QUERIES, tmp);
+                
+                *checkpoint = VP_CHECKPOINT5;
             };
-            return false
-        };
-        if (*checkpoint == VP_CHECKPOINT6) {
-            // emit LogGas("OODS consistency check", gasleft());
-            send_field_elements(ctx, channel_ptr, 1, MM_OODS_ALPHA);
-            // emit LogGas("Generate OODS coefficients", gasleft());
-            let hash = read_hash(ctx, proof, channel_ptr, true);
-            set_el(ctx, MM_FRI_COMMITMENTS, hash);
-
-            let n_fri_steps = length(&get_fri_step_sizes(proof_params));
-            let fri_eval_point_ptr = MM_FRI_EVAL_POINTS;
-            for (i in 1..(n_fri_steps - 1)) {
-                send_field_elements(ctx, channel_ptr, 1, fri_eval_point_ptr + i);
-                hash = read_hash(ctx, proof, channel_ptr, true);
-                set_el(ctx, MM_FRI_COMMITMENTS + i, hash);
-            };
-
-            // Send last random FRI evaluation point.
-            send_field_elements(
-                ctx,
-                channel_ptr,
-                1,
-                MM_FRI_EVAL_POINTS + n_fri_steps - 1
-            );
-
-            // Read FRI last layer commitment.
-            read_last_fri_layer(ctx, proof);
-
-            // Generate queries.
-            // emit LogGas("Read FRI commitments", gasleft());
-            let tmp = (*borrow(ctx, MM_PROOF_OF_WORK_BITS) as u8);
-            verify_proof_of_work(ctx, proof, channel_ptr, tmp);
-
-            let tmp1 = *borrow(ctx, MM_N_UNIQUE_QUERIES);
-            let tmp2 = *borrow(ctx, MM_EVAL_DOMAIN_SIZE);
-            let tmp = send_random_queries(
-                ctx,
-                channel_ptr,
-                tmp1,
-                tmp2 - 1,
-                MM_FRI_QUEUE,
-                FRI_QUEUE_SLOT_SIZE,
-            );
-            set_el(ctx, MM_N_UNIQUE_QUERIES, tmp);
-            
-            *checkpoint = VP_CHECKPOINT7;
             return false
         };
         // emit LogGas("Send queries", gasleft());
 
-        if (*checkpoint == VP_CHECKPOINT7) {
+        if (*checkpoint == VP_CHECKPOINT5) {
             if (compute_first_fri_layer(signer, ctx, proof)) {
-                *checkpoint = VP_CHECKPOINT8;
+                *checkpoint = VP_CHECKPOINT6;
             };
-            return false
+            // return false
         };
 
         fri_statement_verifier_7::fri_verify_layers(signer, ctx, proof, proof_params);
@@ -912,87 +877,42 @@ module verifier_addr::stark_verifier_7 {
             N is the actual number of public memory cells,
             and S is the number of cells allocated for the public memory (which includes the padding).
     */
-    fun compute_public_memory_quotient(
-        signer: &signer,
-        ctx: &mut vector<u256>,
-        public_input: &vector<u256>
-    ): Option<u256> acquires CpmpPtr, CpmqCheckpoint, CacheCpmqCheckpoint1, CacheCpmqCheckpoint3 {
-        let signer_addr = address_of(signer);
-        let CpmqCheckpoint {
-            checkpoint,
-            first_invoking
-        } = borrow_global_mut<CpmqCheckpoint>(signer_addr);
-        if (*first_invoking) {
-            *checkpoint = CPMQ_CHECKPOINT1;
-            *first_invoking = false;
-        };
-        if (*checkpoint == CPMQ_CHECKPOINT1) {
-            let n_public_memory_pages = *borrow(ctx, MM_N_PUBLIC_MEM_PAGES);
-            let cumulative_prods_ptr = *borrow(ctx, MM_PUBLIC_INPUT_PTR) + get_offset_page_prod(
-                0,
-                n_public_memory_pages
-            );
-            let denominator = compute_public_memory_prod(
-                signer,
-                public_input,
-                (cumulative_prods_ptr as u64),
-                (n_public_memory_pages as u64)
-            );
-            if (option::is_none(&denominator)) {
-                return option::none<u256>()
-            };
-            *borrow_global_mut<CacheCpmqCheckpoint1>(signer_addr) = CacheCpmqCheckpoint1 {
-                denominator: *option::borrow(&denominator)
-            };
+    fun compute_public_memory_quotient(ctx: &mut vector<u256>, public_input: &vector<u256>): u256 {
+        let n_values = *borrow(ctx, MM_N_PUBLIC_MEM_ENTRIES);
+        let z = *borrow(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM);
+        let alpha = *borrow(ctx, MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0);
+        // The size that is allocated to the public memory.
+        let public_memory_size = safe_div(*borrow(ctx, MM_TRACE_LENGTH), PUBLIC_MEMORY_STEP);
 
-            *checkpoint = CPMQ_CHECKPOINT2;
-            // return option::none<u256>()
-        };
+        // Ensure 'nValues' is bounded as a sanity check
+        // (the bound is somewhat arbitrary).
+        assert!(n_values < 0x1000000, OVERFLOW_PROTECTION_FAILED);
+        assert!(n_values <= public_memory_size, NUMBER_OF_VALUES_OF_PUBLIC_MEMORY_IS_TOO_LARGE);
 
-        let CacheCpmqCheckpoint1 {
-            denominator
-        } = borrow_global_mut<CacheCpmqCheckpoint1>(signer_addr);
+        let n_public_memory_pages = *borrow(ctx, MM_N_PUBLIC_MEM_PAGES);
+        let cumulative_prods_ptr = *borrow(ctx, MM_PUBLIC_INPUT_PTR) + get_offset_page_prod(0, n_public_memory_pages);
+        let denominator = compute_public_memory_prod(
+            public_input,
+            (cumulative_prods_ptr as u64),
+            (n_public_memory_pages as u64)
+        );
 
-        if (*checkpoint == CPMQ_CHECKPOINT2) {
-            let n_values = *borrow(ctx, MM_N_PUBLIC_MEM_ENTRIES);
-            let z = *borrow(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM);
-            let alpha = *borrow(ctx, MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0);
-            // The size that is allocated to the public memory.
-            let public_memory_size = safe_div(*borrow(ctx, MM_TRACE_LENGTH), PUBLIC_MEMORY_STEP);
+        // Compute address + alpha * value for the first address-value pair for padding.
+        let public_input_ptr = (*borrow(ctx, MM_PUBLIC_INPUT_PTR) as u64);
+        let padding_addr_ptr = public_input_ptr + OFFSET_PUBLIC_MEMORY_PADDING_ADDR;
+        let padding_addr = *borrow(public_input, padding_addr_ptr);
+        let padding_value = *borrow(public_input, padding_addr_ptr + 1);
+        let hash_first_address_value = fadd(padding_addr, fmul(padding_value, alpha));
 
-            // Ensure 'nValues' is bounded as a sanity check
-            // (the bound is somewhat arbitrary).
-            assert!(n_values < 0x1000000, OVERFLOW_PROTECTION_FAILED);
-            assert!(n_values <= public_memory_size, NUMBER_OF_VALUES_OF_PUBLIC_MEMORY_IS_TOO_LARGE);
-            // Compute address + alpha * value for the first address-value pair for padding.
-            let public_input_ptr = (*borrow(ctx, MM_PUBLIC_INPUT_PTR) as u64);
-            let padding_addr_ptr = public_input_ptr + OFFSET_PUBLIC_MEMORY_PADDING_ADDR;
-            let padding_addr = *borrow(public_input, padding_addr_ptr);
-            let padding_value = *borrow(public_input, padding_addr_ptr + 1);
-            let hash_first_address_value = fadd(padding_addr, fmul(padding_value, alpha));
+        // Pad the denominator with the shifted value of hash_first_address_value.
+        let denom_pad = fpow(fsub(z, hash_first_address_value), public_memory_size - n_values);
+        denominator = fmul(denominator, denom_pad);
 
-            // Pad the denominator with the shifted value of hash_first_address_value.
-            let denom_pad = fpow(fsub(z, hash_first_address_value), public_memory_size - n_values);
-            *denominator = fmul(*denominator, denom_pad);
-
-            *checkpoint = CPMQ_CHECKPOINT3;
-            // return option::none<u256>()
-        };
-
-        if (*checkpoint == CPMQ_CHECKPOINT3) {
-            let z = *borrow(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM);
-            let public_memory_size = safe_div(*borrow(ctx, MM_TRACE_LENGTH), PUBLIC_MEMORY_STEP);
-            // Calculate the numerator.
-            let numerator = fpow(z, public_memory_size);
-            *borrow_global_mut<CacheCpmqCheckpoint3>(signer_addr) = CacheCpmqCheckpoint3 {
-                numerator
-            };
-            *checkpoint = CPMQ_CHECKPOINT4;
-            // return option::none<u256>()
-        };
+        // Calculate the numerator.
+        let numerator = fpow(z, public_memory_size);
 
         // Compute the final result: numerator * denominator^(-1).
-        option::some(fmul(borrow_global<CacheCpmqCheckpoint3>(signer_addr).numerator, inverse(*denominator)))
+        fmul(numerator, inverse(denominator))
     }
 
     /*
@@ -1003,32 +923,15 @@ module verifier_addr::stark_verifier_7 {
           z and alpha are the perm and hash interaction elements assert!d to calculate the product.
     */
     fun compute_public_memory_prod(
-        signer: &signer,
         public_input: &vector<u256>,
         cumulative_prods_ptr: u64,
         n_public_memory_pages: u64
-    ): Option<u256> acquires CpmpPtr {
-        let CpmpPtr {
-            res,
-            ptr,
-            first_invoking
-        } = borrow_global_mut<CpmpPtr>(address_of(signer));
-        if (*first_invoking) {
-            *res = 1;
-            *ptr = cumulative_prods_ptr;
-            *first_invoking = false;
+    ): u256 {
+        let res = 1u256;
+        for (i in cumulative_prods_ptr..(cumulative_prods_ptr + n_public_memory_pages)) {
+            res = fmul(res, *borrow(public_input, i));
         };
-        let end_ptr = min(cumulative_prods_ptr + n_public_memory_pages, *ptr + CPMP_ITERATION_LENGTH);
-        for (i in *ptr..end_ptr) {
-            *res = fmul(*res, *borrow(public_input, i));
-        };
-        *ptr = end_ptr;
-        if (end_ptr == cumulative_prods_ptr + n_public_memory_pages) {
-            *first_invoking = true;
-            option::some(*res)
-        } else {
-            option::none<u256>()
-        }
+        res
     }
 
     // In Starknet's contracts, this function is implemented in `CpuVerifier.sol`
@@ -1036,16 +939,11 @@ module verifier_addr::stark_verifier_7 {
         signer: &signer,
         ctx: &mut vector<u256>,
         public_input: &vector<u256>
-    ): bool acquires VmpfIterationCache, OccCheckpoint, CpmpPtr, CpmqCheckpoint, CacheCpmqCheckpoint1, CacheCpmqCheckpoint3 {
+    ): bool acquires VmpfIterationCache, OccCheckpoint {
         let signer_addr = address_of(signer);
         let OccCheckpoint {
-            checkpoint,
-            first_invoking
+            inner: checkpoint
         } = borrow_global_mut<OccCheckpoint>(signer_addr);
-        if (*first_invoking) {
-            *checkpoint = OCC_CHECKPOINT1;
-            *first_invoking = false;
-        };
         if (*checkpoint == OCC_CHECKPOINT1) {
             if (verify_memory_page_facts(signer, ctx, public_input)) {
                 let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS);
@@ -1059,19 +957,12 @@ module verifier_addr::stark_verifier_7 {
             return false
         };
         if (*checkpoint == OCC_CHECKPOINT2) {
-            let public_memory_prod = compute_public_memory_quotient(signer, ctx, public_input);
-            if (is_some(&public_memory_prod)) {
-                let public_memory_prod = *option::borrow(&public_memory_prod);
-                set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__PUBLIC_MEMORY_PROD, public_memory_prod);
-                *checkpoint = OCC_CHECKPOINT3;
-            };
-            return false
-        };
-        if (*checkpoint == OCC_CHECKPOINT3) {
-            if (prepare_for_oods_check(signer, ctx)) {
-                *checkpoint = OCC_CHECKPOINT4;
-            };
-            return false
+            let public_memory_prod = compute_public_memory_quotient(ctx, public_input);
+            set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__PUBLIC_MEMORY_PROD, public_memory_prod);
+
+            prepare_for_oods_check(ctx);
+            *checkpoint = OCC_CHECKPOINT3;
+            // return false
         };
 
         // Todo
@@ -1099,7 +990,7 @@ module verifier_addr::stark_verifier_7 {
         //     composition_from_trace_value == claimed_composition,
         //     CLAIMED_COMPOSITION_DOES_NOT_MATCH_TRACE
         // );
-        *first_invoking = true;
+        *checkpoint = OCC_CHECKPOINT1;
         true
     }
 
@@ -1191,23 +1082,13 @@ module verifier_addr::stark_verifier_7 {
     const VP_CHECKPOINT4: u8 = 4;
     const VP_CHECKPOINT5: u8 = 5;
     const VP_CHECKPOINT6: u8 = 6;
-    const VP_CHECKPOINT7: u8 = 7;
-    const VP_CHECKPOINT8: u8 = 8;
 
-    struct VerifyProofCheckpoint has key, drop {
+    struct VpCheckpoint has key, drop {
         inner: u8
     }
 
     struct CtxCache has key, drop {
         inner: vector<u256>
-    }
-
-    // Checkpoint 4 cache
-    const CHECKPOINT4_ITERATION_LENGTH: u64 = 100;
-
-    struct Checkpoint4Cache has key, drop {
-        ptr: u64,
-        first_invoking: bool
     }
 
     // Data of the function `verify_memory_page_facts`
@@ -1226,37 +1107,7 @@ module verifier_addr::stark_verifier_7 {
     const OCC_CHECKPOINT4: u8 = 4;
 
     struct OccCheckpoint has key, drop {
-        checkpoint: u8,
-        first_invoking: bool
-    }
-
-    // Data of the function `compute_public_memory_prod`
-    const CPMP_ITERATION_LENGTH: u64 = 120;
-
-    struct CpmpPtr has key, drop {
-        res: u256,
-        ptr: u64,
-        first_invoking: bool
-    }
-
-    // Data of the function `compute_public_memory_quotient`
-    // checkpoints
-    const CPMQ_CHECKPOINT1: u8 = 1;
-    const CPMQ_CHECKPOINT2: u8 = 2;
-    const CPMQ_CHECKPOINT3: u8 = 3;
-    const CPMQ_CHECKPOINT4: u8 = 4;
-
-    struct CpmqCheckpoint has key, drop {
-        checkpoint: u8,
-        first_invoking: bool
-    }
-
-    struct CacheCpmqCheckpoint1 has key, drop {
-        denominator: u256
-    }
-
-    struct CacheCpmqCheckpoint3 has key, drop {
-        numerator: u256
+        inner: u8
     }
 
     // Data of the function `compute_first_fri_layer`
@@ -1264,11 +1115,11 @@ module verifier_addr::stark_verifier_7 {
     const CFFL_CHECKPOINT1: u8 = 1;
     const CFFL_CHECKPOINT2: u8 = 2;
     const CFFL_CHECKPOINT3: u8 = 3;
-    
+
     struct CfflCheckpoint has key {
         inner: u8
     }
-    
+
     // assertion code
     const INVALID_PROOF_PARAMS: u64 = 1;
     const LOG_BLOWUP_FACTOR_MUST_BE_AT_MOST_16: u64 = 2;

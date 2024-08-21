@@ -69,6 +69,7 @@ module verifier_addr::gps_output_parser {
             first_invoking: true
         });
     }
+    
     /*
       Parses the GPS program output (using taskMetadata, which should be verified by the caller),
       and registers the facts of the tasks which were executed.
@@ -122,7 +123,7 @@ module verifier_addr::gps_output_parser {
         } = borrow_global_mut<IterationCache>(signer_addr);
         if (*first_invoking) {
             *ptr = 0;
-            
+
             *total_num_pages = (*borrow(public_memory_pages, 0) as u64);
 
             *n_task = (*borrow(task_metadata, 0) as u64);
@@ -150,7 +151,7 @@ module verifier_addr::gps_output_parser {
 
             // Skip the array length and the first page.
             *page_info_ptr_start = (PAGE_INFO_SIZE as u64);
-            
+
             *first_invoking = false;
         };
         let end_ptr = min(*n_task, *ptr + ITERATION_LENGTH);
