@@ -1,0 +1,17 @@
+name: Setup Aptos CLI
+description: A composite action that sets up the Aptos CLI
+runs:
+  using: "composite"
+  steps:
+    - name: Download Aptos CLI
+      uses: robinraju/release-downloader@v1.7
+      with:
+        repository: "aptos-labs/aptos-core"
+        tag: aptos-cli-v${{ inputs.version }}
+        fileName: aptos-cli-${{ inputs.version }}-Ubuntu-x86_64.zip
+    - name: Setup Aptos CLI
+      shell: bash
+      run: |
+        unzip aptos-cli-${{ inputs.version }}-Ubuntu-x86_64.zip
+        mv ./aptos /usr/local/bin
+        chmod +x /usr/local/bin/aptos
