@@ -12,3 +12,6 @@
   - [ ] Consider using consts for things that can be pre-computed.
   - [ ] `pow(2, x) => (1 << x+1)`
   - [ ] `inline` short functions to save gas.
+  - [ ] Find all vector::empty() in all files and replace them with the first append
+  - [ ] Use vector::\*\_reverse\_\*() version to save gas.
+- [ ] Check Visibility of functions 
