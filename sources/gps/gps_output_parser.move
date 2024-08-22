@@ -1,6 +1,4 @@
 module verifier_addr::gps_output_parser {
-    use std::option;
-    use std::option::Option;
     use std::signer::address_of;
     use std::vector::borrow;
     use std::vector::length;
@@ -65,8 +63,7 @@ module verifier_addr::gps_output_parser {
             cur_addr: 0,
             cur_page: 0,
             node_stack: vector[],
-            page_info_ptr_start: 0,
-            first_invoking: true
+            page_info_ptr_start: 0
         });
     }
     
@@ -118,12 +115,9 @@ module verifier_addr::gps_output_parser {
             cur_addr,
             cur_page,
             node_stack,
-            page_info_ptr_start,
-            first_invoking
+            page_info_ptr_start
         } = borrow_global_mut<IterationCache>(signer_addr);
-        if (*first_invoking) {
-            *ptr = 0;
-
+        if (*ptr == 0) {
             *total_num_pages = (*borrow(public_memory_pages, 0) as u64);
 
             *n_task = (*borrow(task_metadata, 0) as u64);
@@ -151,8 +145,6 @@ module verifier_addr::gps_output_parser {
 
             // Skip the array length and the first page.
             *page_info_ptr_start = (PAGE_INFO_SIZE as u64);
-
-            *first_invoking = false;
         };
         let end_ptr = min(*n_task, *ptr + ITERATION_LENGTH);
         // Register the fact for each task.
@@ -245,7 +237,7 @@ module verifier_addr::gps_output_parser {
         *ptr = end_ptr;
         if (*ptr == *n_task) {
             assert!(*total_num_pages == *cur_page, NOT_ALL_MEMORY_PAGES_WERE_PROCESSED);
-            *first_invoking = true;
+            *ptr = 0;
             return true
         };
         false
@@ -328,7 +320,6 @@ module verifier_addr::gps_output_parser {
         cur_addr: u256,
         cur_page: u64,
         node_stack: vector<u256>,
-        page_info_ptr_start: u64,
-        first_invoking: bool
+        page_info_ptr_start: u64
     }
 }

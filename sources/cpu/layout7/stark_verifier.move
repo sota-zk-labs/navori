@@ -225,8 +225,7 @@ module verifier_addr::stark_verifier_7 {
             inner: vector[]
         });
         move_to(signer, VmpfIterationCache {
-            ptr: 0,
-            first_invoking: true
+            ptr: 0
         });
         move_to(signer, OccCheckpoint {
             inner: OCC_CHECKPOINT1
@@ -805,13 +804,8 @@ module verifier_addr::stark_verifier_7 {
     ): bool acquires VmpfIterationCache {
         let signer_addr = address_of(signer);
         let VmpfIterationCache {
-            ptr,
-            first_invoking
+            ptr
         } = borrow_global_mut<VmpfIterationCache>(signer_addr);
-        if (*first_invoking) {
-            *ptr = 0;
-            *first_invoking = false;
-        };
         let n_public_memory_pages = *borrow(ctx, MM_N_PUBLIC_MEM_PAGES);
 
         let end_ptr = (min((n_public_memory_pages as u64), (*ptr + VMPF_ITERATION_LENGTH as u64)) as u256);
@@ -848,7 +842,7 @@ module verifier_addr::stark_verifier_7 {
         };
         *ptr = end_ptr;
         if (end_ptr == n_public_memory_pages) {
-            *first_invoking = true;
+            *ptr = 0;
             true
         } else {
             false
@@ -1094,8 +1088,7 @@ module verifier_addr::stark_verifier_7 {
     const VMPF_ITERATION_LENGTH: u256 = 120;
 
     struct VmpfIterationCache has key, drop {
-        ptr: u256,
-        first_invoking: bool
+        ptr: u256
     }
 
     // Data of the function `oods_consistency_check`
