@@ -4,7 +4,7 @@ version = "1.0.0"
 authors = []
 
 [addresses]
-verifier_addr = "0d86ef4ed97b15752707c861650d084d2ad181357b7f966a2e08a931c63187c7"
+verifier_addr = "_"
 
 [dev-addresses]
 
@@ -12,5 +12,8 @@ verifier_addr = "0d86ef4ed97b15752707c861650d084d2ad181357b7f966a2e08a931c63187c
 git = "https://github.com/aptos-labs/aptos-core.git"
 rev = "release-v.1.14"
 subdir = "aptos-move/framework/aptos-framework"
+
+[dependencies]
+libs = {local = "../libs"}
 
 [dev-dependencies]

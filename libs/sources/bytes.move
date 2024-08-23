@@ -1,4 +1,4 @@
-module verifier_addr::bytes {
+module lib_addr::bytes {
     use std::bcs::to_bytes;
     use std::vector;
     use std::vector::{append, for_each_ref};

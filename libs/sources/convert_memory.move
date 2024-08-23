@@ -1,4 +1,4 @@
-module verifier_addr::convert_memory {
+module lib_addr::convert_memory {
     use std::vector;
 
     public fun copy_vec_to_memory(vec: vector<u256>, table: &mut vector<u256>, start_prt: u64) {
