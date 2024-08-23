@@ -72,11 +72,11 @@ module lib_addr::bytes {
 }
 
 #[test_only]
-module verifier_addr::bytes_test {
+module lib_addr::bytes_test {
     use std::bcs::to_bytes;
     use std::vector;
 
-    use verifier_addr::bytes::{pad, vec_to_bytes_be};
+    use lib_addr::bytes::{pad, vec_to_bytes_be};
 
     #[test]
     fun test_padding() {

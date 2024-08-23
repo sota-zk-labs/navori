@@ -5,12 +5,15 @@ authors = []
 
 [addresses]
 verifier_addr = "_"
+lib_addr = "_"
 
 [dev-addresses]
+verifier_addr = "0x70c7fb94e185ce44f460f4fd8f9c38751bf9689ce8faefb7a216d8f224ec38fc"
+lib_addr = "0x70c7fb94e185ce44f460f4fd8f9c38751bf9689ce8faefb7a216d8f224ec38f3"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
-rev = "release-v.1.14"
+rev = "aptos-release-v1.17"
 subdir = "aptos-move/framework/aptos-framework"
 
 [dependencies]
