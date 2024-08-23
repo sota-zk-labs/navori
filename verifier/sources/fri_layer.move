@@ -3,10 +3,10 @@ module verifier_addr::fri_layer {
     use std::vector;
     use aptos_std::aptos_hash::keccak256;
 
-    use verifier_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
+    use lib_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::fri_transform::transform_coset;
-    use verifier_addr::prime_field_element_0::{fmul, fpow};
+    use lib_addr::prime_field_element_0::{fmul, fpow};
 
     // This line is used for generating constants DO NOT REMOVE!
     // 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000

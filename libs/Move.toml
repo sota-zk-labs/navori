@@ -1,16 +1,15 @@
 [package]
-name = "navori"
+name = "libs"
 version = "1.0.0"
 authors = []
 
 [addresses]
-verifier_addr = "0d86ef4ed97b15752707c861650d084d2ad181357b7f966a2e08a931c63187c7"
+lib_addr = "_"
 
 [dev-addresses]
+lib_addr = "0x70c7fb94e185ce44f460f4fd8f9c38751bf9689ce8faefb7a216d8f224ec38fc"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
-rev = "release-v.1.14"
+rev = "aptos-release-v1.17"
 subdir = "aptos-move/framework/aptos-framework"
-
-[dev-dependencies]

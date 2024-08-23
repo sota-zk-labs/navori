@@ -18,5 +18,5 @@ jobs:
       - uses: ./.github/actions/setup_aptos_cli
         with:
           version: 4.0.0
-      - name: Test
-        run: aptos move test
+      - name: test_contract
+        run: (cd libs && aptos move test --skip-fetch-latest-git-deps --skip-attribute-checks) & (cd verifier && aptos move test --skip-fetch-latest-git-deps --skip-attribute-checks)

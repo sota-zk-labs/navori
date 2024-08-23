@@ -6,8 +6,8 @@ module verifier_addr::merkle_statement_contract {
     use aptos_std::math64::pow;
     use aptos_framework::event;
 
-    use verifier_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
-    use verifier_addr::convert_memory::copy_vec_to_memory;
+    use lib_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
+    use lib_addr::convert_memory::copy_vec_to_memory;
     use verifier_addr::fact_registry::register_fact;
     use verifier_addr::fri::{get_fri, new_fri, update_fri};
 
