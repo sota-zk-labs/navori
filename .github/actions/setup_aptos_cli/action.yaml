@@ -1,5 +1,10 @@
 name: Setup Aptos CLI
 description: A composite action that sets up the Aptos CLI
+inputs:
+  version:
+    description: 'The version of the Aptos CLI to install'
+    required: true
+    default: '4.0.0'
 runs:
   using: "composite"
   steps:

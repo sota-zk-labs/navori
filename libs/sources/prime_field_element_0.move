@@ -1,4 +1,4 @@
-module verifier_addr::prime_field_element_0 {
+module lib_addr::prime_field_element_0 {
     // This line is used for generating constants DO NOT REMOVE!
     // 3618502788666131213697322783095070105623107215331596699973092056135872020481
     const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;

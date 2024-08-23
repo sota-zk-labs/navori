@@ -1,7 +1,7 @@
 module verifier_addr::fri_transform {
     use std::vector;
 
-    use verifier_addr::prime_field_element_0::fmul;
+    use lib_addr::prime_field_element_0::fmul;
 
     // This line is used for generating constants DO NOT REMOVE!
     // 3618502788666131213697322783095070105623107215331596699973092056135872020481

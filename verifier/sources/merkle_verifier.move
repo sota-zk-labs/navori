@@ -5,7 +5,7 @@ module verifier_addr::merkle_verifier {
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event;
 
-    use verifier_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
+    use lib_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
     use verifier_addr::fri::{get_fri, update_fri};
 
     // This line is used for generating constants DO NOT REMOVE!
