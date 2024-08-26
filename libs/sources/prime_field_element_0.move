@@ -62,6 +62,10 @@ module lib_addr::prime_field_element_0 {
         res
     }
 
+    public fun fadd(a: u256, b: u256): u256 {
+        (a % K_MODULUS + b % K_MODULUS) % K_MODULUS
+    }
+
     public inline fun fpow(val: u256, exp: u256): u256 {
         expmod(val, exp, K_MODULUS)
     }
