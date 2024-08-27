@@ -2,18 +2,12 @@ module verifier_addr::cpu_constraint_poly {
 
     use std::vector;
     use std::vector::{push_back, borrow, borrow_mut};
+    use lib_addr::prime_field_element_0::{fmul, fpow};
+
 
     const EPRODUCT_INVERSE_ZERO: u64 = 0x0001;
 
     const PRIME: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
-
-    public fun fmul(a: u256, b: u256): u256 {
-        0
-    }
-
-    public fun fexp(a: u256, b: u256): u256 {
-        0
-    }
 
     // The Memory map during the execution of this contract is as follows:
     // [0x0, 0x20) - pedersen__points__x
@@ -226,242 +220,242 @@ module verifier_addr::cpu_constraint_poly {
             // compute expmods
             // expmods[0] = point^(trace_length / 2048)
             {
-                let val = fexp(/*point*/ point, (/*trace_length*/ trace_length / 2048));
+                let val = fpow(/*point*/ point, (/*trace_length*/ trace_length / 2048));
                 *borrow_mut(&mut ctx, 286) = val;
             };
             // expmods[1] = point^(trace_length / 1024)
             {
-                let val = fexp(/*point*/ point, (/*trace_length*/ trace_length / 1024));
+                let val = fpow(/*point*/ point, (/*trace_length*/ trace_length / 1024));
                 *borrow_mut(&mut ctx, 287) = val;
             };
             // expmods[2] = point^(trace_length / 128)
             {
-                let val = fexp(/*point*/ point, (/*trace_length*/ trace_length / 128));
+                let val = fpow(/*point*/ point, (/*trace_length*/ trace_length / 128));
                 *borrow_mut(&mut ctx, 288) = val;
             };
             // expmods[3] = point^(trace_length / 64)
             {
-                let val = fexp(/*point*/ point, (/*trace_length*/ trace_length / 64));
+                let val = fpow(/*point*/ point, (/*trace_length*/ trace_length / 64));
                 *borrow_mut(&mut ctx, 289) = val;
             };
             // expmods[4] = point^(trace_length / 32)
             {
-                let val = fexp(/*point*/ point, (/*trace_length*/ trace_length / 32));
+                let val = fpow(/*point*/ point, (/*trace_length*/ trace_length / 32));
                 *borrow_mut(&mut ctx, 290) = val;
             };
             // expmods[5] = point^(trace_length / 16)
             {
-                let val = fexp(/*point*/ point, (/*trace_length*/ trace_length / 16));
+                let val = fpow(/*point*/ point, (/*trace_length*/ trace_length / 16));
                 *borrow_mut(&mut ctx, 291) = val;
             };
             // expmods[6] = point^(trace_length / 4)
             {
-                let val = fexp(/*point*/ point, (/*trace_length*/ trace_length / 4));
+                let val = fpow(/*point*/ point, (/*trace_length*/ trace_length / 4));
                 *borrow_mut(&mut ctx, 292) = val;
             };
             // expmods[7] = point^(trace_length / 2)
             {
-                let val = fexp(/*point*/ point, (/*trace_length*/ trace_length / 2));
+                let val = fpow(/*point*/ point, (/*trace_length*/ trace_length / 2));
                 *borrow_mut(&mut ctx, 293) = val;
             };
             // expmods[8] = point^trace_length
             {
-                let val = fexp(/*point*/ point, /*trace_length*/ trace_length);
+                let val = fpow(/*point*/ point, /*trace_length*/ trace_length);
                 *borrow_mut(&mut ctx, 294) = val;
             };
             // expmods[9] = trace_generator^(trace_length / 64)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (/*trace_length*/ trace_length / 64));
+                let val = fpow(/*trace_generator*/ trace_generator, (/*trace_length*/ trace_length / 64));
                 *borrow_mut(&mut ctx, 295) = val;
             };
             // expmods[10] = trace_generator^(trace_length / 32)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (/*trace_length*/ trace_length / 32));
+                let val = fpow(/*trace_generator*/ trace_generator, (/*trace_length*/ trace_length / 32));
                 *borrow_mut(&mut ctx, 296) = val;
             };
             // expmods[11] = trace_generator^(3 * trace_length / 64)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(3, /*trace_length*/ trace_length) / 64));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(3, /*trace_length*/ trace_length) / 64));
                 *borrow_mut(&mut ctx, 297) = val;
             };
             // expmods[12] = trace_generator^(trace_length / 16)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (/*trace_length*/ trace_length / 16));
+                let val = fpow(/*trace_generator*/ trace_generator, (/*trace_length*/ trace_length / 16));
                 *borrow_mut(&mut ctx, 298) = val;
             };
             // expmods[13] = trace_generator^(5 * trace_length / 64)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(5, /*trace_length*/ trace_length) / 64));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(5, /*trace_length*/ trace_length) / 64));
                 *borrow_mut(&mut ctx, 299) = val;
             };
             // expmods[14] = trace_generator^(3 * trace_length / 32)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(3, /*trace_length*/ trace_length) / 32));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(3, /*trace_length*/ trace_length) / 32));
                 *borrow_mut(&mut ctx, 300) = val;
             };
             // expmods[15] = trace_generator^(7 * trace_length / 64)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(7, /*trace_length*/ trace_length) / 64));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(7, /*trace_length*/ trace_length) / 64));
                 *borrow_mut(&mut ctx, 301) = val;
             };
             // expmods[16] = trace_generator^(trace_length / 8)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (/*trace_length*/ trace_length / 8));
+                let val = fpow(/*trace_generator*/ trace_generator, (/*trace_length*/ trace_length / 8));
                 *borrow_mut(&mut ctx, 302) = val;
             };
             // expmods[17] = trace_generator^(9 * trace_length / 64)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(9, /*trace_length*/ trace_length) / 64));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(9, /*trace_length*/ trace_length) / 64));
                 *borrow_mut(&mut ctx, 303) = val;
             };
             // expmods[18] = trace_generator^(5 * trace_length / 32)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(5, /*trace_length*/ trace_length) / 32));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(5, /*trace_length*/ trace_length) / 32));
                 *borrow_mut(&mut ctx, 304) = val;
             };
             // expmods[19] = trace_generator^(11 * trace_length / 64)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(11, /*trace_length*/ trace_length) / 64));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(11, /*trace_length*/ trace_length) / 64));
                 *borrow_mut(&mut ctx, 305) = val;
             };
             // expmods[20] = trace_generator^(3 * trace_length / 16)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(3, /*trace_length*/ trace_length) / 16));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(3, /*trace_length*/ trace_length) / 16));
                 *borrow_mut(&mut ctx, 306) = val;
             };
             // expmods[21] = trace_generator^(13 * trace_length / 64)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(13, /*trace_length*/ trace_length) / 64));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(13, /*trace_length*/ trace_length) / 64));
                 *borrow_mut(&mut ctx, 307) = val;
             };
             // expmods[22] = trace_generator^(7 * trace_length / 32)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(7, /*trace_length*/ trace_length) / 32));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(7, /*trace_length*/ trace_length) / 32));
                 *borrow_mut(&mut ctx, 308) = val;
             };
             // expmods[23] = trace_generator^(15 * trace_length / 64)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(15, /*trace_length*/ trace_length) / 64));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(15, /*trace_length*/ trace_length) / 64));
                 *borrow_mut(&mut ctx, 309) = val;
             };
             // expmods[24] = trace_generator^(trace_length / 2)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (/*trace_length*/ trace_length / 2));
+                let val = fpow(/*trace_generator*/ trace_generator, (/*trace_length*/ trace_length / 2));
                 *borrow_mut(&mut ctx, 310) = val;
             };
             // expmods[25] = trace_generator^(19 * trace_length / 32)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(19, /*trace_length*/ trace_length) / 32));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(19, /*trace_length*/ trace_length) / 32));
                 *borrow_mut(&mut ctx, 311) = val;
             };
             // expmods[26] = trace_generator^(5 * trace_length / 8)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(5, /*trace_length*/ trace_length) / 8));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(5, /*trace_length*/ trace_length) / 8));
                 *borrow_mut(&mut ctx, 312) = val;
             };
             // expmods[27] = trace_generator^(21 * trace_length / 32)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(21, /*trace_length*/ trace_length) / 32));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(21, /*trace_length*/ trace_length) / 32));
                 *borrow_mut(&mut ctx, 313) = val;
             };
             // expmods[28] = trace_generator^(11 * trace_length / 16)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(11, /*trace_length*/ trace_length) / 16));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(11, /*trace_length*/ trace_length) / 16));
                 *borrow_mut(&mut ctx, 314) = val;
             };
             // expmods[29] = trace_generator^(23 * trace_length / 32)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(23, /*trace_length*/ trace_length) / 32));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(23, /*trace_length*/ trace_length) / 32));
                 *borrow_mut(&mut ctx, 315) = val;
             };
             // expmods[30] = trace_generator^(3 * trace_length / 4)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(3, /*trace_length*/ trace_length) / 4));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(3, /*trace_length*/ trace_length) / 4));
                 *borrow_mut(&mut ctx, 316) = val;
             };
             // expmods[31] = trace_generator^(25 * trace_length / 32)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(25, /*trace_length*/ trace_length) / 32));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(25, /*trace_length*/ trace_length) / 32));
                 *borrow_mut(&mut ctx, 317) = val;
             };
             // expmods[32] = trace_generator^(13 * trace_length / 16)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(13, /*trace_length*/ trace_length) / 16));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(13, /*trace_length*/ trace_length) / 16));
                 *borrow_mut(&mut ctx, 318) = val;
             };
             // expmods[33] = trace_generator^(27 * trace_length / 32)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(27, /*trace_length*/ trace_length) / 32));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(27, /*trace_length*/ trace_length) / 32));
                 *borrow_mut(&mut ctx, 319) = val;
             };
             // expmods[34] = trace_generator^(7 * trace_length / 8)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(7, /*trace_length*/ trace_length) / 8));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(7, /*trace_length*/ trace_length) / 8));
                 *borrow_mut(&mut ctx, 320) = val;
             };
             // expmods[35] = trace_generator^(29 * trace_length / 32)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(29, /*trace_length*/ trace_length) / 32));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(29, /*trace_length*/ trace_length) / 32));
                 *borrow_mut(&mut ctx, 321) = val;
             };
             // expmods[36] = trace_generator^(15 * trace_length / 16)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(15, /*trace_length*/ trace_length) / 16));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(15, /*trace_length*/ trace_length) / 16));
                 *borrow_mut(&mut ctx, 322) = val;
             };
             // expmods[37] = trace_generator^(61 * trace_length / 64)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(61, /*trace_length*/ trace_length) / 64));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(61, /*trace_length*/ trace_length) / 64));
                 *borrow_mut(&mut ctx, 323) = val;
             };
             // expmods[38] = trace_generator^(31 * trace_length / 32)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(31, /*trace_length*/ trace_length) / 32));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(31, /*trace_length*/ trace_length) / 32));
                 *borrow_mut(&mut ctx, 324) = val;
             };
             // expmods[39] = trace_generator^(63 * trace_length / 64)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(63, /*trace_length*/ trace_length) / 64));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(63, /*trace_length*/ trace_length) / 64));
                 *borrow_mut(&mut ctx, 325) = val;
             };
             // expmods[40] = trace_generator^(255 * trace_length / 256)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, (fmul(255, /*trace_length*/ trace_length) / 256));
+                let val = fpow(/*trace_generator*/ trace_generator, (fmul(255, /*trace_length*/ trace_length) / 256));
                 *borrow_mut(&mut ctx, 326) = val;
             };
             // expmods[41] = trace_generator^(trace_length - 16)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 16)) % PRIME));
+                let val = fpow(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 16)) % PRIME));
                 *borrow_mut(&mut ctx, 327) = val;
             };
             // expmods[42] = trace_generator^(trace_length - 2)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 2)) % PRIME));
+                let val = fpow(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 2)) % PRIME));
                 *borrow_mut(&mut ctx, 328) = val;
             };
             // expmods[43] = trace_generator^(trace_length - 4)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 4)) % PRIME));
+                let val = fpow(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 4)) % PRIME));
                 *borrow_mut(&mut ctx, 329) = val;
             };
             // expmods[44] = trace_generator^(trace_length - 1)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 1)) % PRIME));
+                let val = fpow(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 1)) % PRIME));
                 *borrow_mut(&mut ctx, 330) = val;
             };
             // expmods[45] = trace_generator^(trace_length - 2048)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 2048)) % PRIME));
+                let val = fpow(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 2048)) % PRIME));
                 *borrow_mut(&mut ctx, 331) = val;
             };
             // expmods[46] = trace_generator^(trace_length - 128)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 128)) % PRIME));
+                let val = fpow(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 128)) % PRIME));
                 *borrow_mut(&mut ctx, 332) = val;
             };
             // expmods[47] = trace_generator^(trace_length - 64)
             {
-                let val = fexp(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 64)) % PRIME));
+                let val = fpow(/*trace_generator*/ trace_generator, ((/*trace_length*/ trace_length + (PRIME - 64)) % PRIME));
                 *borrow_mut(&mut ctx, 333) = val;
             };
 
@@ -729,7 +723,7 @@ module verifier_addr::cpu_constraint_poly {
 
             let firstPartialProductPtr = 362;
             // Compute the inverse of the product.
-            let prodInv = fexp(prod, PRIME - 2);
+            let prodInv = fpow(prod, PRIME - 2);
 
             assert!(prodInv != 0, EPRODUCT_INVERSE_ZERO);
 
