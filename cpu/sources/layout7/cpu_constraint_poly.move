@@ -1,7 +1,8 @@
-module verifier_addr::cpu_constraint_poly {
+module cpu_addr::cpu_constraint_poly {
 
     use std::vector;
     use std::vector::{push_back, borrow, borrow_mut};
+    use aptos_std::debug;
     use lib_addr::prime_field_element_0::{fmul, fpow};
 
 
@@ -715,14 +716,16 @@ module verifier_addr::cpu_constraint_poly {
             let partialProductEndPtr = 380;
             let partialProductPtr = 362;
             while (partialProductPtr < partialProductEndPtr) {
-                partialProductPtr = partialProductPtr + 1;
                 *vector::borrow_mut(&mut ctx, partialProductPtr) = prod;
                 // prod *= d_{i}.
                 prod = fmul(prod, *borrow(&ctx, partialProductPtr + productsToValuesOffset));
+                partialProductPtr = partialProductPtr + 1;
+
             };
 
             let firstPartialProductPtr = 362;
             // Compute the inverse of the product.
+
             let prodInv = fpow(prod, PRIME - 2);
 
             assert!(prodInv != 0, EPRODUCT_INVERSE_ZERO);
@@ -733,11 +736,11 @@ module verifier_addr::cpu_constraint_poly {
             // Loop over denominator_invs in reverse order.
             // currentPartialProductPtr is initialized to one past the end.
             while (currentPartialProductPtr > firstPartialProductPtr) {
-                currentPartialProductPtr = currentPartialProductPtr - 1;
                 // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
                 *borrow_mut(&mut ctx, currentPartialProductPtr) = fmul(*borrow(&ctx, currentPartialProductPtr), prodInv);
                 // Update prodInv to be 1/(d_0 * ... * d_{i-1}) by multiplying by d_i.
                 prodInv = fmul(prodInv, *borrow(&ctx, currentPartialProductPtr + productsToValuesOffset));
+                currentPartialProductPtr = currentPartialProductPtr - 1;
             };
 
         };
@@ -2831,8 +2834,8 @@ module verifier_addr::cpu_constraint_poly {
     }
 
 
-    #[test_only]
-    use aptos_std::debug;
+    // #[test_only]
+    // use aptos_std::debug;
 
     #[test]
     fun test_fallback() {
