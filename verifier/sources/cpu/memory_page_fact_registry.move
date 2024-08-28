@@ -24,6 +24,8 @@ module verifier_addr::memory_page_fact_registry {
     const ETOO_MANY_MEMORY_VALUES: u64 = 0x1;
     // 0
     const REGULAR_PAGE: u256 = 0x0;
+    // 3618502788666131213697322783095070105623107215331596699973092056135872020481
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
     // End of generating constants!
 
     #[event]
@@ -185,9 +187,4 @@ module verifier_addr::memory_page_fact_registry {
         });
         register_fact(s, bytes32_to_u256(fact_hash));
     }
-
-    // A page based on a list of pairs (address, value).
-    // In this case, memoryHash = hash(address, value, address, value, address, value, ...).
-    // A page based on adjacent memory cells, starting from a given address.
-    // In this case, memoryHash = hash(value, value, value, ...).
 }
