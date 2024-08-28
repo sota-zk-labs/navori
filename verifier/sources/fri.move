@@ -12,7 +12,7 @@ module verifier_addr::fri {
 
     public(friend) fun new_fri(): vector<u256> {
         let fri = vector[];
-        for (i in 0..500) {
+        for (i in 0..1500) {
             vector::push_back(&mut fri, 0_u256);
         };
         fri

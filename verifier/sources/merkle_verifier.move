@@ -3,6 +3,7 @@ module verifier_addr::merkle_verifier {
     use std::vector;
     use std::vector::borrow;
     use aptos_std::aptos_hash::keccak256;
+    use aptos_std::debug::print;
     use aptos_framework::event;
 
     use lib_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
@@ -97,7 +98,6 @@ module verifier_addr::merkle_verifier {
 
                 index = *borrow(fri, queue_ptr + rd_idx);
             };
-
             let new_hash = *vector::borrow(fri, (new_hash_ptr as u64));
             *vector::borrow_mut(fri, (sibling_offset as u64)) = new_hash;
 
@@ -111,6 +111,7 @@ module verifier_addr::merkle_verifier {
         };
 
         let hash = *vector::borrow(fri, hashes_ptr + rd_idx);
+        print(&hash);
         assert!(hash == root, EINVALID_MERKLE_PROOF);
         event::emit<Hash>(Hash { hash: u256_to_bytes32(&hash) });
         *vector::borrow_mut(fri, channel_ptr) = proof_ptr;
