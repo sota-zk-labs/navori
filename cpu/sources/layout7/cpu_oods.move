@@ -1,8 +1,8 @@
 module cpu_addr::cpu_oods_7 {
     use std::signer::address_of;
-    use std::vector::{borrow, for_each_ref, length, push_back};
+    use std::vector::{borrow, for_each_ref, push_back};
 
-    use lib_addr::prime_field_element_0::{fadd, fmul, fpow, inverse};
+    use lib_addr::prime_field_element_0::{fadd, fmul, inverse};
     use lib_addr::vector::{assign, set_el};
 
     // This line is used for generating constants DO NOT REMOVE!
@@ -110,7 +110,7 @@ module cpu_addr::cpu_oods_7 {
             *n_queries = (*borrow(ctx, MM_N_UNIQUE_QUERIES) as u64);
             *batch_inverse_array = assign(0u256, 2 * *n_queries * BATCH_INVERSE_CHUNK);
 
-            oods_prepare_inverses(ctx, batch_inverse_array);
+            oods_prepare_inverses(ctx, batch_inverse_array, *n_queries);
             *checkpoint = FB_CHECKPOINT2;
             return false
         };
@@ -240,7 +240,7 @@ module cpu_addr::cpu_oods_7 {
     // 0..(N_ROWS_IN_MASK-1):   [(x - g^i * z)^(-1) for i in rowsInMask]
     // N_ROWS_IN_MASK:          (x - z^constraintDegree)^-1
     // N_ROWS_IN_MASK+1:        frieval_pointInv.
-    fun oods_prepare_inverses(ctx: &vector<u256>, batch_inverse_array: &mut vector<u256>) {
+    fun oods_prepare_inverses(ctx: &vector<u256>, batch_inverse_array: &mut vector<u256>, n_queries: u64) {
         let eval_coset_offset_ = GENERATOR_VAL;
         // The array expmods_and_points stores subexpressions that are needed
         // for the denominators computation.
@@ -261,51 +261,15 @@ module cpu_addr::cpu_oods_7 {
             let tg7 = fmul(tg4, tg3);
             let tg12 = fmul(tg7, tg5);
             let tg13 = fmul(tg12, trace_generator);
-            let tg28 = fmul(tg2, fmul(tg13, tg13));
-            let tg48 = fmul(tg28, fmul(tg13, tg7));
-            let tg216 = fpow(tg12, 18);
+            let tg24 = fmul(tg12, tg12);
+            let tg28 = fmul(tg24, tg4);
+            let tg48 = fmul(tg24, tg24);
+            let tg96 = fmul(tg48, tg48);
+            let tg192 = fmul(tg96, tg96);
+            let tg216 = fmul(tg24, tg192);
             let tg245 = fmul(trace_generator, fmul(tg216, tg28));
             let tg320 = fmul(tg216, fmul(tg48, fmul(tg28, tg28)));
-            let tg1010 = fmul(tg2, fmul(tg48, fpow(tg320, 3)));
-
-            // expmods_and_points.expmods[0] = trace_generator^2.
-            push_back(expmods_and_points, tg2);
-
-            // expmods_and_points.expmods[1] = trace_generator^3.
-            push_back(expmods_and_points, tg3);
-
-            // expmods_and_points.expmods[2] = trace_generator^4.
-            push_back(expmods_and_points, tg4);
-
-            // expmods_and_points.expmods[3] = trace_generator^5.
-            push_back(expmods_and_points, tg5);
-
-            // expmods_and_points.expmods[4] = trace_generator^7.
-            push_back(expmods_and_points, tg7);
-
-            // expmods_and_points.expmods[5] = trace_generator^12.
-            push_back(expmods_and_points, tg12);
-
-            // expmods_and_points.expmods[6] = trace_generator^13.
-            push_back(expmods_and_points, tg13);
-
-            // expmods_and_points.expmods[7] = trace_generator^28.
-            push_back(expmods_and_points, tg28);
-
-            // expmods_and_points.expmods[8] = trace_generator^48.
-            push_back(expmods_and_points, tg48);
-
-            // expmods_and_points.expmods[9] = trace_generator^216.
-            push_back(expmods_and_points, tg216);
-
-            // expmods_and_points.expmods[10] = trace_generator^245.
-            push_back(expmods_and_points, tg245);
-
-            // expmods_and_points.expmods[11] = trace_generator^320.
-            push_back(expmods_and_points, tg320);
-
-            // expmods_and_points.expmods[12] = trace_generator^1010.
-            push_back(expmods_and_points, tg1010);
+            let tg1010 = fmul(tg2, fmul(tg48, fmul(tg320, fmul(tg320, tg320))));
 
             let oods_point = /*oods_point*/ *borrow(ctx, MM_OODS_POINT);
             {
@@ -813,7 +777,7 @@ module cpu_addr::cpu_oods_7 {
             // Consequently the products and values are half the array size apart.
             let products_ptr = 0;
             // Compute an offset in bytes to the middle of the array.
-            let products_to_values_offset = length(batch_inverse_array) >> 1;
+            let products_to_values_offset = n_queries * BATCH_INVERSE_CHUNK;
             let values_ptr = products_to_values_offset;
             let partial_product = 1;
             let minus_point_pow = prime - fmul(oods_point, oods_point);
@@ -823,10 +787,10 @@ module cpu_addr::cpu_oods_7 {
                 // Shift eval_point to evaluation domain coset.
                 let shifted_eval_point = fmul(eval_point, eval_coset_offset_);
 
-                for (offset in 13..111) {
+                for (offset in 0..98) {
                     let denominator = shifted_eval_point + *borrow(expmods_and_points, offset);
-                    set_el(batch_inverse_array, products_ptr + offset - 13, partial_product);
-                    set_el(batch_inverse_array, values_ptr + offset - 13, denominator);
+                    set_el(batch_inverse_array, products_ptr + offset, partial_product);
+                    set_el(batch_inverse_array, values_ptr + offset, denominator);
                     partial_product = fmul(partial_product, denominator);
                 };
 
@@ -863,23 +827,6 @@ module cpu_addr::cpu_oods_7 {
             // currentpartial_productPtr >= first_partial_product_ptr + 8*0x20, or equivalently,
             // currentpartial_productPtr > first_partial_product_ptr + 7*0x20.
             // We use the latter comparison since there is no >= evm opcode.
-            let mid_partial_product_ptr = first_partial_product_ptr + 7;
-            while (current_partial_product_ptr > mid_partial_product_ptr) {
-                for (_i in 0..8) {
-                    current_partial_product_ptr = current_partial_product_ptr - 1;
-                    // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
-                    let tmp = fmul(*borrow(batch_inverse_array, current_partial_product_ptr), prod_inv);
-                    set_el(batch_inverse_array, current_partial_product_ptr, tmp);
-
-                    // Update prodInv to be 1/(d_0 * ... * d_{i-1}) by multiplying by d_i.
-                    prod_inv = fmul(
-                        prod_inv,
-                        *borrow(batch_inverse_array, current_partial_product_ptr + products_to_values_offset)
-                    );
-                };
-            };
-
-            // Loop over the remainder.
             while (current_partial_product_ptr > first_partial_product_ptr) {
                 current_partial_product_ptr = current_partial_product_ptr - 1;
                 // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
