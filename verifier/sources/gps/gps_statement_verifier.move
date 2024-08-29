@@ -608,7 +608,7 @@ module verifier_addr::test_gps {
     use verifier_addr::stark_verifier_7::{get_vp_checkpoint, get_occ_checkpoint, get_cffl_checkpoint};
 
     use verifier_addr::constructor::init_all;
-    use verifier_addr::fact_registry::{is_valid, register_fact};
+    use verifier_addr::fact_registry::{is_valid, register_facts};
     use verifier_addr::gps_statement_verifier::{prepush_data_to_verify_proof_and_register, prepush_task_metadata,
         verify_proof_and_register, get_vpar_checkpoint, get_rpmmp_checkpoint
     };
@@ -623,8 +623,8 @@ module verifier_addr::test_gps {
         // Register pre-existing facts and ensure they do not overlap with the set of facts
         // that will be registered during this test function.
         let registered_facts = registered_facts_();
+        register_facts(signer, pre_registered_facts_());
         for_each(pre_registered_facts_(), |fact| {
-            register_fact(signer, fact);
             assert!(!vector::contains(&registered_facts, &fact), 1);
         });
 
