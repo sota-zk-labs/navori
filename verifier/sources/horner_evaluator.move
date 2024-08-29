@@ -19,9 +19,9 @@ module verifier_addr::horner_evaluator {
     public fun horner_eval(proof: &vector<u256>, coefs_start: u64, point: u256, n_coef: u64): u256 {
         let result = 0;
 
-        assert!(n_coef % 8 == 0, NUMBER_OF_POLYNOMIAL_COEFFICIENTS_MUST_BE_DIVISIBLE_BY_8);
+        assert!(n_coef % 8 == 0, ENUMBER_OF_POLYNOMIAL_COEFFICIENTS_MUST_BE_DIVISIBLE_BY_8);
         // Ensure 'n_coef' is bounded as a sanity check (the bound is somewhat arbitrary).
-        assert!(n_coef < 4096, NO_MORE_THAN_4096_COEFFICIENTS_ARE_SUPPORTED);
+        assert!(n_coef < 4096, ENO_MORE_THAN_4096_COEFFICIENTS_ARE_SUPPORTED);
 
         let coefs_ptr = coefs_start + n_coef;
         while (coefs_ptr > coefs_start) {
@@ -57,6 +57,6 @@ module verifier_addr::horner_evaluator {
     }
 
     // assertion codes
-    const NUMBER_OF_POLYNOMIAL_COEFFICIENTS_MUST_BE_DIVISIBLE_BY_8: u64 = 1;
-    const NO_MORE_THAN_4096_COEFFICIENTS_ARE_SUPPORTED: u64 = 2;
+    const ENUMBER_OF_POLYNOMIAL_COEFFICIENTS_MUST_BE_DIVISIBLE_BY_8: u64 = 1;
+    const ENO_MORE_THAN_4096_COEFFICIENTS_ARE_SUPPORTED: u64 = 2;
 }

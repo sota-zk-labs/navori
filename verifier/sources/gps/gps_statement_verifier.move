@@ -190,7 +190,7 @@ module verifier_addr::gps_statement_verifier {
             // Aptos has no abstract contract, so we set `cairo_verifier_id` to 7, as shown in these transactions
             // https://etherscan.io/address/0x47312450b3ac8b5b8e247a6bb6d523e7605bdb60
             // Todo: Consider this function with another `cairo_verifier_id`
-            assert!(*cairo_verifier_id == 7, WRONG_CAIRO_VERIFIER_ID);
+            assert!(*cairo_verifier_id == 7, EWRONG_CAIRO_VERIFIER_ID);
 
             // The values z and alpha are used only for the fact registration of the main page.
             // They are not part of the public input of CpuVerifier as they are computed there.
@@ -203,7 +203,7 @@ module verifier_addr::gps_statement_verifier {
 
                 let (public_memory_offset, selected_builtins_) = get_layout_info();
                 *selected_builtins = selected_builtins_;
-                assert!(cairo_aux_input_length > (public_memory_offset as u64), INVALID_CAIROAUXINPUT_LENGTH);
+                assert!(cairo_aux_input_length > (public_memory_offset as u64), EINVALID_CAIROAUXINPUT_LENGTH);
 
                 tmp = length(cairo_public_input);
                 *public_memory_pages = slice(
@@ -212,7 +212,7 @@ module verifier_addr::gps_statement_verifier {
                     tmp
                 );
                 *n_pages = *borrow(public_memory_pages, 0);
-                assert!(*n_pages < 10000, INVALID_NPAGES);
+                assert!(*n_pages < 10000, EINVALID_NPAGES);
 
                 // Validate publicMemoryPages.length.
                 // Each page has a page info and a cumulative product.
@@ -220,7 +220,7 @@ module verifier_addr::gps_statement_verifier {
                 // used to store the number of pages.
                 assert!(
                     (length(public_memory_pages) as u256) == *n_pages * (PAGE_INFO_SIZE + 1),
-                    INVALID_PUBLIC_MEMORY_PAGES_LENGTH
+                    EINVALID_PUBLIC_MEMORY_PAGES_LENGTH
                 );
             };
             // Process public memory.
@@ -241,15 +241,15 @@ module verifier_addr::gps_statement_verifier {
                 // between the prover and the verifier on the bootloader program or bootloader config.
                 assert!(
                     *borrow(public_memory_pages, (PAGE_INFO_SIZE_OFFSET as u64)) == public_memory_length,
-                    INVALID_SIZE_FOR_MEMORY_PAGE_0
+                    EINVALID_SIZE_FOR_MEMORY_PAGE_0
                 );
                 assert!(
                     *borrow(public_memory_pages, (PAGE_INFO_HASH_OFFSET as u64)) == memory_hash,
-                    INVALID_HASH_FOR_MEMORY_PAGE_0
+                    EINVALID_HASH_FOR_MEMORY_PAGE_0
                 );
                 assert!(
                     *borrow(public_memory_pages, (*n_pages * PAGE_INFO_SIZE as u64)) == prod,
-                    INVALID_CUMULATIVE_PRODUCT
+                    EINVALID_CUMULATIVE_PRODUCT
                 );
             };
             *checkpoint = VERIFY_PROOF_EXTERNAL;
@@ -310,7 +310,7 @@ module verifier_addr::gps_statement_verifier {
         if (*checkpoint == RPMMP_CHECKPOINT1) {
             let n_tasks = *borrow(task_metadata, 0);
             // Ensure 'n_tasks' is bounded as a sanity check (the bound is somewhat arbitrary).
-            assert!(n_tasks < (1 << 30), INVALID_NUMBER_OF_TASKS);
+            assert!(n_tasks < (1 << 30), EINVALID_NUMBER_OF_TASKS);
 
             // Public memory length.
             let public_memory_length = (PROGRAM_SIZE +
@@ -345,7 +345,7 @@ module verifier_addr::gps_statement_verifier {
                 // return, even if the called function is malicious).
                 // It guarantees that it's not possible to create a cycle in the call stack.
                 let initial_fp = *borrow(cairo_aux_input, OFFSET_EXECUTION_BEGIN_ADDR);
-                assert!(initial_fp >= 2, INVALID_EXECUTION_BEGIN_ADDRESS);
+                assert!(initial_fp >= 2, EINVALID_EXECUTION_BEGIN_ADDRESS);
                 *borrow_mut(&mut public_memory, offset + 0) = initial_fp - 2;
                 *borrow_mut(&mut public_memory, offset + 1) = initial_fp;
                 // Make sure [initial_fp - 1] = 0.
@@ -388,7 +388,7 @@ module verifier_addr::gps_statement_verifier {
                     offset = offset + 2;
                     selected_builtins = selected_builtins >> 1;
                 };
-                assert!(selected_builtins == 0, SELECTED_BUILTINS_VECTOR_IS_TOO_LONG);
+                assert!(selected_builtins == 0, ESELECTED_BUILTINS_VECTOR_IS_TOO_LONG);
                 // Skip the return values which were already written.
                 offset = offset + (2 * N_BUILTINS as u64);
             };
@@ -445,7 +445,7 @@ module verifier_addr::gps_statement_verifier {
 
                     // Ensure 'outputSize' is at least 2 and bounded from above as a sanity check
                     // (the bound is somewhat arbitrary).
-                    assert!(2 <= output_size && output_size < (1 << 30), INVALID_TASK_OUTPUT_SIZE);
+                    assert!(2 <= output_size && output_size < (1 << 30), EINVALID_TASK_OUTPUT_SIZE);
                     let program_hash = *borrow(task_metadata_slice, METADATA_OFFSET_TASK_PROGRAM_HASH);
                     let n_tree_pairs = *borrow(task_metadata_slice, METADATA_OFFSET_TASK_N_TREE_PAIRS);
 
@@ -453,7 +453,7 @@ module verifier_addr::gps_statement_verifier {
                     // (the bound is somewhat arbitrary).
                     assert!(
                         1 <= n_tree_pairs && n_tree_pairs < (1 << 20),
-                        INVALID_NUMBER_OF_PAIRS_IN_MERKLE_TREE_STRUCTURE
+                        EINVALID_NUMBER_OF_PAIRS_IN_MERKLE_TREE_STRUCTURE
                     );
                     // Force that memory[outputAddress] = outputSize.
                     set_el(public_memory, *offset + 0, *output_address);
@@ -469,11 +469,11 @@ module verifier_addr::gps_statement_verifier {
                 };
                 *ptr = end_ptr;
                 if (*ptr == (*n_tasks as u64)) {
-                    assert!(length(task_metadata_slice) == 0, INVALID_LENGTH_OF_TASK_METADATA);
+                    assert!(length(task_metadata_slice) == 0, EINVALID_LENGTH_OF_TASK_METADATA);
 
                     assert!(
                         *borrow(cairo_aux_input, OFFSET_OUTPUT_STOP_PTR) == *output_address,
-                        INCONSISTENT_PROGRAM_OUTPUT_LENGTH
+                        EINCONSISTENT_PROGRAM_OUTPUT_LENGTH
                     );
                     *checkpoint = RPMMP_CHECKPOINT3;
                     *ptr = 0;
@@ -484,7 +484,7 @@ module verifier_addr::gps_statement_verifier {
         };
 
         if (*checkpoint == RPMMP_CHECKPOINT3) {
-            assert!(length(public_memory) == *offset, NOT_ALL_CAIRO_PUBLIC_INPUTS_WERE_WRITTEN);
+            assert!(length(public_memory) == *offset, ENOT_ALL_CAIRO_PUBLIC_INPUTS_WERE_WRITTEN);
             let cairo_aux_input_length = length(cairo_aux_input);
             let z = *borrow(cairo_aux_input, cairo_aux_input_length - 2);
             let alpha = *borrow(cairo_aux_input, cairo_aux_input_length - 1);
@@ -519,22 +519,22 @@ module verifier_addr::gps_statement_verifier {
     }
 
     /// error codes
-    const CAIRO_VERIFIER_ID_OUT_OF_RANGE: u64 = 1;
-    const WRONG_CAIRO_VERIFIER_ID: u64 = 2;
-    const INVALID_CAIROAUXINPUT_LENGTH: u64 = 3;
-    const INVALID_NPAGES: u64 = 4;
-    const INVALID_PUBLIC_MEMORY_PAGES_LENGTH: u64 = 5;
-    const INVALID_SIZE_FOR_MEMORY_PAGE_0: u64 = 6;
-    const INVALID_HASH_FOR_MEMORY_PAGE_0: u64 = 7;
-    const INVALID_CUMULATIVE_PRODUCT: u64 = 8;
-    const INVALID_NUMBER_OF_TASKS: u64 = 9;
-    const INVALID_EXECUTION_BEGIN_ADDRESS: u64 = 10;
-    const SELECTED_BUILTINS_VECTOR_IS_TOO_LONG: u64 = 10;
-    const INVALID_TASK_OUTPUT_SIZE: u64 = 11;
-    const INVALID_NUMBER_OF_PAIRS_IN_MERKLE_TREE_STRUCTURE: u64 = 12;
-    const INVALID_LENGTH_OF_TASK_METADATA: u64 = 13;
-    const INCONSISTENT_PROGRAM_OUTPUT_LENGTH: u64 = 14;
-    const NOT_ALL_CAIRO_PUBLIC_INPUTS_WERE_WRITTEN: u64 = 15;
+    const ECAIRO_VERIFIER_ID_OUT_OF_RANGE: u64 = 1;
+    const EWRONG_CAIRO_VERIFIER_ID: u64 = 2;
+    const EINVALID_CAIROAUXINPUT_LENGTH: u64 = 3;
+    const EINVALID_NPAGES: u64 = 4;
+    const EINVALID_PUBLIC_MEMORY_PAGES_LENGTH: u64 = 5;
+    const EINVALID_SIZE_FOR_MEMORY_PAGE_0: u64 = 6;
+    const EINVALID_HASH_FOR_MEMORY_PAGE_0: u64 = 7;
+    const EINVALID_CUMULATIVE_PRODUCT: u64 = 8;
+    const EINVALID_NUMBER_OF_TASKS: u64 = 9;
+    const EINVALID_EXECUTION_BEGIN_ADDRESS: u64 = 10;
+    const ESELECTED_BUILTINS_VECTOR_IS_TOO_LONG: u64 = 10;
+    const EINVALID_TASK_OUTPUT_SIZE: u64 = 11;
+    const EINVALID_NUMBER_OF_PAIRS_IN_MERKLE_TREE_STRUCTURE: u64 = 12;
+    const EINVALID_LENGTH_OF_TASK_METADATA: u64 = 13;
+    const EINCONSISTENT_PROGRAM_OUTPUT_LENGTH: u64 = 14;
+    const ENOT_ALL_CAIRO_PUBLIC_INPUTS_WERE_WRITTEN: u64 = 15;
 
     // Data of the function `verify_proof_and_register`
 

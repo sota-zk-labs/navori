@@ -120,8 +120,8 @@ module cpu_addr::layout_specific_7 {
 
     #[view]
     public fun safe_div(numerator: u256, denominator: u256): u256 {
-        assert!(denominator > 0, DENOMINATOR_MUST_NOT_BE_ZERO);
-        assert!(numerator % denominator == 0, NUMERATOR_NOT_DIVISIBLE_BY_DENOMINATOR);
+        assert!(denominator > 0, EDENOMINATOR_MUST_NOT_BE_ZERO);
+        assert!(numerator % denominator == 0, ENUMERATOR_NOT_DIVISIBLE_BY_DENOMINATOR);
         numerator / denominator
     }
 
@@ -133,12 +133,11 @@ module cpu_addr::layout_specific_7 {
         cells_per_instance: u256,
         n_steps: u256
     ) {
-        assert!(
-            initial_address < (1 << 64), OUT_OF_RANGE_BEGIN_ADDR);
+        assert!(initial_address < (1 << 64), EOUT_OF_RANGE_BEGIN_ADDR);
         let max_stop_ptr = initial_address + cells_per_instance * safe_div(n_steps, builtin_ratio);
         assert!(
             initial_address <= stop_address && stop_address <= max_stop_ptr,
-            INVALID_STOP_PTR
+            EINVALID_STOP_PTR
         );
     }
 
@@ -146,8 +145,8 @@ module cpu_addr::layout_specific_7 {
         // "output" memory segment.
         let output_begin_addr = *borrow(public_input, OFFSET_OUTPUT_BEGIN_ADDR);
         let output_stop_ptr = *borrow(public_input, OFFSET_OUTPUT_STOP_PTR);
-        assert!(output_begin_addr <= output_stop_ptr, OUTPUT_BEGIN_ADDR_MUST_BE_LESS_THAN_OR_EQUAL_TO_STOP_PTR);
-        assert!(output_stop_ptr < (1 << 64), OUT_OF_RANGE_OUTPUT_STOP_PTR);
+        assert!(output_begin_addr <= output_stop_ptr, EOUTPUT_BEGIN_ADDR_MUST_BE_LESS_THAN_OR_EQUAL_TO_STOP_PTR);
+        assert!(output_stop_ptr < (1 << 64), EOUT_OF_RANGE_OUTPUT_STOP_PTR);
         let n_steps = 1u256 << ((*borrow(ctx, MM_LOG_N_STEPS)) as u8);
 
         // "pedersen" memory segment.
@@ -328,10 +327,10 @@ module cpu_addr::layout_specific_7 {
     }
 
     // assertion codes
-    const OUTPUT_BEGIN_ADDR_MUST_BE_LESS_THAN_OR_EQUAL_TO_STOP_PTR: u64 = 1;
-    const OUT_OF_RANGE_OUTPUT_STOP_PTR: u64 = 2;
-    const OUT_OF_RANGE_BEGIN_ADDR: u64 = 3;
-    const INVALID_STOP_PTR: u64 = 4;
-    const DENOMINATOR_MUST_NOT_BE_ZERO: u64 = 5;
-    const NUMERATOR_NOT_DIVISIBLE_BY_DENOMINATOR: u64 = 6;
+    const EOUTPUT_BEGIN_ADDR_MUST_BE_LESS_THAN_OR_EQUAL_TO_STOP_PTR: u64 = 1;
+    const EOUT_OF_RANGE_OUTPUT_STOP_PTR: u64 = 2;
+    const EOUT_OF_RANGE_BEGIN_ADDR: u64 = 3;
+    const EINVALID_STOP_PTR: u64 = 4;
+    const EDENOMINATOR_MUST_NOT_BE_ZERO: u64 = 5;
+    const ENUMERATOR_NOT_DIVISIBLE_BY_DENOMINATOR: u64 = 6;
 }

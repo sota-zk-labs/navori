@@ -853,7 +853,7 @@ module cpu_addr::cpu_oods_7 {
             // Compute the inverse of the product.
             let prod_inv = inverse(partial_product);
 
-            assert!(prod_inv != 0, BATCH_INVERSE_PRODUCT_IS_ZERO);
+            assert!(prod_inv != 0, EBATCH_INVERSE_PRODUCT_IS_ZERO);
 
             // Compute the inverses.
             // Loop over denominator_invs in reverse order.
@@ -926,7 +926,7 @@ module cpu_addr::cpu_oods_7 {
     }
 
     // assertion codes
-    const BATCH_INVERSE_PRODUCT_IS_ZERO: u64 = 1;
+    const EBATCH_INVERSE_PRODUCT_IS_ZERO: u64 = 1;
 }
 
 #[test_only]

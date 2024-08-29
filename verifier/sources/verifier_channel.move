@@ -37,7 +37,7 @@ module verifier_addr::verifier_channel {
         n_elements: u64,
         target_ptr: u64
     ) {
-        assert!(n_elements < 0x1000000, OVERFLOW_PROTECTION_FAILED);
+        assert!(n_elements < 0x1000000, EOVERFLOW_PROTECTION_FAILED);
         let bound = 0xf80000000000020f00000000000000000000000000000000000000000000001fu256;
         let digest = *borrow(ctx, channel_ptr + 1);
 
@@ -72,7 +72,7 @@ module verifier_addr::verifier_channel {
         queries_out_ptr: u64,
         stride: u64
     ): u256 {
-        assert!(mask < (1 << 64), MASK_MUST_BE_LESS_THAN_2_TO_THE_POWER_OF_64);
+        assert!(mask < (1 << 64), EMASK_MUST_BE_LESS_THAN_2_TO_THE_POWER_OF_64);
         let val = 0u256;
         let shift = 0u256;
         let end_ptr = queries_out_ptr;
@@ -173,7 +173,7 @@ module verifier_addr::verifier_channel {
         set_el(ctx, channel_ptr + 2, 0);
 
         let proof_of_work_threshold = 1u256 << ((256 - (proof_of_work_bits as u16)) as u8);
-        assert!(proof_of_work_digest < proof_of_work_threshold, PROOF_OF_WORK_CHECK_FAILED);
+        assert!(proof_of_work_digest < proof_of_work_threshold, EPROOF_OF_WORK_CHECK_FAILED);
     }
 
     public(friend) fun read_bytes(
@@ -207,9 +207,9 @@ module verifier_addr::verifier_channel {
     }
 
     // assertion codes
-    const OVERFLOW_PROTECTION_FAILED: u64 = 1;
-    const PROOF_OF_WORK_CHECK_FAILED: u64 = 2;
-    const MASK_MUST_BE_LESS_THAN_2_TO_THE_POWER_OF_64: u64 = 3;
+    const EOVERFLOW_PROTECTION_FAILED: u64 = 1;
+    const EPROOF_OF_WORK_CHECK_FAILED: u64 = 2;
+    const EMASK_MUST_BE_LESS_THAN_2_TO_THE_POWER_OF_64: u64 = 3;
 }
 
 #[test_only]

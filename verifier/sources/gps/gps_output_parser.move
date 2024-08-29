@@ -170,7 +170,7 @@ module verifier_addr::gps_output_parser {
 
                 // Ensure 'nPages' is bounded from above as a sanity check
                 // (the bound is somewhat arbitrary).
-                assert!(n_pages <= (1 << 20), INVALID_VALUE_OF_N_PAGES_IN_TREE_STRUCTURE);
+                assert!(n_pages <= (1 << 20), EINVALID_VALUE_OF_N_PAGES_IN_TREE_STRUCTURE);
                 for (i in 0..n_pages) {
                     let page_info_ptr = slice(public_memory_pages, *page_info_ptr_start,
                         *page_info_ptr_start + (PAGE_INFO_SIZE as u64)
@@ -198,7 +198,7 @@ module verifier_addr::gps_output_parser {
                     node_stack_len = construct_node(node_stack, node_stack_len, n_nodes);
                 }
             };
-            assert!(node_stack_len == 1, NODE_STACK_MUST_CONTAIN_EXACTLY_ONE_ITEM);
+            assert!(node_stack_len == 1, ENODE_STACK_MUST_CONTAIN_EXACTLY_ONE_ITEM);
             let program_hash = *vector::borrow(
                 task_metadata,
                 *task_metadata_offset + METADATA_OFFSET_TASK_PROGRAM_HASH
@@ -214,7 +214,7 @@ module verifier_addr::gps_output_parser {
 
                 assert!(
                     *borrow(node_stack, NODE_STACK_OFFSET_END) + 2 == output_size,
-                    SUM_OF_THE_PAGE_SIZES_DOES_NOT_MATCH_OUTPUT_SIZE
+                    ESUM_OF_THE_PAGE_SIZES_DOES_NOT_MATCH_OUTPUT_SIZE
                 );
             };
 
@@ -240,7 +240,7 @@ module verifier_addr::gps_output_parser {
         };
         *ptr = end_ptr;
         if (*ptr == *n_task) {
-            assert!(*total_num_pages == *cur_page, NOT_ALL_MEMORY_PAGES_WERE_PROCESSED);
+            assert!(*total_num_pages == *cur_page, ENOT_ALL_MEMORY_PAGES_WERE_PROCESSED);
             *ptr = 0;
             return true
         };
@@ -255,13 +255,13 @@ module verifier_addr::gps_output_parser {
         node_stack: &mut vector<u256>,
         node_stack_len: u256
     ): (u256, u256) {
-        assert!(length(&page_info_ptr) == (PAGE_INFO_SIZE as u64), INVALID_PAGE_INFO_PTR_LENGTH);
+        assert!(length(&page_info_ptr) == (PAGE_INFO_SIZE as u64), EINVALID_PAGE_INFO_PTR_LENGTH);
         let page_addr = *borrow(&page_info_ptr, (PAGE_INFO_ADDRESS_OFFSET as u64));
         let page_size = *borrow(&page_info_ptr, (PAGE_INFO_SIZE_OFFSET as u64));
         let page_hash = *borrow(&page_info_ptr, (PAGE_INFO_HASH_OFFSET as u64));
 
-        assert!(page_size < (1 << 30), INVALID_PAGE_SIZE);
-        assert!(page_addr == cur_addr, INVALID_PAGE_ADDRESS);
+        assert!(page_size < (1 << 30), EINVALID_PAGE_SIZE);
+        assert!(page_addr == cur_addr, EINVALID_PAGE_ADDRESS);
 
         set_el(
             node_stack,
@@ -303,13 +303,13 @@ module verifier_addr::gps_output_parser {
     }
 
     // assertion codes
-    const INVALID_VALUE_OF_N_PAGES_IN_TREE_STRUCTURE: u64 = 1;
-    const INVALID_PAGE_SIZE: u64 = 2;
-    const INVALID_PAGE_ADDRESS: u64 = 3;
-    const INVALID_PAGE_INFO_PTR_LENGTH: u64 = 4;
-    const SUM_OF_THE_PAGE_SIZES_DOES_NOT_MATCH_OUTPUT_SIZE: u64 = 5;
-    const NODE_STACK_MUST_CONTAIN_EXACTLY_ONE_ITEM: u64 = 6;
-    const NOT_ALL_MEMORY_PAGES_WERE_PROCESSED: u64 = 7;
+    const EINVALID_VALUE_OF_N_PAGES_IN_TREE_STRUCTURE: u64 = 1;
+    const EINVALID_PAGE_SIZE: u64 = 2;
+    const EINVALID_PAGE_ADDRESS: u64 = 3;
+    const EINVALID_PAGE_INFO_PTR_LENGTH: u64 = 4;
+    const ESUM_OF_THE_PAGE_SIZES_DOES_NOT_MATCH_OUTPUT_SIZE: u64 = 5;
+    const ENODE_STACK_MUST_CONTAIN_EXACTLY_ONE_ITEM: u64 = 6;
+    const ENOT_ALL_MEMORY_PAGES_WERE_PROCESSED: u64 = 7;
 
 
     // Data of the function `register_gps_facts`
