@@ -1,13 +1,16 @@
 #[test_only]
 module verifier_addr::test_verify_fri_statement {
     use std::signer::address_of;
+    use aptos_std::debug::print;
+    use aptos_framework::event::emitted_events;
+    use verifier_addr::merkle_statement_contract::VerifyMerkle;
 
     use verifier_addr::fact_registry::is_valid;
     use verifier_addr::fri_layer::{ compute_next_layer,
         init_fri_group
     };
-    use verifier_addr::fri_statement_contract::{register_fact_verify_fri, verify_fri};
-    use verifier_addr::fri_test::{get_evaluation_point_3,
+    use verifier_addr::fri_statement_contract::{register_fact_verify_fri, verify_fri, FriCtx, ComputeNextLayer};
+    use verifier_addr::vanhG_test::{get_evaluation_point_3,
         get_expected_root_3,
         get_fri_queue_3,
         get_fri_step_size_3,
@@ -25,6 +28,12 @@ module verifier_addr::test_verify_fri_statement {
             get_fri_step_size_3(),
             get_expected_root_3()
         );
+         let fri = emitted_events<FriCtx>();
+        let compute_next_layer =  emitted_events<ComputeNextLayer>();
+
+        print(&fri);
+        print(&compute_next_layer);
+
         init_fri_group(s, 275);
 
         compute_next_layer(

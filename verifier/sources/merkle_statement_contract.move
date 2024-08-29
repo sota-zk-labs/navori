@@ -98,11 +98,11 @@ module verifier_addr::merkle_statement_contract {
             let cur_idx = *vector::borrow(fri, merkle_queue_ptr);
 
             // Sanity check that the indices are sorted.
-           // assert!(cur_idx >= idx_lower_limit, EINVALID_MERKLE_INDICES);
+           assert!(cur_idx >= idx_lower_limit, EINVALID_MERKLE_INDICES);
 
             // The next idx must be at least curIdx + 1. Ensure it doesn't overflow.
             idx_lower_limit = cur_idx + 1;
-            // assert!(idx_lower_limit != 0, EINVALID_MERKLE_INDICES);
+            assert!(idx_lower_limit != 0, EINVALID_MERKLE_INDICES);
 
             // Copy the pair (idx, hash) to the dataToHash array.
             *vector::borrow_mut(fri, data_to_hash_ptr) = cur_idx;
