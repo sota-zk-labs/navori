@@ -2,7 +2,7 @@
 module verifier_addr::test_verify_fri_statement {
     use std::signer::address_of;
 
-    use verifier_addr::fact_registry::is_valid;
+    use verifier_addr::fact_registry::{init_fact_registry, is_valid};
     use verifier_addr::fri_layer::{ compute_next_layer,
         init_fri_group
     };
@@ -17,6 +17,7 @@ module verifier_addr::test_verify_fri_statement {
 
     #[test(s = @verifier_addr)]
     fun test_verify_fri(s: &signer) {
+        init_fact_registry(s);
         verify_fri(
             s,
             get_proof_3(),

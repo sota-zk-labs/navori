@@ -3,14 +3,16 @@ module verifier_addr::fri_layer {
     use std::vector;
     use aptos_std::aptos_hash::keccak256;
 
-    use lib_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le};
+    use lib_addr::prime_field_element_0::{fmul, fpow};
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::fri_transform::transform_coset;
-    use lib_addr::prime_field_element_0::{fmul, fpow};
 
     // This line is used for generating constants DO NOT REMOVE!
     // 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
     const COMMITMENT_MASK: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
+    // 1
+    const EBIT_REVERSE: u64 = 0x1;
     // 0
     const FRI_CTX_TO_COSET_EVALUATIONS_OFFSET: u64 = 0x0;
     // FRI_GROUP_SIZE
@@ -89,17 +91,16 @@ module verifier_addr::fri_layer {
         num: u256,
         number_of_bits: u8
     ): u256 {
-        assert!(num < (1 << number_of_bits), 1);
+        assert!(num < (1 << number_of_bits), EBIT_REVERSE);
         let r = 0 ;
         for (i in 0..number_of_bits) {
-            r = (r * 2) | (num % 2);
-            num = num / 2;
+            r = (r << 1) | (num & 1);
+            num = num >> 1;
         };
         r
     }
-    /*
-          Initializes the FRI group and half inv group in the FRI context.
-    */
+
+    // Initializes the FRI group and half inv group in the FRI context.
     public entry fun init_fri_group(
         signer: &signer,
         fri_ctx: u64
@@ -130,22 +131,20 @@ module verifier_addr::fri_layer {
         };
         update_fri(signer, *fri);
     }
-    /*
-      Computes the FRI step with eta = log2(friCosetSize) for all the live queries.
 
-      The inputs for the current layer are read from the FRI queue and the inputs
-      for the next layer are written to the same queue (overwriting the input).
-      See friVerifyLayers for the description for the FRI queue.
-
-      The function returns the number of live queries remaining after computing the FRI step.
-
-      The number of live queries decreases whenever multiple query points in the same
-      coset are reduced to a single query in the next FRI layer.
-
-      As the function computes the next layer it also collects that data from
-      the previous layer for Merkle verification.
-    */
-
+    // Computes the FRI step with eta = log2(friCosetSize) for all the live queries.
+    //
+    // The inputs for the current layer are read from the FRI queue and the inputs
+    // for the next layer are written to the same queue (overwriting the input).
+    // See friVerifyLayers for the description for the FRI queue.
+    //
+    // The function returns the number of live queries remaining after computing the FRI step.
+    //
+    // The number of live queries decreases whenever multiple query points in the same
+    // coset are reduced to a single query in the next FRI layer.
+    //
+    // As the function computes the next layer it also collects that data from
+    // the previous layer for Merkle verification.
     public entry fun compute_next_layer(
         s: &signer,
         channel_ptr: u64,
@@ -182,7 +181,7 @@ module verifier_addr::fri_layer {
 
             let hash = vector::empty();
             for (i in 0..fri_coset_size) {
-                vector::append(&mut hash, u256_to_bytes32(vector::borrow(fri, evaluation_on_coset_ptr + i)));
+                vector::append(&mut hash, num_to_bytes_le(vector::borrow(fri, evaluation_on_coset_ptr + i)));
             };
 
             *vector::borrow_mut(fri, merkle_queue_ptr + 1) = COMMITMENT_MASK & bytes32_to_u256(keccak256(hash));

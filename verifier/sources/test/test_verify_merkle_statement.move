@@ -2,7 +2,7 @@
 module verifier_addr::test_verify_merkle_statement {
     use std::signer::address_of;
 
-    use verifier_addr::fact_registry::{has_registered_fact, is_valid};
+    use verifier_addr::fact_registry::{has_registered_fact, init_fact_registry, is_valid};
     use verifier_addr::merkle_statement_contract::{register_fact_verify_merkle,
         verify_merkle
     };
@@ -11,6 +11,7 @@ module verifier_addr::test_verify_merkle_statement {
 
     #[test(s = @verifier_addr)]
     fun test_verify_merkle(s: &signer) {
+        init_fact_registry(s);
         verify_merkle(s,
             get_merkle_view_data(),
             get_initial_merkle_queue(),

@@ -4,7 +4,7 @@ module verifier_addr::fri_statement_contract {
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event::emit;
 
-    use lib_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le};
     use lib_addr::convert_memory::copy_vec_to_memory;
     use verifier_addr::fact_registry::register_fact;
     use verifier_addr::fri::{get_fri, new_fri, update_fri};
@@ -16,8 +16,14 @@ module verifier_addr::fri_statement_contract {
     const EFRI_STEP_SIZE_TOO_LARGE: u64 = 0x1;
     // 2
     const EINVALID_EVAL_POINT: u64 = 0x2;
+    // 8
+    const EINVALID_FRI_INVERSE_POINT: u64 = 0x8;
+    // 7
+    const EINVALID_FRI_VALUE: u64 = 0x7;
     // 5
     const EINVALID_QUERIES_RANGE: u64 = 0x5;
+    // 6
+    const EINVALID_QUERY_VALUE: u64 = 0x6;
     // 4
     const ENO_QUERY_TO_PROCESS: u64 = 0x4;
     // FRI_CTX_TO_FRI_HALF_INV_GROUP_OFFSET + (FRI_GROUP_SIZE / 2)
@@ -91,7 +97,7 @@ module verifier_addr::fri_statement_contract {
 
         let hash = vector::empty();
         for (i in 0..(n_queries * 3)) {
-            vector::append(&mut hash, u256_to_bytes32(vector::borrow(fri, fri_queue_ptr + i)));
+            vector::append(&mut hash, num_to_bytes_le(vector::borrow(fri, fri_queue_ptr + i)));
         };
 
         *vector::borrow_mut(fri, data_to_hash + 2) = bytes32_to_u256(keccak256(hash));
@@ -124,7 +130,7 @@ module verifier_addr::fri_statement_contract {
         for ( i in 0..(n_queries * 3)) {
             vector::append(
                 &mut input_hash,
-                u256_to_bytes32(vector::borrow(fri, fri_queue_ptr + i))
+                num_to_bytes_le(vector::borrow(fri, fri_queue_ptr + i))
             );
         };
 
@@ -138,7 +144,7 @@ module verifier_addr::fri_statement_contract {
         for (i in 0..5) {
             vector::append(
                 &mut input_hash,
-                u256_to_bytes32(vector::borrow(fri, data_to_hash + i))
+                num_to_bytes_le(vector::borrow(fri, data_to_hash + i))
             );
         };
         register_fact(s, bytes32_to_u256(keccak256(input_hash)));
@@ -161,9 +167,9 @@ module verifier_addr::fri_statement_contract {
         let n_queries = fri_queue_length / 3;
         let prev_query = 0;
         for (i in 0..n_queries) {
-            assert!(*vector::borrow(&fri_queue, 3 * i) > prev_query, 1);
-            assert!(*vector::borrow(&fri_queue, 3 * i + 1) < K_MODULUS, 1);
-            assert!(*vector::borrow(&fri_queue, 3 * i + 2) < K_MODULUS, 1);
+            assert!(*vector::borrow(&fri_queue, 3 * i) > prev_query, EINVALID_QUERY_VALUE);
+            assert!(*vector::borrow(&fri_queue, 3 * i + 1) < K_MODULUS, EINVALID_FRI_VALUE);
+            assert!(*vector::borrow(&fri_queue, 3 * i + 2) < K_MODULUS, EINVALID_FRI_INVERSE_POINT);
             prev_query = *vector::borrow(&fri_queue, 3 * i);
         };
         // Verify all queries are on the same logarithmic step.
