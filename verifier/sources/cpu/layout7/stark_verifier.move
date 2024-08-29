@@ -15,6 +15,72 @@ module verifier_addr::stark_verifier_7 {
     const CONSTRAINTS_DEGREE_BOUND: u64 = 0x2;
     // 1
     const CONTINUOUS_PAGE: u256 = 0x1;
+    // 30
+    const ECLAIMED_COMPOSITION_DOES_NOT_MATCH_TRACE: u64 = 0x1e;
+    // 14
+    const EFRI_PARAMS_DO_NOT_MATCH_TRACE_LENGTH: u64 = 0xe;
+    // 32
+    const EINVALID_FIELD_ELEMENT: u64 = 0x20;
+    // 23
+    const EINVALID_FINAL_PC: u64 = 0x17;
+    // 22
+    const EINVALID_INITIAL_PC: u64 = 0x16;
+    // 24
+    const EINVALID_NUMBER_OF_MEMORY_PAGES: u64 = 0x18;
+    // 1
+    const EINVALID_PROOF_PARAMS: u64 = 0x1;
+    // 21
+    const ELAYOUT_CODE_MISMATCH: u64 = 0x15;
+    // 3
+    const ELOG_BLOWUP_FACTOR_MUST_BE_AT_LEAST_1: u64 = 0x3;
+    // 2
+    const ELOG_BLOWUP_FACTOR_MUST_BE_AT_MOST_16: u64 = 0x2;
+    // 7
+    const ELOG_FRI_LAST_LAYER_DEG_BOUND_MUST_BE_AT_MOST_10: u64 = 0x7;
+    // 16
+    const EMAX_SUPPORTED_FRI_STEP_SIZE_IS_4: u64 = 0x10;
+    // 27
+    const EMEMORY_PAGE_FACT_NOT_REGISTERED: u64 = 0x1b;
+    // 5
+    const EMINIMUM_PROOF_OF_WORK_BITS_NOT_SATISFIED: u64 = 0x5;
+    // 15
+    const EMIN_SUPPORTED_FRI_STEP_SIZE_IS_2: u64 = 0xf;
+    // 9
+    const ENOT_ENOUGH_FRI_STEPS: u64 = 0x9;
+    // 10
+    const ENUMBER_OF_QUERIES_MUST_BE_AT_LEAST_ONE: u64 = 0xa;
+    // 18
+    const ENUMBER_OF_STEPS_IS_TOO_LARGE: u64 = 0x12;
+    // 29
+    const ENUMBER_OF_VALUES_OF_PUBLIC_MEMORY_IS_TOO_LARGE: u64 = 0x1d;
+    // 13
+    const EONLY_ETA0_IS_CURRENTLY_SUPPORTED: u64 = 0xd;
+    // 100
+    const EOVERFLOW_PROTECTION_FAILED: u64 = 0x64;
+    // 6
+    const EPROOFS_MAY_NOT_BE_PURELY_BASED_ON_POW: u64 = 0x6;
+    // 4
+    const EPROOF_OF_WORK_BITS_MUST_BE_AT_MOST_50: u64 = 0x4;
+    // 12
+    const EPROOF_PARAMS_DO_NOT_SATISFY_SECURITY: u64 = 0xc;
+    // 17
+    const EPUBLIC_INPUT_IS_TOO_SHORT: u64 = 0x11;
+    // 26
+    const EPUBLIC_INPUT_LENGTH_MISMATCH: u64 = 0x1a;
+    // 20
+    const ERC_MAX_OUT_OF_RANGE: u64 = 0x14;
+    // 19
+    const ERC_MIN_MUST_BE_LESS_THAN_OR_EQUAL_TO_RC_MAX: u64 = 0x13;
+    // 31
+    const ETOO_MANY_COLUMNS: u64 = 0x1f;
+    // 8
+    const ETOO_MANY_FRI_STEPS: u64 = 0x8;
+    // 25
+    const ETOO_MANY_PUBLIC_MEMORY_ENTRIES_IN_ONE_PAGE: u64 = 0x19;
+    // 11
+    const ETOO_MANY_QUERIES: u64 = 0xb;
+    // 33
+    const EWRONG_BYTES_LENGTH: u64 = 0x21;
     // INITIAL_PC + 4
     const FINAL_PC: u64 = 0x5;
     // 4
@@ -33,14 +99,10 @@ module verifier_addr::stark_verifier_7 {
     const LAYOUT_CODE: u256 = 42800643258479064999893963318903811951182475189843316;
     // 4
     const LOG_CPU_COMPONENT_HEIGHT: u256 = 0x4;
-    // 192
-    const MASK_SIZE: u64 = 0xc0;
     // 10
     const MAX_FRI_STEPS: u64 = 0xa;
     // 48
     const MAX_N_QUERIES: u64 = 0x30;
-    // 4
-    const MAX_SUPPORTED_FRI_STEP_SIZE: u64 = 0x4;
     // 1
     const MM_BLOW_UP_FACTOR: u64 = 0x1;
     // 10
@@ -51,8 +113,6 @@ module verifier_addr::stark_verifier_7 {
     const MM_COMPOSITION_OODS_VALUES: u64 = 0x227;
     // 1178
     const MM_COMPOSITION_QUERY_RESPONSES: u64 = 0x49a;
-    // 551
-    const MM_CONSTRAINT_POLY_ARGS_END: u64 = 0x227;
     // 317
     const MM_CONSTRAINT_POLY_ARGS_START: u64 = 0x13d;
     // 1277
@@ -75,8 +135,6 @@ module verifier_addr::stark_verifier_7 {
     const MM_FRI_LAST_LAYER_PTR: u64 = 0x13c;
     // 109
     const MM_FRI_QUEUE: u64 = 0x6d;
-    // 294
-    const MM_FRI_STEP_SIZES_PTR: u64 = 0x126;
     // 326
     const MM_HALF_OFFSET_SIZE: u64 = 0x146;
     // 327
@@ -1135,39 +1193,4 @@ module verifier_addr::stark_verifier_7 {
     struct CfflCheckpoint has key {
         inner: u8
     }
-
-    // assertion code
-    const EINVALID_PROOF_PARAMS: u64 = 1;
-    const ELOG_BLOWUP_FACTOR_MUST_BE_AT_MOST_16: u64 = 2;
-    const ELOG_BLOWUP_FACTOR_MUST_BE_AT_LEAST_1: u64 = 3;
-    const EPROOF_OF_WORK_BITS_MUST_BE_AT_MOST_50: u64 = 4;
-    const EMINIMUM_PROOF_OF_WORK_BITS_NOT_SATISFIED: u64 = 5;
-    const EPROOFS_MAY_NOT_BE_PURELY_BASED_ON_POW: u64 = 6;
-    const ELOG_FRI_LAST_LAYER_DEG_BOUND_MUST_BE_AT_MOST_10: u64 = 7;
-    const ETOO_MANY_FRI_STEPS: u64 = 8;
-    const ENOT_ENOUGH_FRI_STEPS: u64 = 9;
-    const ENUMBER_OF_QUERIES_MUST_BE_AT_LEAST_ONE: u64 = 10;
-    const ETOO_MANY_QUERIES: u64 = 11;
-    const EPROOF_PARAMS_DO_NOT_SATISFY_SECURITY: u64 = 12;
-    const EONLY_ETA0_IS_CURRENTLY_SUPPORTED: u64 = 13;
-    const EFRI_PARAMS_DO_NOT_MATCH_TRACE_LENGTH: u64 = 14;
-    const EMIN_SUPPORTED_FRI_STEP_SIZE_IS_2: u64 = 15;
-    const EMAX_SUPPORTED_FRI_STEP_SIZE_IS_4: u64 = 16;
-    const EPUBLIC_INPUT_IS_TOO_SHORT: u64 = 17;
-    const ENUMBER_OF_STEPS_IS_TOO_LARGE: u64 = 18;
-    const ERC_MIN_MUST_BE_LESS_THAN_OR_EQUAL_TO_RC_MAX: u64 = 19;
-    const ERC_MAX_OUT_OF_RANGE: u64 = 20;
-    const ELAYOUT_CODE_MISMATCH: u64 = 21;
-    const EINVALID_INITIAL_PC: u64 = 22;
-    const EINVALID_FINAL_PC: u64 = 23;
-    const EINVALID_NUMBER_OF_MEMORY_PAGES: u64 = 24;
-    const ETOO_MANY_PUBLIC_MEMORY_ENTRIES_IN_ONE_PAGE: u64 = 25;
-    const EPUBLIC_INPUT_LENGTH_MISMATCH: u64 = 26;
-    const EMEMORY_PAGE_FACT_NOT_REGISTERED: u64 = 27;
-    const EOVERFLOW_PROTECTION_FAILED: u64 = 28;
-    const ENUMBER_OF_VALUES_OF_PUBLIC_MEMORY_IS_TOO_LARGE: u64 = 29;
-    const ECLAIMED_COMPOSITION_DOES_NOT_MATCH_TRACE: u64 = 30;
-    const ETOO_MANY_COLUMNS: u64 = 31;
-    const EINVALID_FIELD_ELEMENT: u64 = 32;
-    const EWRONG_BYTES_LENGTH: u64 = 33;
 }

@@ -4,6 +4,10 @@ module verifier_addr::horner_evaluator {
     use lib_addr::prime_field_element_0::fmul;
 
     // This line is used for generating constants DO NOT REMOVE!
+    // 2
+    const ENO_MORE_THAN_4096_COEFFICIENTS_ARE_SUPPORTED: u64 = 0x2;
+    // 1
+    const ENUMBER_OF_POLYNOMIAL_COEFFICIENTS_MUST_BE_DIVISIBLE_BY_8: u64 = 0x1;
     // 3618502788666131213697322783095070105623107215331596699973092056135872020481
     const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
     // End of generating constants!
@@ -55,8 +59,4 @@ module verifier_addr::horner_evaluator {
         // Since the last operation was "add" (instead of "addmod"), we need to take result % prime.
         result % K_MODULUS
     }
-
-    // assertion codes
-    const ENUMBER_OF_POLYNOMIAL_COEFFICIENTS_MUST_BE_DIVISIBLE_BY_8: u64 = 1;
-    const ENO_MORE_THAN_4096_COEFFICIENTS_ARE_SUPPORTED: u64 = 2;
 }

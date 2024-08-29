@@ -7,6 +7,10 @@ module verifier_addr::merkle_statement_verifier {
     use verifier_addr::fact_registry::is_valid;
 
     // This line is used for generating constants DO NOT REMOVE!
+    // 2
+    const EINVALIDATED_MERKLE_STATEMENT: u64 = 0x2;
+    // 1
+    const ETOO_MANY_MERKLE_QUERIES: u64 = 0x1;
     // 128
     const MAX_N_MERKLE_VERIFIER_QUERIES: u64 = 0x80;
     // End of generating constants!
@@ -29,7 +33,4 @@ module verifier_addr::merkle_statement_verifier {
         assert!(is_valid(address_of(signer), statement), EINVALIDATED_MERKLE_STATEMENT);
         root
     }
-
-    const ETOO_MANY_MERKLE_QUERIES: u64 = 1;
-    const EINVALIDATED_MERKLE_STATEMENT: u64 = 2;
 }

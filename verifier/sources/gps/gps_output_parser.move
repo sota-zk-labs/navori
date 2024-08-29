@@ -15,6 +15,20 @@ module verifier_addr::gps_output_parser {
     // This line is used for generating constants DO NOT REMOVE!
     // 1
     const CONTINUOUS_PAGE: u256 = 0x1;
+    // 3
+    const EINVALID_PAGE_ADDRESS: u64 = 0x3;
+    // 4
+    const EINVALID_PAGE_INFO_PTR_LENGTH: u64 = 0x4;
+    // 2
+    const EINVALID_PAGE_SIZE: u64 = 0x2;
+    // 1
+    const EINVALID_VALUE_OF_N_PAGES_IN_TREE_STRUCTURE: u64 = 0x1;
+    // 6
+    const ENODE_STACK_MUST_CONTAIN_EXACTLY_ONE_ITEM: u64 = 0x6;
+    // 7
+    const ENOT_ALL_MEMORY_PAGES_WERE_PROCESSED: u64 = 0x7;
+    // 5
+    const ESUM_OF_THE_PAGE_SIZES_DOES_NOT_MATCH_OUTPUT_SIZE: u64 = 0x5;
     // 2
     const METADATA_OFFSET_TASK_N_TREE_PAIRS: u64 = 0x2;
     // 0
@@ -301,16 +315,6 @@ module verifier_addr::gps_output_parser {
 
         return new_stack_len + 1
     }
-
-    // assertion codes
-    const EINVALID_VALUE_OF_N_PAGES_IN_TREE_STRUCTURE: u64 = 1;
-    const EINVALID_PAGE_SIZE: u64 = 2;
-    const EINVALID_PAGE_ADDRESS: u64 = 3;
-    const EINVALID_PAGE_INFO_PTR_LENGTH: u64 = 4;
-    const ESUM_OF_THE_PAGE_SIZES_DOES_NOT_MATCH_OUTPUT_SIZE: u64 = 5;
-    const ENODE_STACK_MUST_CONTAIN_EXACTLY_ONE_ITEM: u64 = 6;
-    const ENOT_ALL_MEMORY_PAGES_WERE_PROCESSED: u64 = 7;
-
 
     // Data of the function `register_gps_facts`
 

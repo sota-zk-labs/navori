@@ -18,6 +18,38 @@ module verifier_addr::gps_statement_verifier {
 
     // This line is used for generating constants DO NOT REMOVE!
     // 1
+    const ECAIRO_VERIFIER_ID_OUT_OF_RANGE: u64 = 0x1;
+    // 14
+    const EINCONSISTENT_PROGRAM_OUTPUT_LENGTH: u64 = 0xe;
+    // 3
+    const EINVALID_CAIROAUXINPUT_LENGTH: u64 = 0x3;
+    // 8
+    const EINVALID_CUMULATIVE_PRODUCT: u64 = 0x8;
+    // 10
+    const EINVALID_EXECUTION_BEGIN_ADDRESS: u64 = 0xa;
+    // 7
+    const EINVALID_HASH_FOR_MEMORY_PAGE_0: u64 = 0x7;
+    // 13
+    const EINVALID_LENGTH_OF_TASK_METADATA: u64 = 0xd;
+    // 4
+    const EINVALID_NPAGES: u64 = 0x4;
+    // 12
+    const EINVALID_NUMBER_OF_PAIRS_IN_MERKLE_TREE_STRUCTURE: u64 = 0xc;
+    // 9
+    const EINVALID_NUMBER_OF_TASKS: u64 = 0x9;
+    // 5
+    const EINVALID_PUBLIC_MEMORY_PAGES_LENGTH: u64 = 0x5;
+    // 6
+    const EINVALID_SIZE_FOR_MEMORY_PAGE_0: u64 = 0x6;
+    // 11
+    const EINVALID_TASK_OUTPUT_SIZE: u64 = 0xb;
+    // 15
+    const ENOT_ALL_CAIRO_PUBLIC_INPUTS_WERE_WRITTEN: u64 = 0xf;
+    // 10
+    const ESELECTED_BUILTINS_VECTOR_IS_TOO_LONG: u64 = 0xa;
+    // 2
+    const EWRONG_CAIRO_VERIFIER_ID: u64 = 0x2;
+    // 1
     const INITIAL_PC: u64 = 0x1;
     // 2
     const MEMORY_PAIR_SIZE: u256 = 0x2;
@@ -517,24 +549,6 @@ module verifier_addr::gps_statement_verifier {
     public fun get_rpmmp_checkpoint(signer: &signer): u8 acquires RpmmpCheckpoint {
         borrow_global<RpmmpCheckpoint>(address_of(signer)).inner
     }
-
-    /// error codes
-    const ECAIRO_VERIFIER_ID_OUT_OF_RANGE: u64 = 1;
-    const EWRONG_CAIRO_VERIFIER_ID: u64 = 2;
-    const EINVALID_CAIROAUXINPUT_LENGTH: u64 = 3;
-    const EINVALID_NPAGES: u64 = 4;
-    const EINVALID_PUBLIC_MEMORY_PAGES_LENGTH: u64 = 5;
-    const EINVALID_SIZE_FOR_MEMORY_PAGE_0: u64 = 6;
-    const EINVALID_HASH_FOR_MEMORY_PAGE_0: u64 = 7;
-    const EINVALID_CUMULATIVE_PRODUCT: u64 = 8;
-    const EINVALID_NUMBER_OF_TASKS: u64 = 9;
-    const EINVALID_EXECUTION_BEGIN_ADDRESS: u64 = 10;
-    const ESELECTED_BUILTINS_VECTOR_IS_TOO_LONG: u64 = 10;
-    const EINVALID_TASK_OUTPUT_SIZE: u64 = 11;
-    const EINVALID_NUMBER_OF_PAIRS_IN_MERKLE_TREE_STRUCTURE: u64 = 12;
-    const EINVALID_LENGTH_OF_TASK_METADATA: u64 = 13;
-    const EINCONSISTENT_PROGRAM_OUTPUT_LENGTH: u64 = 14;
-    const ENOT_ALL_CAIRO_PUBLIC_INPUTS_WERE_WRITTEN: u64 = 15;
 
     // Data of the function `verify_proof_and_register`
 

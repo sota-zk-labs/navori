@@ -4,6 +4,10 @@ module cpu_addr::memory_access_utils_7 {
     use lib_addr::vector::{assign, set_el};
 
     // This line is used for generating constants DO NOT REMOVE!
+    // 9
+    const ENOT_ENOUGH_FRI_STEPS: u64 = 0x9;
+    // 8
+    const ETOO_MANY_FRI_STEPS: u64 = 0x8;
     // 10
     const MAX_FRI_STEPS: u64 = 0xa;
     // 5
@@ -26,7 +30,4 @@ module cpu_addr::memory_access_utils_7 {
 
         fri_step_sizes
     }
-
-    const ETOO_MANY_FRI_STEPS: u64 = 8;
-    const ENOT_ENOUGH_FRI_STEPS: u64 = 9;
 }

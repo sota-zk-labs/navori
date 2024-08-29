@@ -21,6 +21,18 @@ module cpu_addr::layout_specific_7 {
     const DILUTED_N_BITS: u256 = 0x10;
     // 4
     const DILUTED_SPACING: u8 = 0x4;
+    // 5
+    const EDENOMINATOR_MUST_NOT_BE_ZERO: u64 = 0x5;
+    // 4
+    const EINVALID_STOP_PTR: u64 = 0x4;
+    // 6
+    const ENUMERATOR_NOT_DIVISIBLE_BY_DENOMINATOR: u64 = 0x6;
+    // 1
+    const EOUTPUT_BEGIN_ADDR_MUST_BE_LESS_THAN_OR_EQUAL_TO_STOP_PTR: u64 = 0x1;
+    // 3
+    const EOUT_OF_RANGE_BEGIN_ADDR: u64 = 0x3;
+    // 2
+    const EOUT_OF_RANGE_OUTPUT_STOP_PTR: u64 = 0x2;
     // 343
     const MM_DILUTED_CHECK__FINAL_CUM_VAL: u64 = 0x157;
     // 340
@@ -325,12 +337,4 @@ module cpu_addr::layout_specific_7 {
 
         res
     }
-
-    // assertion codes
-    const EOUTPUT_BEGIN_ADDR_MUST_BE_LESS_THAN_OR_EQUAL_TO_STOP_PTR: u64 = 1;
-    const EOUT_OF_RANGE_OUTPUT_STOP_PTR: u64 = 2;
-    const EOUT_OF_RANGE_BEGIN_ADDR: u64 = 3;
-    const EINVALID_STOP_PTR: u64 = 4;
-    const EDENOMINATOR_MUST_NOT_BE_ZERO: u64 = 5;
-    const ENUMERATOR_NOT_DIVISIBLE_BY_DENOMINATOR: u64 = 6;
 }

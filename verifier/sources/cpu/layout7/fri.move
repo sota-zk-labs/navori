@@ -10,6 +10,10 @@ module verifier_addr::fri_7 {
     friend verifier_addr::stark_verifier_7;
 
     // This line is used for generating constants DO NOT REMOVE!
+    // 2
+    const EBAD_LAST_LAYER_VALUE: u64 = 0x2;
+    // 1
+    const EMAX_STEP_SIZE_IS_INCONSISTENT: u64 = 0x1;
     // 4
     const FRI_MAX_STEP_SIZE: u256 = 0x4;
     // 3
@@ -56,7 +60,7 @@ module verifier_addr::fri_7 {
             assert!(
                 horner_eval(proof, (coefs_start as u64), point, (fri_last_layer_deg_bound as u64)) ==
                     *borrow(ctx, MM_FRI_QUEUE + FRI_QUEUE_SLOT_SIZE * i + 1),
-                BAD_LAST_LAYER_VALUE
+                EBAD_LAST_LAYER_VALUE
             );
         }
     }
@@ -69,7 +73,7 @@ module verifier_addr::fri_7 {
         let fri_ctx = MM_FRI_CTX;
         assert!(
             MAX_SUPPORTED_FRI_STEP_SIZE == (FRI_MAX_STEP_SIZE as u64),
-            MAX_STEP_SIZE_IS_INCONSISTENT
+            EMAX_STEP_SIZE_IS_INCONSISTENT
         );
         // Todo
         // initFriGroups(fri_ctx);
@@ -136,8 +140,4 @@ module verifier_addr::fri_7 {
         verify_last_layer(ctx, proof, n_live_queries);
         // emit LogGas("last FRI layer", gasleft());
     }
-
-    // assertion codes
-    const MAX_STEP_SIZE_IS_INCONSISTENT: u64 = 1;
-    const BAD_LAST_LAYER_VALUE: u64 = 2;
 }

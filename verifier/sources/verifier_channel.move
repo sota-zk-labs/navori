@@ -8,6 +8,12 @@ module verifier_addr::verifier_channel {
     use verifier_addr::prng::{get_random_bytes, init_prng};
 
     // This line is used for generating constants DO NOT REMOVE!
+    // 3
+    const EMASK_MUST_BE_LESS_THAN_2_TO_THE_POWER_OF_64: u64 = 0x3;
+    // 100
+    const EOVERFLOW_PROTECTION_FAILED: u64 = 0x64;
+    // 2
+    const EPROOF_OF_WORK_CHECK_FAILED: u64 = 0x2;
     // 113078212145816603762751633895895194930089271709401121343797004406777446400
     const K_MONTGOMERY_R_INV: u256 = 0x40000000000001100000000000012100000000000000000000000000000000;
     // End of generating constants!
@@ -205,11 +211,6 @@ module verifier_addr::verifier_channel {
         };
         val
     }
-
-    // assertion codes
-    const EOVERFLOW_PROTECTION_FAILED: u64 = 1;
-    const EPROOF_OF_WORK_CHECK_FAILED: u64 = 2;
-    const EMASK_MUST_BE_LESS_THAN_2_TO_THE_POWER_OF_64: u64 = 3;
 }
 
 #[test_only]

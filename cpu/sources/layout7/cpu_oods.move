@@ -6,6 +6,8 @@ module cpu_addr::cpu_oods_7 {
     use lib_addr::vector::{assign, set_el};
 
     // This line is used for generating constants DO NOT REMOVE!
+    // 1
+    const EBATCH_INVERSE_PRODUCT_IS_ZERO: u64 = 0x1;
     // 3
     const FRI_QUEUE_SLOT_SIZE: u64 = 0x3;
     // 3
@@ -871,9 +873,6 @@ module cpu_addr::cpu_oods_7 {
         composition_query_responses: u64,
         first_invoking: bool
     }
-
-    // assertion codes
-    const EBATCH_INVERSE_PRODUCT_IS_ZERO: u64 = 1;
 }
 
 #[test_only]

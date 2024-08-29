@@ -18,6 +18,8 @@ module verifier_addr::fri_statement_verifier_7 {
     friend verifier_addr::stark_verifier_7;
 
     // This line is used for generating constants DO NOT REMOVE!
+    // 1
+    const EINVALIDATED_FRI_STATEMENT: u64 = 0x1;
     // 3618502788666127798953978732740734578953660990361066340291730267701097005025
     const K_MONTGOMERY_R: u256 = 0x7fffffffffffdf0ffffffffffffffffffffffffffffffffffffffffffffffe1;
     // 1
@@ -129,7 +131,7 @@ module verifier_addr::fri_statement_verifier_7 {
             // Verify statement is registered.
             assert!(// NOLINT: calls-loop.
                 is_valid(signer_addr, bytes32_to_u256(keccak256(vec_to_bytes_be(&data_to_hash)))),
-                INVALIDATED_FRI_STATEMENT
+                EINVALIDATED_FRI_STATEMENT
             );
 
             input_layer_hash = output_layer_hash;
@@ -146,7 +148,7 @@ module verifier_addr::fri_statement_verifier_7 {
 
         assert!(
             is_valid(signer_addr, bytes32_to_u256(keccak256(vec_to_bytes_be(&data_to_hash)))),
-            INVALIDATED_FRI_STATEMENT
+            EINVALIDATED_FRI_STATEMENT
         );
     }
 
@@ -206,9 +208,6 @@ module verifier_addr::fri_statement_verifier_7 {
         push_back(&mut res, bytes32_to_u256(keccak256(vec_to_bytes_be(&data_to_hash))));
         res
     }
-
-    // assertion codes
-    const INVALIDATED_FRI_STATEMENT: u64 = 1;
 }
 
 #[test_only]
