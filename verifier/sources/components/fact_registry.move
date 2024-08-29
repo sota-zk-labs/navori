@@ -14,7 +14,7 @@ module verifier_addr::fact_registry {
         any_fact_registered: bool
     }
 
-    fun init_fact_registry(s: &signer) {
+    public fun init_fact_registry(s: &signer) {
         move_to(s, VerifierFact {
             verified_fact: smart_table::new<u256, bool>(),
             any_fact_registered: false
@@ -27,10 +27,7 @@ module verifier_addr::fact_registry {
         *smart_table::borrow_with_default(&verifier_fact.verified_fact, fact, &false)
     }
 
-    public fun register_fact(s: &signer, fact_hash: u256) acquires VerifierFact {
-        if (!exists<VerifierFact>(address_of(s))) {
-            init_fact_registry(s);
-        };
+    public entry fun register_fact(s: &signer, fact_hash: u256) acquires VerifierFact {
         let verifier_fact = borrow_global_mut<VerifierFact>(address_of(s));
         smart_table::upsert(&mut verifier_fact.verified_fact, fact_hash, true);
         event::emit<FactRegistered>(FactRegistered { fact_hash });

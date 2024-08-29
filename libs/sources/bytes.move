@@ -1,8 +1,73 @@
 module lib_addr::bytes {
     use std::bcs::to_bytes;
+    use std::option;
+    use std::option::Option;
+    use std::signer::address_of;
     use std::vector;
-    use std::vector::{append, for_each_ref};
+    use std::vector::{append, borrow, for_each_ref, length};
     use aptos_std::from_bcs::to_u256;
+
+    // Pads a vector<u8> with a specified byte value up to the desired length
+    public fun pad(v: vector<u8>, desired_length: u64, pad_byte: u8, pad_left: bool): vector<u8> {
+        let current_length = vector::length(&v);
+
+        if (current_length >= desired_length) {
+            return v
+        };
+
+        let pad = vector::empty<u8>();
+        let pad_length = desired_length - current_length;
+
+        let i = 0;
+        while (i < pad_length) {
+            vector::push_back(&mut pad, pad_byte);
+            i = i + 1;
+        };
+
+        let padded = vector[];
+
+        if (pad_left) {
+            vector::append(&mut padded, v);
+            vector::append(&mut padded, pad);
+        } else {
+            vector::append(&mut padded, pad);
+            vector::append(&mut padded, v);
+        };
+
+        return padded
+    }
+
+    public fun long_vec_to_bytes_be<Element>(
+        signer: &signer,
+        v: &vector<Element>
+    ): Option<vector<u8>> acquires Cache {
+        let signer_addr = address_of(signer);
+        if (!exists<Cache>(signer_addr)) {
+            move_to(signer, Cache {
+                ptr: 0,
+                bytes: vector[]
+            })
+        };
+        let Cache {
+            ptr,
+            bytes
+        } = borrow_global_mut<Cache>(signer_addr);
+        let n = length(v);
+        let count = 0;
+        while (*ptr < n && count < ITERATION_LENGTH) {
+            let tmp = to_bytes(borrow(v, *ptr));
+            vector::reverse(&mut tmp);
+            append(bytes, tmp);
+            *ptr = *ptr + 1;
+            count = count + 1;
+        };
+        if (*ptr < n) {
+            return option::none<vector<u8>>()
+        };
+        let bytes = *bytes;
+        move_from<Cache>(signer_addr);
+        option::some(bytes)
+    }
 
     public fun vec_to_bytes_be<Element>(v: &vector<Element>): vector<u8> {
         let bytes: vector<u8> = vector[];
@@ -14,22 +79,46 @@ module lib_addr::bytes {
         bytes
     }
 
-    public fun u256_to_bytes32<Element>(v: &Element): vector<u8> {
+    public fun num_to_bytes_be<Element>(v: &Element): vector<u8> {
         let result = to_bytes(v);
         vector::reverse(&mut result);
         result
     }
 
-
     public fun bytes32_to_u256(bytes: vector<u8>): u256 {
         vector::reverse(&mut bytes);
         to_u256(bytes)
+    }
+
+    // Data of the function `long_vec_to_bytes_be`
+
+    // checkpoints
+    const IN_ITERATION: u8 = 1;
+    const END_ITERATION: u8 = 1;
+
+    const ITERATION_LENGTH: u64 = 1000;
+
+    struct Cache has key, drop {
+        ptr: u64,
+        bytes: vector<u8>
     }
 }
 
 #[test_only]
 module lib_addr::bytes_test {
-    use lib_addr::bytes::vec_to_bytes_be;
+    use std::bcs::to_bytes;
+    use std::vector;
+
+    use lib_addr::bytes::{pad, vec_to_bytes_be};
+
+    #[test]
+    fun test_padding() {
+        let value = 0x123456;
+        let v = to_bytes(&value);
+        let padded = pad(v, 32, 0x00, true);
+        assert!(vector::length(&padded) == 32, 1);
+        assert!(padded == to_bytes(&0x123456u256), 1);
+    }
 
     #[test]
     fun test_vec_to_bytes_be() {

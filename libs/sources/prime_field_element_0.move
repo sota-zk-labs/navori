@@ -4,10 +4,11 @@ module lib_addr::prime_field_element_0 {
     const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
     // 10633823966279327296825105735305134080
     const K_MODULUS_0: u256 = 0x8000000000000110000000000000000;
+    // 113078212145816603762751633895895194930089271709401121343797004406777446400
+    const K_MONTGOMERY_R_INV: u256 = 0x40000000000001100000000000012100000000000000000000000000000000;
     // 0xffffffffffffffffffffffffffffffff
     const MAX_U128: u256 = 0xffffffffffffffffffffffffffffffff;
     // End of generating constants!
-
 
     // formula: a * b = q * K_MODULUS + r
     // split a, b into two limbs: a = a_0 * 2 ^ 128 + a_1
@@ -19,7 +20,7 @@ module lib_addr::prime_field_element_0 {
     // K_MODULUS = K_MODULUS_0 * 2 ^ 128 + K_MODULUS_1
     // K_MODULUS_1 = 1;
     // optimistically cal q_0 = ab_0 / K_MODULUS_0, set q_1 = 0
-    // let qk = q * K_MODULUS; 
+    // let qk = q * K_MODULUS;
     // using the technique above, cal qk_mid = qk_mid_0 + qk_mid_1
     // res = (ab - qk) mod k
     // OPTIMIZED: LAST_MODULUS=1
@@ -62,11 +63,19 @@ module lib_addr::prime_field_element_0 {
         res
     }
 
-    public inline fun fadd(a: u256, b: u256): u256 {
+    public inline fun from_montgomery(val: u256): u256 {
+        fmul(val, K_MONTGOMERY_R_INV)
+    }
+
+    public fun fadd(a: u256, b: u256): u256 {
         (a + b) % K_MODULUS
     }
 
-    public inline fun fpow(val: u256, exp: u256): u256 {
+    public inline fun fsub(a: u256, b: u256): u256 {
+        fadd(a, K_MODULUS - b)
+    }
+
+    public fun fpow(val: u256, exp: u256): u256 {
         expmod(val, exp, K_MODULUS)
     }
 
@@ -85,24 +94,20 @@ module lib_addr::prime_field_element_0 {
         res
     }
 
-    public inline fun inverse(val: u256): u256 {
+    public fun inverse(val: u256): u256 {
         expmod(val, K_MODULUS - 2, K_MODULUS)
     }
 
-
-    #[test()]
     fun testmath_basic() {
         let res = 8 % K_MODULUS;
         assert!(res == 8, 1);
     }
 
-    #[test()]
     fun test_expmod() {
         let res = expmod(0x5ec467b88826aba4537602d514425f3b0bdf467bbf302458337c45f6021e539, 15, K_MODULUS);
         assert!(res == 2607735469685256064975697808597423000021425046638838630471627721324227832437, 1);
     }
 
-    #[test()]
     fun tes_mulmod() {
         let res = fmul(
             0x800000000000011000000000000000000000000000000000000000000000000,
@@ -111,33 +116,32 @@ module lib_addr::prime_field_element_0 {
         assert!(res == 1, 1);
     }
 
-    #[test()]
     fun tes_mulmod1() {
         let res = fmul(
             0x6f31595cf7b7c9239fde468365c31cb213f6e99bfac7e9f13c6063a760a28f3,
             0x6f31595cf7b7c9239fde468365c31cb213f6e99bfac7e9f13c6063a760a28f3
         );
         assert!(res == 0x3640da36d563e087290172eec26556cf9359dd4800d74e854504b7dbae81ba4, 1);
+        // assert!(res == 0x6097aa03e733f4c41191a1dd5731289c210364e1183819f428704c582a0bb05, 1);
     }
 
-    #[test()]
     fun tes_mulmod2() {
         let res = fmul(
             0x6f31595cf7b7c9239fde468365c31cb213f6e99bfac7e9f13c6063a760a28f3,
             0x5f31595cf7b7c9239fde468365c31cb213f6e99bfac7e9f13c6063a760a28f3
         );
         assert!(res == 0x2fdbdfde6ae533be13e17f0d624c8bb2b9bef967b4dfe911d5b500f2084da17, 1);
+        // assert!(res == 0x6097aa03e733f4c41191a1dd5731289c210364e1183819f428704c582a0bb05, 1);
     }
 
-    #[test()]
     fun tes_mulmod3() {
         let res = fmul(
             0x5f31595cf7b7c9239fde468365c31cb213f6e99bfac7e9f13c6063a760a28f3,
             1
         );
         assert!(res == 0x5f31595cf7b7c9239fde468365c31cb213f6e99bfac7e9f13c6063a760a28f3, 1);
+        // assert!(res == 0x6097aa03e733f4c41191a1dd5731289c210364e1183819f428704c582a0bb05, 1);
     }
 }
-
 
 

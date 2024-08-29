@@ -4,7 +4,7 @@ module verifier_addr::fri_statement_contract {
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event::emit;
 
-    use lib_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be};
     use lib_addr::convert_memory::copy_vec_to_memory;
     use verifier_addr::fact_registry::register_fact;
     use verifier_addr::fri::{get_fri, new_fri, update_fri};
@@ -91,7 +91,7 @@ module verifier_addr::fri_statement_contract {
 
         let hash = vector::empty();
         for (i in 0..(n_queries * 3)) {
-            vector::append(&mut hash, u256_to_bytes32(vector::borrow(fri, fri_queue_ptr + i)));
+            vector::append(&mut hash, num_to_bytes_be(vector::borrow(fri, fri_queue_ptr + i)));
         };
 
         *vector::borrow_mut(fri, data_to_hash + 2) = bytes32_to_u256(keccak256(hash));
@@ -124,7 +124,7 @@ module verifier_addr::fri_statement_contract {
         for ( i in 0..(n_queries * 3)) {
             vector::append(
                 &mut input_hash,
-                u256_to_bytes32(vector::borrow(fri, fri_queue_ptr + i))
+                num_to_bytes_be(vector::borrow(fri, fri_queue_ptr + i))
             );
         };
 
@@ -138,7 +138,7 @@ module verifier_addr::fri_statement_contract {
         for (i in 0..5) {
             vector::append(
                 &mut input_hash,
-                u256_to_bytes32(vector::borrow(fri, data_to_hash + i))
+                num_to_bytes_be(vector::borrow(fri, data_to_hash + i))
             );
         };
         register_fact(s, bytes32_to_u256(keccak256(input_hash)));

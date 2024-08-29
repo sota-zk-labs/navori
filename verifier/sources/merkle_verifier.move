@@ -5,7 +5,7 @@ module verifier_addr::merkle_verifier {
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event;
 
-    use lib_addr::bytes::{bytes32_to_u256, u256_to_bytes32};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be};
     use verifier_addr::fri::{get_fri, update_fri};
 
     // This line is used for generating constants DO NOT REMOVE!
@@ -101,8 +101,8 @@ module verifier_addr::merkle_verifier {
             let new_hash = *vector::borrow(fri, (new_hash_ptr as u64));
             *vector::borrow_mut(fri, (sibling_offset as u64)) = new_hash;
 
-            let hash = u256_to_bytes32(borrow(fri, 0));
-            vector::append(&mut hash, u256_to_bytes32(borrow(fri, 1)));
+            let hash = num_to_bytes_be(borrow(fri, 0));
+            vector::append(&mut hash, num_to_bytes_be(borrow(fri, 1)));
 
             let pre_hash = keccak256(hash);
 
@@ -112,7 +112,7 @@ module verifier_addr::merkle_verifier {
 
         let hash = *vector::borrow(fri, hashes_ptr + rd_idx);
         assert!(hash == root, EINVALID_MERKLE_PROOF);
-        event::emit<Hash>(Hash { hash: u256_to_bytes32(&hash) });
+        event::emit<Hash>(Hash { hash: num_to_bytes_be(&hash) });
         *vector::borrow_mut(fri, channel_ptr) = proof_ptr;
         update_fri(s, *fri);
     }
