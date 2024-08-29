@@ -61,10 +61,8 @@ module verifier_addr::gps_output_parser {
     const NODE_STACK_ITEM_SIZE: u64 = 2;
     const FIRST_CONTINUOUS_PAGE_INDEX: u64 = 1;
 
-    /*
-      Logs the program output fact together with the relevant continuous memory pages' hashes.
-      The event is emitted for each registered fact.
-    */
+    // Logs the program output fact together with the relevant continuous memory pages' hashes.
+    // The event is emitted for each registered fact.
     #[event]
     struct LogMemoryPagesHashes has drop, store {
         program_output_fact: u256,
@@ -85,38 +83,37 @@ module verifier_addr::gps_output_parser {
         });
     }
 
-    /*
-      Parses the GPS program output (using taskMetadata, which should be verified by the caller),
-      and registers the facts of the tasks which were executed.
-
-      The first entry in taskMetadata is the number of tasks.
-
-      For each task, the structure is as follows:
-        1. Size (including the size and hash fields).
-        2. Program hash.
-        3. The number of pairs in the Merkle tree structure (see below).
-        4. The Merkle tree structure (see below).
-
-      The fact of each task is stored as a (non-binary) Merkle tree.
-      Leaf nodes are labeled with the hash of their data.
-      Each non-leaf node is labeled as 1 + the hash of (node0, end0, node1, end1, ...)
-      where node* is a label of a child children and end* is the total number of data words up to
-      and including that node and its children (including the previous sibling nodes).
-      We add 1 to the result of the hash to prevent an attacker from using a preimage of a leaf node
-      as a preimage of a non-leaf hash and vice versa.
-
-      The structure of the tree is passed as a list of pairs (n_pages, n_nodes), and the tree is
-      constructed using a stack of nodes (initialized to an empty stack) by repeating for each pair:
-      1. Add n_pages to the stack of nodes.
-      2. Pop the top n_nodes, construct a parent node for them, and push it back to the stack.
-      After applying the steps above, the stack much contain exactly one node, which will
-      constitute the root of the Merkle tree.
-      For example, [(2, 2)] will create a Merkle tree with a root and two direct children, while
-      [(3, 2), (0, 2)] will create a Merkle tree with a root whose left child is a leaf and
-      right child has two leaf children.
-
-      Assumptions: taskMetadata and cairoAuxInput are verified externally.
-    */
+    // Parses the GPS program output (using taskMetadata, which should be verified by the caller),
+    // and registers the facts of the tasks which were executed.
+    //
+    // The first entry in taskMetadata is the number of tasks.
+    //
+    // For each task, the structure is as follows:
+    //   1. Size (including the size and hash fields).
+    //   2. Program hash.
+    //   3. The number of pairs in the Merkle tree structure (see below).
+    //   4. The Merkle tree structure (see below).
+    //
+    // The fact of each task is stored as a (non-binary) Merkle tree.
+    // Leaf nodes are labeled with the hash of their data.
+    // Each non-leaf node is labeled as 1 + the hash of (node0, end0, node1, end1, ...)
+    // where node* is a label of a child children and end* is the total number of data words up to
+    // and including that node and its children (including the previous sibling nodes).
+    // We add 1 to the result of the hash to prevent an attacker from using a preimage of a leaf node
+    // as a preimage of a non-leaf hash and vice versa.
+    //
+    // The structure of the tree is passed as a list of pairs (n_pages, n_nodes), and the tree is
+    // constructed using a stack of nodes (initialized to an empty stack) by repeating for each pair:
+    // 1. Add n_pages to the stack of nodes.
+    // 2. Pop the top n_nodes, construct a parent node for them, and push it back to the stack.
+    // After applying the steps above, the stack much contain exactly one node, which will
+    // constitute the root of the Merkle tree.
+    // For example, [(2, 2)] will create a Merkle tree with a root and two direct children, while
+    // [(3, 2), (0, 2)] will create a Merkle tree with a root whose left child is a leaf and
+    // right child has two leaf children.
+    //
+    // Assumptions: taskMetadata and cairoAuxInput are verified externally.
+    //
     public(friend) fun register_gps_facts(
         signer: &signer,
         task_metadata: &vector<u256>,

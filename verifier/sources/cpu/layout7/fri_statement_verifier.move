@@ -40,11 +40,11 @@ module verifier_addr::fri_statement_verifier_7 {
     const MM_N_UNIQUE_QUERIES: u64 = 0x9;
     // End of generating constants!
 
-    /*
-      Fast-forwards the queries and invPoints of the friQueue from before the first layer to after
-      the last layer, computes the last FRI layer using horner evaluations, then returns the hash
-      of the final FriQueue.
-    */
+    //
+    // Fast-forwards the queries and invPoints of the friQueue from before the first layer to after
+    // the last layer, computes the last FRI layer using horner evaluations, then returns the hash
+    // of the final FriQueue.
+    //
     fun compute_last_layer_hash(
         ctx: &mut vector<u256>,
         proof: &vector<u256>,

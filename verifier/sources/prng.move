@@ -20,9 +20,7 @@ module verifier_addr::prng {
         store_prng(ctx, prng_ptr, public_input_hash, 0);
     }
 
-    /*
-      Auxiliary function for getRandomBytes.
-    */
+    // Auxiliary function for getRandomBytes.
     fun get_random_bytes_inner(digest: u256, counter: u256): (u256, u256, u256) {
         let random_bytes = bytes32_to_u256(keccak256(vec_to_bytes_be(&vector[digest, counter])));
         (digest, counter + 1, random_bytes)

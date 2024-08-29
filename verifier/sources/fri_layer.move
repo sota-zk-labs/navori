@@ -97,9 +97,8 @@ module verifier_addr::fri_layer {
         };
         r
     }
-    /*
-          Initializes the FRI group and half inv group in the FRI context.
-    */
+
+    // Initializes the FRI group and half inv group in the FRI context.
     public entry fun init_fri_group(
         signer: &signer,
         fri_ctx: u64
@@ -130,22 +129,20 @@ module verifier_addr::fri_layer {
         };
         update_fri(signer, *fri);
     }
-    /*
-      Computes the FRI step with eta = log2(friCosetSize) for all the live queries.
 
-      The inputs for the current layer are read from the FRI queue and the inputs
-      for the next layer are written to the same queue (overwriting the input).
-      See friVerifyLayers for the description for the FRI queue.
-
-      The function returns the number of live queries remaining after computing the FRI step.
-
-      The number of live queries decreases whenever multiple query points in the same
-      coset are reduced to a single query in the next FRI layer.
-
-      As the function computes the next layer it also collects that data from
-      the previous layer for Merkle verification.
-    */
-
+    // Computes the FRI step with eta = log2(friCosetSize) for all the live queries.
+    //
+    // The inputs for the current layer are read from the FRI queue and the inputs
+    // for the next layer are written to the same queue (overwriting the input).
+    // See friVerifyLayers for the description for the FRI queue.
+    //
+    // The function returns the number of live queries remaining after computing the FRI step.
+    //
+    // The number of live queries decreases whenever multiple query points in the same
+    // coset are reduced to a single query in the next FRI layer.
+    //
+    // As the function computes the next layer it also collects that data from
+    // the previous layer for Merkle verification.
     public entry fun compute_next_layer(
         s: &signer,
         channel_ptr: u64,

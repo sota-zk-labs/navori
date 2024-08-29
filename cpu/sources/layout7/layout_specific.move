@@ -282,9 +282,10 @@ module cpu_addr::layout_specific_7 {
             poseidon_poseidon_partial_round_key_1_column_7::compute(z_point_pow_poseidon)
         );
     }
-    /*
-      Computes the final cumulative value of the diluted pool.
-    */
+
+    //
+    // Computes the final cumulative value of the diluted pool.
+    //
     fun compute_diluted_cumulative_value(ctx: &mut vector<u256>): u256 {
         // The cumulative value is defined using the following recursive formula:
         //   r_1 = 1, r_{j+1} = r_j * (1 + z * u_j) + alpha * u_j^2 (for j >= 1)

@@ -42,11 +42,11 @@ module verifier_addr::fri_7 {
     const MM_N_UNIQUE_QUERIES: u64 = 0x9;
     // End of generating constants!
 
-    /*
-      Verifies FRI layers.
-
-      See FriLayer for the descriptions of the FRI context and FRI queue.
-    */
+    //
+    // Verifies FRI layers.
+    //
+    // See FriLayer for the descriptions of the FRI context and FRI queue.
+    //
     fun verify_last_layer(ctx: &mut vector<u256>, proof: &vector<u256>, n_points: u64) {
         let fri_last_layer_deg_bound = *borrow(ctx, MM_FRI_LAST_LAYER_DEG_BOUND);
         let group_order_minus_one = fri_last_layer_deg_bound * (*borrow(ctx, MM_BLOW_UP_FACTOR)) - 1;

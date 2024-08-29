@@ -261,16 +261,13 @@ module verifier_addr::stark_verifier_7 {
     const PROOF_PARAMS_FRI_LAST_LAYER_LOG_DEG_BOUND_OFFSET: u64 = 3;
 
     struct ConstructorConfig has key, copy {
-        /*
-          The work required to generate an invalid proof is 2^numSecurityBits.
-          Typical values: 80-128.
-        */
+        // The work required to generate an invalid proof is 2^numSecurityBits.
+        // Typical values: 80-128.
         num_security_bits: u256,
-        /*
-          The secuirty of a proof is a composition of bits obtained by PoW and bits obtained by FRI
-          queries. The verifier requires at least minProofOfWorkBits to be obtained by PoW.
-          Typical values: 20-30.
-        */
+
+        // The secuirty of a proof is a composition of bits obtained by PoW and bits obtained by FRI
+        // queries. The verifier requires at least minProofOfWorkBits to be obtained by PoW.
+        // Typical values: 20-30.
         min_proof_of_work_bits: u256
     }
 
@@ -300,21 +297,20 @@ module verifier_addr::stark_verifier_7 {
         cpu_oods_7::init_data_type(signer);
     }
 
-    /*
-      Adjusts the query indices and generates evaluation points for each query index.
-      The operations above are independent but we can save gas by combining them as both
-      operations require us to iterate the queries array.
-
-      Indices adjustment:
-          The query indices adjustment is needed because both the Merkle verification and FRI
-          expect queries "full binary tree in array" indices.
-          The adjustment is simply adding evalDomainSize to each query.
-          Note that evalDomainSize == 2^(#FRI layers) == 2^(Merkle tree hight).
-
-      evalPoints generation:
-          for each query index "idx" we compute the corresponding evaluation point:
-              g^(bitReverse(idx, log_evalDomainSize).
-    */
+    // Adjusts the query indices and generates evaluation points for each query index.
+    // The operations above are independent but we can save gas by combining them as both
+    // operations require us to iterate the queries array.
+    //
+    // Indices adjustment:
+    //     The query indices adjustment is needed because both the Merkle verification and FRI
+    //     expect queries "full binary tree in array" indices.
+    //     The adjustment is simply adding evalDomainSize to each query.
+    //     Note that evalDomainSize == 2^(#FRI layers) == 2^(Merkle tree hight).
+    //
+    // evalPoints generation:
+    //     for each query index "idx" we compute the corresponding evaluation point:
+    //         g^(bitReverse(idx, log_evalDomainSize).
+    //
     fun adjust_query_indices_and_prepare_eval_points(ctx: &mut vector<u256>) {
         let n_unique_queries = (*borrow(ctx, MM_N_UNIQUE_QUERIES) as u64);
         let fri_queue = MM_FRI_QUEUE;
@@ -341,26 +337,26 @@ module verifier_addr::stark_verifier_7 {
         }
     }
 
-    // Note: After the function verifier_channel::verify_proof_of_work, proof_ptr is incremented by 8 bytes. 
-    // Therefore, in this function, we must add 8 to proof_ptr.
-    /*
-      Reads query responses for n_columns from the channel with the corresponding authentication
-      paths. Verifies the consistency of the authentication paths with respect to the given
-      merkleRoot, and stores the query values in proofDataPtr.
-
-      n_total_columns is the total number of columns represented in proofDataPtr (which should be
-      an array of nUniqueQueries rows of size n_total_columns). n_columns is the number of columns
-      for which data will be read by this function.
-      The change to the proofDataPtr array will be as follows:
-      * The first n_columns cells will be set,
-      * The next n_total_columns - n_columns will be skipped,
-      * The next n_columns cells will be set,
-      * The next n_total_columns - n_columns will be skipped,
-      * ...
-
-      To set the last columns for each query simply add an offset to proofDataPtr before calling the
-      function.
-    */
+    //   Note: After the function verifier_channel::verify_proof_of_work, proof_ptr is incremented by 8 bytes.
+    //   Therefore, in this function, we must add 8 to proof_ptr.
+    //
+    //   Reads query responses for n_columns from the channel with the corresponding authentication
+    //   paths. Verifies the consistency of the authentication paths with respect to the given
+    //   merkleRoot, and stores the query values in proofDataPtr.
+    //
+    //   n_total_columns is the total number of columns represented in proofDataPtr (which should be
+    //   an array of nUniqueQueries rows of size n_total_columns). n_columns is the number of columns
+    //   for which data will be read by this function.
+    //   The change to the proofDataPtr array will be as follows:
+    //   * The first n_columns cells will be set,
+    //   * The next n_total_columns - n_columns will be skipped,
+    //   * The next n_columns cells will be set,
+    //   * The next n_total_columns - n_columns will be skipped,
+    //   * ...
+    //
+    //   To set the last columns for each query simply add an offset to proofDataPtr before calling the
+    //   function.
+    //
     fun read_query_responses_and_decommit(
         signer: &signer,
         ctx: &mut vector<u256>,
@@ -428,16 +424,15 @@ module verifier_addr::stark_verifier_7 {
         );
     }
 
-    /*
-      Computes the first FRI layer by reading the query responses and calling
-      the OODS contract.
-
-      The OODS contract will build and sum boundary constraints that check that
-      the prover provided the proper evaluations for the Out of Domain Sampling.
-
-      I.e. if the prover said that f(z) = c, the first FRI layer will include
-      the term (f(x) - c)/(x-z).
-    */
+    // Computes the first FRI layer by reading the query responses and calling
+    // the OODS contract.
+    //
+    // The OODS contract will build and sum boundary constraints that check that
+    // the prover provided the proper evaluations for the Out of Domain Sampling.
+    //
+    // I.e. if the prover said that f(z) = c, the first FRI layer will include
+    // the term (f(x) - c)/(x-z).
+    //
     fun compute_first_fri_layer(
         signer: &signer,
         ctx: &mut vector<u256>,
@@ -503,16 +498,15 @@ module verifier_addr::stark_verifier_7 {
         // emit LogGas("OODS virtual oracle", gasleft());
     }
 
-    /*
-      Reads the last FRI layer (i.e. the polynomial's coefficients) from the channel.
-      This differs from standard reading of channel field elements in several ways:
-      -- The digest is updated by hashing it once with all coefficients simultaneously, rather than
-         iteratively one by one.
-      -- The coefficients are kept in Montgomery form, as is the case throughout the FRI
-         computation.
-      -- The coefficients are not actually read and copied elsewhere, but rather only a pointer to
-         their location in the channel is stored.
-    */
+    // Reads the last FRI layer (i.e. the polynomial's coefficients) from the channel.
+    // This differs from standard reading of channel field elements in several ways:
+    // -- The digest is updated by hashing it once with all coefficients simultaneously, rather than
+    //    iteratively one by one.
+    // -- The coefficients are kept in Montgomery form, as is the case throughout the FRI
+    //    computation.
+    // -- The coefficients are not actually read and copied elsewhere, but rather only a pointer to
+    //    their location in the channel is stored.
+    //
     fun read_last_fri_layer(ctx: &mut vector<u256>, proof: &mut vector<u256>) {
         let lmm_channel = MM_CHANNEL;
         let fri_last_layer_deg_bound = *borrow(ctx, MM_FRI_LAST_LAYER_DEG_BOUND);
@@ -859,11 +853,11 @@ module verifier_addr::stark_verifier_7 {
     }
 
     // In Starknet's contracts, this function is implemented in `CpuVerifier.sol`
-    /*
-      Verifies that all the information on each public memory page (size, hash, prod, and possibly
-      address) is consistent with z and alpha, by checking that the corresponding facts were
-      registered on memoryPageFactRegistry.
-    */
+
+    // Verifies that all the information on each public memory page (size, hash, prod, and possibly
+    // address) is consistent with z and alpha, by checking that the corresponding facts were
+    // registered on memoryPageFactRegistry.
+    //
     fun verify_memory_page_facts(
         signer: &signer,
         ctx: &mut vector<u256>,
@@ -927,16 +921,15 @@ module verifier_addr::stark_verifier_7 {
         bytes32_to_u256(keccak256(vec_to_bytes_be(&slice(public_input, 0, (public_input_size_for_hash as u64)))))
     }
 
-    /*
-          Computes the value of the public memory quotient:
-            numerator / (denominator * padding)
-          where:
-            numerator = (z - (0 + alpha * 0))^S,
-            denominator = \prod_i( z - (addr_i + alpha * value_i) ),
-            padding = (z - (padding_addr + alpha * padding_value))^(S - N),
-            N is the actual number of public memory cells,
-            and S is the number of cells allocated for the public memory (which includes the padding).
-    */
+    //   Computes the value of the public memory quotient:
+    //   numerator / (denominator * padding)
+    // where:
+    //   numerator = (z - (0 + alpha * 0))^S,
+    //   denominator = \prod_i( z - (addr_i + alpha * value_i) ),
+    //   padding = (z - (padding_addr + alpha * padding_value))^(S - N),
+    //   N is the actual number of public memory cells,
+    //   and S is the number of cells allocated for the public memory (which includes the padding).
+    //
     fun compute_public_memory_quotient(ctx: &mut vector<u256>, public_input: &vector<u256>): u256 {
         let n_values = *borrow(ctx, MM_N_PUBLIC_MEM_ENTRIES);
         let z = *borrow(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM);
@@ -975,13 +968,12 @@ module verifier_addr::stark_verifier_7 {
         fmul(numerator, inverse(denominator))
     }
 
-    /*
-          Computes the cumulative product of the public memory cells:
-            \prod_i( z - (addr_i + alpha * value_i) ).
-
-          publicMemoryPtr is an array of nValues pairs (address, value).
-          z and alpha are the perm and hash interaction elements assert!d to calculate the product.
-    */
+    //   Computes the cumulative product of the public memory cells:
+    //   \prod_i( z - (addr_i + alpha * value_i) ).
+    //
+    //   publicMemoryPtr is an array of nValues pairs (address, value).
+    //   z and alpha are the perm and hash interaction elements assert!d to calculate the product.
+    //
     fun compute_public_memory_prod(
         public_input: &vector<u256>,
         cumulative_prods_ptr: u64,
@@ -1032,7 +1024,7 @@ module verifier_addr::stark_verifier_7 {
         // let offset = 1 + MM_CONSTRAINT_POLY_ARGS_START;
         // let size = MM_CONSTRAINT_POLY_ARGS_END - MM_CONSTRAINT_POLY_ARGS_START;
         // assembly {
-        //     // Call CpuConstraintPoly contract.
+        //   // Call CpuConstraintPoly contract.
         //     let p = mload(0x40)
         //     if iszero(staticcall(not(0), lconstraintPoly, add(ctx, offset), size, p, 0x20)) {
         //     returndatacopy(0, 0, returndatasize())

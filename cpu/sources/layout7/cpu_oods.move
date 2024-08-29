@@ -82,20 +82,20 @@ module cpu_addr::cpu_oods_7 {
     //  out of domain evaluations for the trace and composition columns.
     //  The inputs to this function are:
     //    The verifier ctx.
-    /*
-        The boundary constraints for the trace enforce claims of the form f(g^k*z) = c by
-        requiring the quotient (f(x) - c)/(x-g^k*z) to be a low degree polynomial.
-        The boundary constraints for the composition enforce claims of the form h(z^d) = c by
-        requiring the quotient (h(x) - c)/(x-z^d) to be a low degree polynomial.
-        Where:
-        f is a trace column.
-        h is a composition column.
-        z is the out of domain sampling point.
-        g is the trace generator
-        k is the offset in the mask.
-        d is the degree of the composition polynomial.
-        c is the evaluation sent by the prover.
-    */
+    //
+    //   The boundary constraints for the trace enforce claims of the form f(g^k*z) = c by
+    //   requiring the quotient (f(x) - c)/(x-g^k*z) to be a low degree polynomial.
+    //   The boundary constraints for the composition enforce claims of the form h(z^d) = c by
+    //   requiring the quotient (h(x) - c)/(x-z^d) to be a low degree polynomial.
+    //   Where:
+    //   f is a trace column.
+    //   h is a composition column.
+    //   z is the out of domain sampling point.
+    //   g is the trace generator
+    //   k is the offset in the mask.
+    //   d is the degree of the composition polynomial.
+    //   c is the evaluation sent by the prover.
+    //
     public fun fallback(
         signer: &signer,
         ctx: &mut vector<u256>

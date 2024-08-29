@@ -101,9 +101,7 @@ module verifier_addr::gps_statement_verifier {
         });
     }
 
-    /*
-      Returns the bootloader config.
-    */
+    // Returns the bootloader config.
     public fun getBootloaderConfig(): (u256, u256) acquires ConstructorConfig {
         let config = borrow_global<ConstructorConfig>(@verifier_addr);
         return (config.simple_bootloader_program_hash, config.hashed_supported_cairo_verifiers)
@@ -170,25 +168,23 @@ module verifier_addr::gps_statement_verifier {
             cairo_verifier_id
         };
     }
-    /*
-        This function is used to push `task_metadata` before calling the function `verify_proof_and_register` due to
-        Aptos' function parameter size limit
-    */
+
+    // This function is used to push `task_metadata` before calling the function `verify_proof_and_register` due to
+    // Aptos' function parameter size limit
     public entry fun prepush_task_metadata(signer: &signer, task_metadata: vector<u256>) acquires TaskMetaData {
         *borrow_global_mut<TaskMetaData>(address_of(signer)) = TaskMetaData {
             inner: task_metadata
         };
     }
 
-    /*
-      Verifies a proof and registers the corresponding facts.
-      For the structure of cairoAuxInput, see cpu/CpuPublicInputOffsets.sol.
-      taskMetadata is structured as follows:
-      1. Number of tasks.
-      2. For each task:
-         1. Task output size (including program hash and size).
-         2. Program hash.
-    */
+    // Verifies a proof and registers the corresponding facts.
+    // For the structure of cairoAuxInput, see cpu/CpuPublicInputOffsets.sol.
+    // taskMetadata is structured as follows:
+    // 1. Number of tasks.
+    // 2. For each task:
+    //    1. Task output size (including program hash and size).
+    //    2. Program hash.
+    //
     public entry fun verify_proof_and_register(
         signer: &signer
     ) acquires ConstructorConfig,
@@ -311,24 +307,22 @@ module verifier_addr::gps_statement_verifier {
         };
     }
 
-    /*
-      Registers the fact for memory page 0, which includes:
-      1. The bootloader program,
-      2. Arguments and return values of main()
-      3. Some of the data required for computing the task facts. which is represented in
-         taskMetadata.
-      Returns information on the registered fact.
-
-      Arguments:
-        selectedBuiltins: A bit-map of builtins that are present in the layout.
-            See CairoVerifierContract.sol for more information.
-        taskMetadata: Per task metadata.
-        cairoAuxInput: Auxiliary input for the cairo verifier.
-
-      Assumptions: cairoAuxInput is connected to the public input, which is verified by
-      cairoVerifierContractAddresses.
-      Guarantees: taskMetadata is consistent with the public memory, with some sanity checks.
-    */
+    // Registers the fact for memory page 0, which includes:
+    // 1. The bootloader program,
+    // 2. Arguments and return values of main()
+    // 3. Some of the data required for computing the task facts. which is represented in
+    //    taskMetadata.
+    // Returns information on the registered fact.
+    //
+    // Arguments:
+    //   selectedBuiltins: A bit-map of builtins that are present in the layout.
+    //       See CairoVerifierContract.sol for more information.
+    //   taskMetadata: Per task metadata.
+    //   cairoAuxInput: Auxiliary input for the cairo verifier.
+    //
+    // Assumptions: cairoAuxInput is connected to the public input, which is verified by
+    // cairoVerifierContractAddresses.
+    // Guarantees: taskMetadata is consistent with the public memory, with some sanity checks.
     fun register_public_memory_main_page(
         signer: &signer,
         task_metadata: &vector<u256>,

@@ -15,12 +15,12 @@ module verifier_addr::cairo_verifier_contract {
         cpu_verifier_7::verify_proof_external(signer, proof_params, proof, public_input)
     }
 
-    /*
-      Returns information that is related to the layout.
-
-      publicMemoryOffset is the offset of the public memory pages' information in the public input.
-      selectedBuiltins is a bit-map of builtins that are present in the layout.
-    */
+    //
+    // Returns information that is related to the layout.
+    //
+    // publicMemoryOffset is the offset of the public memory pages' information in the public input.
+    // selectedBuiltins is a bit-map of builtins that are present in the layout.
+    //
     public(friend) fun get_layout_info(): (u256, u256) {
         layout_specific_7::get_layout_info()
     }

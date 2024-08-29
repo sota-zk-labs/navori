@@ -31,12 +31,12 @@ module verifier_addr::verifier_channel {
         init_prng(ctx, channel_ptr + 1, public_input_hash);
     }
 
-    /*
-      Sends a field element through the verifier channel.
-
-      Note that the logic of this function is inlined in many places throughout the code to reduce
-      gas costs.
-    */
+     // 
+      // Sends a field element through the verifier channel.
+      //
+      // Note that the logic of this function is inlined in many places throughout the code to reduce
+      // gas costs.
+      //
     public(friend) fun send_field_elements(
         ctx: &mut vector<u256>,
         channel_ptr: u64,
@@ -61,15 +61,15 @@ module verifier_addr::verifier_channel {
         }
     }
 
-    /*
-      Sends random queries and returns an array of queries sorted in ascending order.
-      Generates count queries in the range [0, mask] and returns the number of unique queries.
-      Note that mask is of the form 2^k-1 (for some k <= 64).
-
-      Note that queries_out_ptr may be (and is) interleaved with other arrays. The stride parameter
-      is passed to indicate the distance between every two entries in the queries array, i.e.
-      stride = 0x20*(number of interleaved arrays).
-    */
+    //
+    // Sends random queries and returns an array of queries sorted in ascending order.
+    // Generates count queries in the range [0, mask] and returns the number of unique queries.
+    // Note that mask is of the form 2^k-1 (for some k <= 64).
+    //
+    // Note that queries_out_ptr may be (and is) interleaved with other arrays. The stride parameter
+    // is passed to indicate the distance between every two entries in the queries array, i.e.
+    // stride = 0x20*(number of interleaved arrays).
+    //
     public(friend) fun send_random_queries(
         ctx: &mut vector<u256>,
         channel_ptr: u64,
@@ -129,15 +129,15 @@ module verifier_addr::verifier_channel {
         read_bytes(ctx, proof, channel_ptr, mix, false)
     }
 
-    /*
-        Reads a field element from the verifier channel (that is, the proof in the non-interactive
-        case).
-        The field elements on the channel are in Montgomery form and this function converts
-        them to the standard representation.
-        
-        Note that the logic of this function is inlined in many places throughout the code to reduce
-        gas costs.
-    */
+    //
+    // Reads a field element from the verifier channel (that is, the proof in the non-interactive
+    // case).
+    // The field elements on the channel are in Montgomery form and this function converts
+    // them to the standard representation.
+    //
+    // Note that the logic of this function is inlined in many places throughout the code to reduce
+    // gas costs.
+    //
     public(friend) fun read_field_element(
         ctx: &mut vector<u256>,
         proof: &vector<u256>,

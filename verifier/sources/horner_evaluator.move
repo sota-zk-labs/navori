@@ -12,14 +12,12 @@ module verifier_addr::horner_evaluator {
     const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
     // End of generating constants!
 
-    /*
-      Computes the evaluation of a polynomial f(x) = sum(a_i * x^i) on the given point.
-      The coefficients of the polynomial are given in
-        a_0 = coefsStart[0], ..., a_{n-1} = coefsStart[n - 1]
-      where n = n_coef = friLastLayerDegBound. Note that coefsStart is not actually an array but
-      a direct pointer.
-      The function requires that n is divisible by 8.
-    */
+    // Computes the evaluation of a polynomial f(x) = sum(a_i * x^i) on the given point.
+    // The coefficients of the polynomial are given in
+    //   a_0 = coefsStart[0], ..., a_{n-1} = coefsStart[n - 1]
+    // where n = n_coef = friLastLayerDegBound. Note that coefsStart is not actually an array but
+    // a direct pointer.
+    // The function requires that n is divisible by 8.
     public fun horner_eval(proof: &vector<u256>, coefs_start: u64, point: u256, n_coef: u64): u256 {
         let result = 0;
 

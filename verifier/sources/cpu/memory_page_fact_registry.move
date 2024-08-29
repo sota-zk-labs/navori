@@ -1,12 +1,10 @@
-/*
-  A fact registry for the claim:
-    I know n pairs (addr, value) for which the hash of the pairs is memoryHash, and the cumulative
-    product: \prod_i( z - (addr_i + alpha * value_i) ) is prod.
-  The exact format of the hash depends on the type of the page
-  (see MemoryPageFactRegistryConstants).
-  The fact consists of (pageType, prime, n, z, alpha, prod, memoryHash, address).
-  Note that address is only available for CONTINUOUS_PAGE, and otherwise it is 0.
-*/
+// A fact registry for the claim:
+//   I know n pairs (addr, value) for which the hash of the pairs is memoryHash, and the cumulative
+//   product: \prod_i( z - (addr_i + alpha * value_i) ) is prod.
+// The exact format of the hash depends on the type of the page
+// (see MemoryPageFactRegistryConstants).
+// The fact consists of (pageType, prime, n, z, alpha, prod, memoryHash, address).
+// Note that address is only available for CONTINUOUS_PAGE, and otherwise it is 0.
 module verifier_addr::memory_page_fact_registry {
     use std::option;
     use std::option::Option;
@@ -146,10 +144,8 @@ module verifier_addr::memory_page_fact_registry {
     }
 
     // TODO: mark as entry func
-    /*
-      Registers a fact based on the given values, assuming continuous addresses.
-      values should be [value at startAddr, value at (startAddr + 1), ...].
-    */
+    //   Registers a fact based on the given values, assuming continuous addresses.
+    //   values should be [value at startAddr, value at (startAddr + 1), ...].
     public(friend) fun register_continuous_memorypage(
         signer: &signer,
         start_address: u256,
@@ -217,11 +213,9 @@ module verifier_addr::memory_page_fact_registry {
         (fact_hash, memory_hash, prod)
     }
 
-    /*
-       Receives a list of MemoryPageEntry. Each element in the list holds arguments for a seperate
-       call to registerContinuousMemoryPage.
-     */
-    //TODO: assert admin
+    // TODO: assert admin
+    // Receives a list of MemoryPageEntry. Each element in the list holds arguments for a seperate
+    // call to registerContinuousMemoryPage.
     public entry fun register_continuous_page_batch(
         s: &signer,
         start_addr: vector<u256>,
