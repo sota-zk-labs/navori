@@ -1,8 +1,6 @@
 module verifier_addr::gps_statement_verifier {
-    use std::option;
-    use std::option::Option;
     use std::signer::address_of;
-    use std::vector::{borrow, borrow_mut, length, slice};
+    use std::vector::{borrow, borrow_mut, is_empty, length, slice};
     use aptos_std::math64::min;
     use aptos_framework::event::emit;
 
@@ -259,11 +257,10 @@ module verifier_addr::gps_statement_verifier {
                 *selected_builtins
             );
             // The function has not finished running yet
-            if (option::is_none(&tmp)) {
+            if (is_empty(&tmp)) {
                 return
             } else {
-                let tmp = option::borrow(&tmp);
-                let (public_memory_length, memory_hash, prod) = (*borrow(tmp, 0), *borrow(tmp, 1), *borrow(tmp, 2));
+                let (public_memory_length, memory_hash, prod) = (*borrow(&tmp, 0), *borrow(&tmp, 1), *borrow(&tmp, 2));
                 // Make sure the first page is valid.
                 // If the size or the hash are invalid, it may indicate that there is a mismatch
                 // between the prover and the verifier on the bootloader program or bootloader config.
@@ -328,7 +325,7 @@ module verifier_addr::gps_statement_verifier {
         task_metadata: &vector<u256>,
         cairo_aux_input: &vector<u256>,
         selected_builtins: u256
-    ): Option<vector<u256>> acquires ConstructorConfig, RpmmpCheckpoint, Cache3, Cache4 {
+    ): vector<u256> acquires ConstructorConfig, RpmmpCheckpoint, Cache3, Cache4 {
         let signer_addr = address_of(signer);
         let RpmmpCheckpoint {
             inner: checkpoint
@@ -425,7 +422,7 @@ module verifier_addr::gps_statement_verifier {
                 n_tasks,
                 public_memory_length
             };
-            return option::none<vector<u256>>()
+            return vector[]
         };
 
         let Cache3 {
@@ -505,7 +502,7 @@ module verifier_addr::gps_statement_verifier {
                     *ptr = 0;
                 };
 
-                return option::none<vector<u256>>()
+                return vector[]
             }
         };
 
@@ -520,25 +517,24 @@ module verifier_addr::gps_statement_verifier {
                 z,
                 alpha
             );
-            if (option::is_none(&tmp)) {
-                return option::none<vector<u256>>()
+            if (is_empty(&tmp)) {
+                return vector[]
             };
-            let tmp = option::borrow(&tmp);
-            let (memory_hash, prod) = (*borrow(tmp, 1), *borrow(tmp, 2));
+            let (memory_hash, prod) = (*borrow(&tmp, 1), *borrow(&tmp, 2));
             let public_memory_length = *public_memory_length;
 
             *checkpoint = RPMMP_CHECKPOINT1;
 
-            return option::some(vector[public_memory_length, memory_hash, prod])
+            return vector[public_memory_length, memory_hash, prod]
         };
-        option::none<vector<u256>>()
+        vector[]
     }
 
     #[test_only]
     public fun get_vpar_checkpoint(signer: &signer): u8 acquires VparCheckpoint {
         borrow_global<VparCheckpoint>(address_of(signer)).inner
     }
-    
+
     #[test_only]
     public fun get_rpmmp_checkpoint(signer: &signer): u8 acquires RpmmpCheckpoint {
         borrow_global<RpmmpCheckpoint>(address_of(signer)).inner
@@ -610,19 +606,25 @@ module verifier_addr::gps_statement_verifier {
 module verifier_addr::test_gps {
     use std::signer::address_of;
     use std::vector;
-    use std::vector::{for_each};
+    use std::vector::for_each;
+
     use cpu_addr::cpu_oods_7::get_cpu_oods_fb_checkpoint;
-    use verifier_addr::memory_page_fact_registry::get_cfh_checkpoint;
-    use verifier_addr::stark_verifier_7::{get_vp_checkpoint, get_occ_checkpoint, get_cffl_checkpoint};
 
     use verifier_addr::constructor::init_all;
     use verifier_addr::fact_registry::{is_valid, register_facts};
-    use verifier_addr::gps_statement_verifier::{prepush_data_to_verify_proof_and_register, prepush_task_metadata,
-        verify_proof_and_register, get_vpar_checkpoint, get_rpmmp_checkpoint
+    use verifier_addr::gps_statement_verifier::{get_rpmmp_checkpoint, get_vpar_checkpoint,
+        prepush_data_to_verify_proof_and_register, prepush_task_metadata, verify_proof_and_register
     };
-    use verifier_addr::gps_statement_verifier_test_data::{cairo_aux_input_, proof_, proof_params_, registered_facts_,
-        task_meta_data_, pre_registered_facts_
+    use verifier_addr::gps_statement_verifier_test_data::{
+        cairo_aux_input_,
+        pre_registered_facts_,
+        proof_,
+        proof_params_,
+        registered_facts_,
+        task_meta_data_
     };
+    use verifier_addr::memory_page_fact_registry::get_cfh_checkpoint;
+    use verifier_addr::stark_verifier_7::{get_cffl_checkpoint, get_occ_checkpoint, get_vp_checkpoint};
 
     #[test(signer = @test_signer)]
     fun test_verify_proof_and_register(signer: &signer) {

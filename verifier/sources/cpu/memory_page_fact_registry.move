@@ -7,9 +7,8 @@
 // Note that address is only available for CONTINUOUS_PAGE, and otherwise it is 0.
 module verifier_addr::memory_page_fact_registry {
     use std::option;
-    use std::option::Option;
     use std::signer::address_of;
-    use std::vector::{borrow, for_each, length};
+    use std::vector::{borrow, for_each, length, is_empty};
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event::emit;
 
@@ -74,7 +73,7 @@ module verifier_addr::memory_page_fact_registry {
         memory_pairs: &vector<u256>,
         z: u256,
         alpha: u256
-    ): Option<vector<u256>> acquires CfhCheckpoint, CfhCache {
+    ): vector<u256> acquires CfhCheckpoint, CfhCache {
         let memory_pairs_length = length(memory_pairs);
         assert!(memory_pairs_length < (1 << 20), ETOO_MANY_MEMORY_VALUES);
         assert!((memory_pairs_length & 1) == 0, ESIZE_OF_MEMORYPAIRS_MUST_BE_EVEN);
@@ -82,15 +81,14 @@ module verifier_addr::memory_page_fact_registry {
         assert!(alpha < K_MODULUS, EINVALID_VALUE_OF_ALPHA);
 
         let tmp = compute_fact_hash(signer, memory_pairs, z, alpha);
-        if (option::is_none(&tmp)) {
-            return option::none<vector<u256>>()
+        if (is_empty(&tmp)) {
+            return vector[]
         };
-        let tmp = option::borrow(&tmp);
-        let (fact_hash, memory_hash, prod) = (*borrow(tmp, 0), *borrow(tmp, 1), *borrow(tmp, 2));
+        let (fact_hash, memory_hash, prod) = (*borrow(&tmp, 0), *borrow(&tmp, 1), *borrow(&tmp, 2));
         emit(LogMemorypPageFactRegular { fact_hash, memory_hash, prod });
 
         register_fact(signer, fact_hash);
-        option::some(vector[fact_hash, memory_hash, prod])
+        tmp
     }
 
     fun compute_fact_hash(
@@ -98,7 +96,7 @@ module verifier_addr::memory_page_fact_registry {
         memory_pairs: &vector<u256>,
         z: u256,
         alpha: u256
-    ): Option<vector<u256>> acquires CfhCheckpoint, CfhCache {
+    ): vector<u256> acquires CfhCheckpoint, CfhCache {
         let signer_addr = address_of(signer);
         let CfhCheckpoint {
             inner: checkpoint
@@ -126,12 +124,12 @@ module verifier_addr::memory_page_fact_registry {
                 prod
             };
             *checkpoint = CFH_CHECKPOINT2;
-            return option::none<vector<u256>>()
+            return vector[]
         };
 
         let memory_pairs_bytes = long_vec_to_bytes_be(signer, memory_pairs);
         if (option::is_none(&memory_pairs_bytes)) {
-            return option::none<vector<u256>>()
+            return vector[]
         };
         let memory_pairs_bytes = option::borrow(&memory_pairs_bytes);
         let memory_hash = bytes32_to_u256(keccak256(*memory_pairs_bytes));
@@ -140,7 +138,7 @@ module verifier_addr::memory_page_fact_registry {
             vec_to_bytes_be(&vector[REGULAR_PAGE, K_MODULUS, (memory_size as u256), z, alpha, prod, memory_hash, 0u256])
         ));
         *checkpoint = CFH_CHECKPOINT1;
-        option::some(vector[fact_hash, memory_hash, prod])
+        vector[fact_hash, memory_hash, prod]
     }
 
     // TODO: mark as entry func
