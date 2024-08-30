@@ -1,17 +1,18 @@
 [package]
-name = "navori"
+name = "verifier"
 version = "1.0.0"
 authors = []
 
 [addresses]
 verifier_addr = "_"
 lib_addr = "_"
-test_signer = "31995d3d7c1a93d26c84f2fd33dd5ec3e03d21a70585087ba180bf6659029447"
+test_signer = "_"
 
 [dev-addresses]
 verifier_addr = "9ebb301117915b4ebf94bb511441b7770cab7d98b83c41f78d8e2e489cdd45c1"
 lib_addr = "54ba5979fbdf5fa56c4f4b5147fa33068148d08f6f191c23bca865c21192dcaa"
 cpu_addr = "1725fb72ba62d830193fe57a932b5071c9718a44e40891e4067a2fe0e78f4d0f"
+test_signer = "31995d3d7c1a93d26c84f2fd33dd5ec3e03d21a70585087ba180bf6659029447"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"

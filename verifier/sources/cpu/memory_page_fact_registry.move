@@ -11,7 +11,7 @@ module verifier_addr::memory_page_fact_registry {
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event::emit;
 
-    use lib_addr::bytes::{bytes32_to_u256, long_vec_to_bytes_le, vec_to_bytes_le};
+    use lib_addr::bytes::{bytes32_to_u256, vec_to_bytes_le};
     use lib_addr::prime_field_element_0::{fadd, fmul};
     use verifier_addr::fact_registry::register_fact;
 
@@ -126,11 +126,7 @@ module verifier_addr::memory_page_fact_registry {
             return vector[]
         };
 
-        let memory_pairs_bytes = long_vec_to_bytes_le(signer, memory_pairs);
-        if (length(&memory_pairs_bytes) == 0) {
-            return vector[]
-        };
-
+        let memory_pairs_bytes = vec_to_bytes_le(memory_pairs);
         let memory_hash = bytes32_to_u256(keccak256(memory_pairs_bytes));
         let prod = borrow_global<CfhCache>(signer_addr).prod;
         let fact_hash = bytes32_to_u256(keccak256(

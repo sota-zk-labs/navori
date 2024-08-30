@@ -259,27 +259,28 @@ module verifier_addr::gps_statement_verifier {
             // The function has not finished running yet
             if (is_empty(&tmp)) {
                 return
-            } else {
-                let (public_memory_length, memory_hash, prod) = (*borrow(&tmp, 0), *borrow(&tmp, 1), *borrow(&tmp, 2));
-                // Make sure the first page is valid.
-                // If the size or the hash are invalid, it may indicate that there is a mismatch
-                // between the prover and the verifier on the bootloader program or bootloader config.
-                assert!(
-                    *borrow(public_memory_pages, (PAGE_INFO_SIZE_OFFSET as u64)) == public_memory_length,
-                    EINVALID_SIZE_FOR_MEMORY_PAGE_0
-                );
-                assert!(
-                    *borrow(public_memory_pages, (PAGE_INFO_HASH_OFFSET as u64)) == memory_hash,
-                    EINVALID_HASH_FOR_MEMORY_PAGE_0
-                );
-                assert!(
-                    *borrow(public_memory_pages, (*n_pages * PAGE_INFO_SIZE as u64)) == prod,
-                    EINVALID_CUMULATIVE_PRODUCT
-                );
             };
+
+            let (public_memory_length, memory_hash, prod) = (*borrow(&tmp, 0), *borrow(&tmp, 1), *borrow(&tmp, 2));
+            // Make sure the first page is valid.
+            // If the size or the hash are invalid, it may indicate that there is a mismatch
+            // between the prover and the verifier on the bootloader program or bootloader config.
+            assert!(
+                *borrow(public_memory_pages, (PAGE_INFO_SIZE_OFFSET as u64)) == public_memory_length,
+                EINVALID_SIZE_FOR_MEMORY_PAGE_0
+            );
+            assert!(
+                *borrow(public_memory_pages, (PAGE_INFO_HASH_OFFSET as u64)) == memory_hash,
+                EINVALID_HASH_FOR_MEMORY_PAGE_0
+            );
+            assert!(
+                *borrow(public_memory_pages, (*n_pages * PAGE_INFO_SIZE as u64)) == prod,
+                EINVALID_CUMULATIVE_PRODUCT
+            );
             *checkpoint = VERIFY_PROOF_EXTERNAL;
             return
         };
+
         // NOLINTNEXTLINE: reentrancy-benign.
         if (*checkpoint == VERIFY_PROOF_EXTERNAL) {
             if (verify_proof_external(signer, proof_params, proof, cairo_public_input)) {
@@ -672,17 +673,7 @@ module verifier_addr::test_gps {
         assert!(get_rpmmp_checkpoint(signer) == 3, 1);
         assert!(get_cfh_checkpoint(signer) == 1, 1);
         verify_proof_and_register(signer);
-        // register_public_memory_main_page::CHECKPOINT3::register_regular_memorypage::compute_fact_hash::long_vec_to_bytes_be, loop 1
-        assert!(get_rpmmp_checkpoint(signer) == 3, 1);
-        assert!(get_cfh_checkpoint(signer) == 2, 1);
-        verify_proof_and_register(signer);
-        // register_public_memory_main_page::CHECKPOINT3::register_regular_memorypage::compute_fact_hash::long_vec_to_bytes_be, loop 2
-        assert!(get_rpmmp_checkpoint(signer) == 3, 1);
-        assert!(get_cfh_checkpoint(signer) == 2, 1);
-        verify_proof_and_register(signer);
-        // register_public_memory_main_page::CHECKPOINT3::register_regular_memorypage::compute_fact_hash::long_vec_to_bytes_be, loop 3, finish REGISTER_PUBLIC_MEMORY_MAIN_PAGE
-        assert!(get_rpmmp_checkpoint(signer) == 3, 1);
-        assert!(get_cfh_checkpoint(signer) == 2, 1);
+
         verify_proof_and_register(signer);
         assert!(get_cfh_checkpoint(signer) == 1, 1);
 

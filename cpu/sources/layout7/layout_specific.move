@@ -321,7 +321,6 @@ module cpu_addr::layout_specific_7 {
         let p = 1 + z;
         let q = 1;
         let x = 1;
-        let res = 0;
         for (i in 1..DILUTED_N_BITS) {
             x = fadd(x, diff_x);
             diff_x = fmul(diff_x, diff_multiplier);
@@ -334,8 +333,6 @@ module cpu_addr::layout_specific_7 {
             );
             p = fmul(p, y);
         };
-        res = fadd(p, fmul(q, alpha));
-
-        res
+        fadd(p, fmul(q, alpha))
     }
 }

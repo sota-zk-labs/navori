@@ -886,7 +886,7 @@ module verifier_addr::stark_verifier_7 {
 
             // Verify that a corresponding fact is registered attesting to the consistency of the page
             // information with z and alpha.
-            let fact_hash = bytes32_to_u256(keccak256(vec_to_bytes_le<u256>(&vector[
+            let fact_hash = bytes32_to_u256(keccak256(vec_to_bytes_le(&vector[
                 if (page == 0) { REGULAR_PAGE } else { CONTINUOUS_PAGE },
                 K_MODULUS,
                 page_size,

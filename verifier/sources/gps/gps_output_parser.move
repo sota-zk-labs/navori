@@ -231,7 +231,7 @@ module verifier_addr::gps_output_parser {
 
             let program_output_fact = *vector::borrow(node_stack, NODE_STACK_OFFSET_HASH);
             let fact = bytes32_to_u256(
-                keccak256(vec_to_bytes_le<u256>(&vector[program_hash, program_output_fact]))
+                keccak256(vec_to_bytes_le(&vector[program_hash, program_output_fact]))
             );
             *task_metadata_offset = *task_metadata_offset + METADATA_TASK_HEADER_SIZE + 2 * n_tree_pairs;
 

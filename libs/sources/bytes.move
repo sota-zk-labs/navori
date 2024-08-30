@@ -1,8 +1,7 @@
 module lib_addr::bytes {
     use std::bcs::to_bytes;
-    use std::signer::address_of;
     use std::vector;
-    use std::vector::{append, borrow, for_each_ref, length};
+    use std::vector::length;
     use aptos_std::from_bcs::to_u256;
 
     // Pads a vector<u8> with a specified byte value up to the desired length
@@ -35,48 +34,60 @@ module lib_addr::bytes {
         return padded
     }
 
-    public fun long_vec_to_bytes_le<Element>(
-        signer: &signer,
-        v: &vector<Element>
-    ): vector<u8> acquires Cache {
-        let signer_addr = address_of(signer);
-        if (!exists<Cache>(signer_addr)) {
-            move_to(signer, Cache {
-                ptr: 0,
-                bytes: vector[]
-            })
-        };
-        let Cache {
-            ptr,
-            bytes
-        } = borrow_global_mut<Cache>(signer_addr);
-        let n = length(v);
-        let count = 0;
-        while (*ptr < n && count < ITERATION_LENGTH) {
-            let tmp = to_bytes(borrow(v, *ptr));
-            vector::reverse(&mut tmp);
-            append(bytes, tmp);
-            *ptr = *ptr + 1;
-            count = count + 1;
-        };
-        if (*ptr < n) {
-            return vector[]
-        };
-        
-        let Cache {
-            ptr: _,
-            bytes
-        } = move_from<Cache>(signer_addr);
-        bytes
-    }
+    public fun vec_to_bytes_le(v: &vector<u256>): vector<u8> {
+        let bytes = to_bytes(v);
 
-    public fun vec_to_bytes_le<Element>(v: &vector<Element>): vector<u8> {
-        let bytes: vector<u8> = vector[];
-        for_each_ref(v, |e| {
-            let tmp = to_bytes(e);
-            vector::reverse(&mut tmp);
-            append(&mut bytes, tmp);
-        });
+        // count (length) bytes to trim
+        let count = if (length(v) < 256) 1 else 2;
+
+        let len = length(&bytes);
+        len = len - count;
+        let i = 0;
+        if (count == 1) {
+            while (i < len) {
+                vector::swap(&mut bytes, i, i + 32);
+                vector::swap(&mut bytes, i + 1, i + 31);
+                vector::swap(&mut bytes, i + 2, i + 30);
+                vector::swap(&mut bytes, i + 3, i + 29);
+                vector::swap(&mut bytes, i + 4, i + 28);
+                vector::swap(&mut bytes, i + 5, i + 27);
+                vector::swap(&mut bytes, i + 6, i + 26);
+                vector::swap(&mut bytes, i + 7, i + 25);
+                vector::swap(&mut bytes, i + 8, i + 24);
+                vector::swap(&mut bytes, i + 9, i + 23);
+                vector::swap(&mut bytes, i + 10, i + 22);
+                vector::swap(&mut bytes, i + 11, i + 21);
+                vector::swap(&mut bytes, i + 12, i + 20);
+                vector::swap(&mut bytes, i + 13, i + 19);
+                vector::swap(&mut bytes, i + 14, i + 18);
+                vector::swap(&mut bytes, i + 15, i + 17);
+                i = i + 32;
+            };
+            vector::pop_back(&mut bytes);
+        } else {
+            while (i < len) {
+                vector::swap(&mut bytes, i, i + 33);
+                vector::swap(&mut bytes, i + 1, i + 32);
+                vector::swap(&mut bytes, i + 2, i + 31);
+                vector::swap(&mut bytes, i + 3, i + 30);
+                vector::swap(&mut bytes, i + 4, i + 29);
+                vector::swap(&mut bytes, i + 5, i + 28);
+                vector::swap(&mut bytes, i + 6, i + 27);
+                vector::swap(&mut bytes, i + 7, i + 26);
+                vector::swap(&mut bytes, i + 8, i + 25);
+                vector::swap(&mut bytes, i + 9, i + 24);
+                vector::swap(&mut bytes, i + 10, i + 23);
+                vector::swap(&mut bytes, i + 11, i + 22);
+                vector::swap(&mut bytes, i + 12, i + 21);
+                vector::swap(&mut bytes, i + 13, i + 20);
+                vector::swap(&mut bytes, i + 14, i + 19);
+                vector::swap(&mut bytes, i + 15, i + 18);
+                vector::swap(&mut bytes, i + 16, i + 17);
+                i = i + 32;
+            };
+            vector::pop_back(&mut bytes);
+            vector::pop_back(&mut bytes);
+        };
         bytes
     }
 
@@ -112,6 +123,19 @@ module lib_addr::bytes_test {
 
     use lib_addr::bytes::{pad, vec_to_bytes_le};
 
+    fun simple_vec_to_bytes_le<Element>(v: &vector<Element>): vector<u8> {
+        let bytes: vector<u8> = vector[];
+        let i = 0;
+        let len = vector::length(v);
+        while (i < len) {
+            let tmp = to_bytes(vector::borrow(v, i));
+            vector::reverse(&mut tmp);
+            vector::append(&mut bytes, tmp);
+            i = i + 1;
+        };
+        bytes
+    }
+
     #[test]
     fun test_padding() {
         let value = 0x123456;
@@ -122,22 +146,13 @@ module lib_addr::bytes_test {
     }
 
     #[test]
-    fun test_vec_to_bytes_be() {
-        let bytes = vec_to_bytes_le(&vector[
+    fun test_vec_to_bytes_le() {
+        let vec = &vector[
             1723587082856532763241173775465496577348305577532331450336061658809521876102u256,
             2479248348687909740970436565718726357572221543762678024250834744245756360726u256,
-            587272u256,
-            2177570517647428816133395681679456086343281988787809822104528418476218261377u256,
-            2590421891839256512113614983194993186457498815986333310670788206383913888162u256,
-            0u256,
-            0u256
-        ]);
+        ];
         assert!(
-            bytes == vector[3, 207, 132, 6, 22, 251, 16, 23, 61, 164, 114, 227, 144, 90, 144, 182, 125, 246, 14, 114, 141, 124, 226, 100, 55, 247, 9, 238, 226, 83, 44, 134, 5, 123, 52, 112, 61, 135, 118, 240,
-                24, 28, 235, 230, 182, 104, 65, 168, 12, 194, 199, 51, 49, 197, 88, 205, 129, 152, 95, 217, 19, 67, 248, 22, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-                , 0, 0, 0, 0, 8, 246, 8, 4, 208, 118, 19, 147, 125, 138, 113, 9, 211, 33, 204, 68, 209, 67, 44, 185, 149, 186, 61, 135, 177, 85, 80, 221, 169, 41, 202, 199, 30, 31, 129, 5, 186, 32,
-                120, 36, 15, 21, 133, 249, 100, 36, 194, 209, 238, 72, 33, 29, 163, 179, 249, 23, 123, 242, 185, 136, 11, 79, 201, 29, 89, 233, 162, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-                , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            simple_vec_to_bytes_le(vec) == vec_to_bytes_le(vec),
             1
         );
     }
