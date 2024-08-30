@@ -8,17 +8,16 @@ module cpu_addr::poseidon_poseidon_partial_round_key_0_column_7 {
 
     #[view]
     public fun compute(x: u256): u256 {
-        let prime = K_MODULUS;
-        let result = 0;
-        result = 0x52208d8264d42061c7107f7945857541692a87bb1b4b4307c17d43193be3ad + fmul(
+        let result = 0x52208d8264d42061c7107f7945857541692a87bb1b4b4307c17d43193be3ad + fmul(
             0x641cd514114aa297433e1ebb6f6fe8cf4c5b3816df09b39b38bf3851328781b + fmul(
                 0x6fba7ab30e117b743f154c4c1ef96007fbbff3b8cddbffbaa3cf1620dad0df2 + fmul(
                     0x18e5bd14d527406ed33ef180f4351d66ba350fd42a210f14b13774666960edd + fmul(
                         0xaba2f20ea6ee9cae2a9a5ffab6bb531cae756025a2039dbb3fdc7f6a7ea66a + fmul(
                             0x624b1ba9e7d45d86f0a2ef7896a159e8e3d418234f3950ae2c1a1106b4d8e64 + fmul(
-                                0x3413bee8966e47edad4d25455e74664d547713650ae8ef6f7f4bd1d56077b55 + fmul(
-                                    result,
-                                    x),
+                                0x3413bee8966e47edad4d25455e74664d547713650ae8ef6f7f4bd1d56077b55,
+                                // + fmul(
+                                // result,
+                                // x),
                                 x),
                             x),
                         x),
@@ -167,6 +166,6 @@ module cpu_addr::poseidon_poseidon_partial_round_key_0_column_7 {
                 result,
                 x);
 
-        result % prime
+        result % K_MODULUS
     }
 }

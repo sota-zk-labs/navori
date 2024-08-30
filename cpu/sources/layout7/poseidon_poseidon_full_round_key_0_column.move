@@ -8,8 +8,6 @@ module cpu_addr::poseidon_poseidon_full_round_key_0_column_7 {
 
     #[view]
     public fun compute(x: u256): u256 {
-        let prime = K_MODULUS;
-        let result = 0;
         // Use Horner's method to compute f(x).
         // The idea is that
         //   a_0 + a_1 * x + a_2 * x^2 + ... + a_n * x^n =
@@ -23,15 +21,18 @@ module cpu_addr::poseidon_poseidon_full_round_key_0_column_7 {
         //  We do this because variable assignment in solidity's functional-style assembly results in
         //  a swap followed by a pop.H
         //  7 is the highest batch we can do due to the 16 slots limit in evm.
-        result =
-            0x2574ea7cc37bd716e0ec143a2420103589ba7b2af9d6b07569af3b108450a90 + fmul(
-                0x712a2cab5d2a48c76a95de8f29a898d655cc216172a400ca054d6eb9950d698 + fmul(
-                    0x7865d89fa1e9dce49da0ac14d7437366bd450fb823a4fd3d2d8b1726f924c8f + fmul(
-                        0x1b8c9c9cfe3c81279569f1130da6064cbf12c4b828d7e0cf60735514cf96c22 + fmul(
-                            0x11eaccb2939fb9e21a2a44d6f1e0608aac4248f817bc9458cce8a56077a22b1 + fmul(
-                                0x5f3e9a55edfd3f6abac770ff5606fca5aaf7074bedae94ade74395453235e8e + fmul(
-                                    0x7ed6ec4a18e23340489e4e36db8f4fcebf6b6ebd56185c29397344c5deea4c8 + fmul(
-                                        result,
+        let result =
+            0x47da67f078d657e777a79423be81a5d41f445f9455b207ec9768858cfd134f1 + fmul(
+                0x2574ea7cc37bd716e0ec143a2420103589ba7b2af9d6b07569af3b108450a90 + fmul(
+                    0x712a2cab5d2a48c76a95de8f29a898d655cc216172a400ca054d6eb9950d698 + fmul(
+                        0x7865d89fa1e9dce49da0ac14d7437366bd450fb823a4fd3d2d8b1726f924c8f + fmul(
+                            0x1b8c9c9cfe3c81279569f1130da6064cbf12c4b828d7e0cf60735514cf96c22 + fmul(
+                                0x11eaccb2939fb9e21a2a44d6f1e0608aac4248f817bc9458cce8a56077a22b1 + fmul(
+                                    0x5f3e9a55edfd3f6abac770ff5606fca5aaf7074bedae94ade74395453235e8e + fmul(
+                                        0x7ed6ec4a18e23340489e4e36db8f4fcebf6b6ebd56185c29397344c5deea4c8,
+                                        // + fmul(
+                                        // result,
+                                        // x),
                                         x),
                                     x),
                                 x),
@@ -40,11 +41,6 @@ module cpu_addr::poseidon_poseidon_full_round_key_0_column_7 {
                     x),
                 x);
 
-        result =
-            0x47da67f078d657e777a79423be81a5d41f445f9455b207ec9768858cfd134f1 + fmul(
-                result,
-                x);
-
-        result % prime
+        result % K_MODULUS
     }
 }

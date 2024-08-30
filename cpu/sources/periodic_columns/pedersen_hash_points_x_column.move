@@ -8,8 +8,6 @@ module cpu_addr::pedersen_hash_points_x_column {
 
     #[view]
     public fun compute(x: u256): u256 {
-        let prime = K_MODULUS;
-        let result = 0;
         // Use Horner's method to compute f(x).
         // The idea is that
         //   a_0 + a_1 * x + a_2 * x^2 + ... + a_n * x^n =
@@ -23,16 +21,17 @@ module cpu_addr::pedersen_hash_points_x_column {
         //  We do this because variable assignment in solidity's functional-style assembly results in
         //  a swap followed by a pop.
         //  7 is the highest batch we can do due to the 16 slots limit in evm.
-        result =
+        let result =
             0x549a83d43c90aaf1a28c445c81abc883cb61e4353a84ea0fcb15ccee6d6482f + fmul(
                 0x6f753527f0dec9b713d52f08e4556a3963a2f7e5e282b2e97ffde3e12569b76 + fmul(
                     0x233eff8cfcc744de79d412f724898d13c0e53b1132046ee45db7a101242a73f + fmul(
                         0x60105b3cb5aab151ce615173eaecbe94014ff5d72e884addcd4b9d973fed9fd + fmul(
                             0x295046a010dd6757176414b0fd144c1d2517fc463df01a12c0ab58bbbac26ea + fmul(
                                 0x4cec4cd52fab6da76b4ab7a41ffd844aad8981917d2295273ff6ab2cce622d8 + fmul(
-                                    0x43869b387c2d0eab20661ebdfaca58b4b23feac014e1e1d9413164312e77da + fmul(
-                                        result,
-                                        x),
+                                    0x43869b387c2d0eab20661ebdfaca58b4b23feac014e1e1d9413164312e77da,
+                                    // + fmul(
+                                    // result,
+                                    // x),
                                     x),
                                 x),
                             x),
@@ -1269,7 +1268,7 @@ module cpu_addr::pedersen_hash_points_x_column {
                 result,
                 x);
 
-        result % prime
+        result % K_MODULUS
     }
 }
 
