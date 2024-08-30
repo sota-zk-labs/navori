@@ -8,7 +8,7 @@ module verifier_addr::gps_output_parser {
     use aptos_std::vector;
     use aptos_framework::event::emit;
 
-    use lib_addr::bytes::{bytes32_to_u256, vec_to_bytes_be};
+    use lib_addr::bytes::{bytes32_to_u256, vec_to_bytes_le};
     use lib_addr::vector::{assign, set_el};
     use verifier_addr::fact_registry::register_fact;
 
@@ -231,7 +231,7 @@ module verifier_addr::gps_output_parser {
 
             let program_output_fact = *vector::borrow(node_stack, NODE_STACK_OFFSET_HASH);
             let fact = bytes32_to_u256(
-                keccak256(vec_to_bytes_be<u256>(&vector[program_hash, program_output_fact]))
+                keccak256(vec_to_bytes_le<u256>(&vector[program_hash, program_output_fact]))
             );
             *task_metadata_offset = *task_metadata_offset + METADATA_TASK_HEADER_SIZE + 2 * n_tree_pairs;
 
@@ -304,7 +304,7 @@ module verifier_addr::gps_output_parser {
             push_back(&mut node_stack_ref, *el);
         });
         let new_node_hash = bytes32_to_u256(
-            keccak256(vec_to_bytes_be(&slice(&node_stack_ref, node_start, node_start + (n_nodes * 2 as u64))))
+            keccak256(vec_to_bytes_le(&slice(&node_stack_ref, node_start, node_start + (n_nodes * 2 as u64))))
         );
 
         set_el(node_stack, NODE_STACK_ITEM_SIZE * (new_stack_len as u64) + NODE_STACK_OFFSET_END, new_node_end);

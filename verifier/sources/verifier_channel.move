@@ -2,7 +2,7 @@ module verifier_addr::verifier_channel {
     use std::vector::{append, borrow, borrow_mut, enumerate_ref, slice};
     use aptos_std::aptos_hash::keccak256;
 
-    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be, vec_to_bytes_be};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be, vec_to_bytes_le};
     use lib_addr::prime_field_element_0::{fmul, from_montgomery};
     use lib_addr::vector::{append_vector, set_el};
     use verifier_addr::prng::{get_random_bytes, init_prng};
@@ -52,7 +52,7 @@ module verifier_addr::verifier_channel {
             while (field_element >= bound) {
                 let counter = *borrow(ctx, channel_ptr + 2);
                 // keccak256(abi.encodePacked(digest, counter));
-                field_element = bytes32_to_u256(keccak256(vec_to_bytes_be(&vector[digest, counter])));
+                field_element = bytes32_to_u256(keccak256(vec_to_bytes_le(&vector[digest, counter])));
                 // *counterPtr += 1;
                 set_el(ctx, channel_ptr + 2, counter + 1);
             };
@@ -205,7 +205,7 @@ module verifier_addr::verifier_channel {
             let digest = borrow_mut(ctx, channel_ptr + 1);
 
             // prng.digest := keccak256(digest + 1||val), nonce was written earlier.
-            *digest = bytes32_to_u256(keccak256(vec_to_bytes_be(&vector[*digest + 1, val])));
+            *digest = bytes32_to_u256(keccak256(vec_to_bytes_le(&vector[*digest + 1, val])));
             // prng.counter := 0.
             set_el(ctx, channel_ptr + 2, 0);
         };

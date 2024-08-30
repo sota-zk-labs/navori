@@ -6,13 +6,12 @@
 // The fact consists of (pageType, prime, n, z, alpha, prod, memoryHash, address).
 // Note that address is only available for CONTINUOUS_PAGE, and otherwise it is 0.
 module verifier_addr::memory_page_fact_registry {
-    use std::option;
     use std::signer::address_of;
-    use std::vector::{borrow, for_each, length, is_empty};
+    use std::vector::{borrow, for_each, is_empty, length};
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event::emit;
 
-    use lib_addr::bytes::{bytes32_to_u256, long_vec_to_bytes_be, vec_to_bytes_be};
+    use lib_addr::bytes::{bytes32_to_u256, long_vec_to_bytes_le, vec_to_bytes_le};
     use lib_addr::prime_field_element_0::{fadd, fmul};
     use verifier_addr::fact_registry::register_fact;
 
@@ -127,15 +126,15 @@ module verifier_addr::memory_page_fact_registry {
             return vector[]
         };
 
-        let memory_pairs_bytes = long_vec_to_bytes_be(signer, memory_pairs);
-        if (option::is_none(&memory_pairs_bytes)) {
+        let memory_pairs_bytes = long_vec_to_bytes_le(signer, memory_pairs);
+        if (length(&memory_pairs_bytes) == 0) {
             return vector[]
         };
-        let memory_pairs_bytes = option::borrow(&memory_pairs_bytes);
-        let memory_hash = bytes32_to_u256(keccak256(*memory_pairs_bytes));
+
+        let memory_hash = bytes32_to_u256(keccak256(memory_pairs_bytes));
         let prod = borrow_global<CfhCache>(signer_addr).prod;
         let fact_hash = bytes32_to_u256(keccak256(
-            vec_to_bytes_be(&vector[REGULAR_PAGE, K_MODULUS, (memory_size as u256), z, alpha, prod, memory_hash, 0u256])
+            vec_to_bytes_le(&vector[REGULAR_PAGE, K_MODULUS, (memory_size as u256), z, alpha, prod, memory_hash, 0u256])
         ));
         *checkpoint = CFH_CHECKPOINT1;
         vector[fact_hash, memory_hash, prod]
@@ -198,9 +197,9 @@ module verifier_addr::memory_page_fact_registry {
             value_ptr = value_ptr + 1;
         };
 
-        let memory_hash = bytes32_to_u256(keccak256(vec_to_bytes_be(&values)));
+        let memory_hash = bytes32_to_u256(keccak256(vec_to_bytes_le(&values)));
         let fact_hash = bytes32_to_u256(keccak256(
-            vec_to_bytes_be(&vector[CONTINUOUS_PAGE, K_MODULUS, n_values, z, alpha, prod, memory_hash, start_address])
+            vec_to_bytes_le(&vector[CONTINUOUS_PAGE, K_MODULUS, n_values, z, alpha, prod, memory_hash, start_address])
         ));
         emit(LogMemoryPageFactContinuous {
             fact_hash,
@@ -250,6 +249,7 @@ module verifier_addr::memory_page_fact_registry {
 #[test_only]
 module verifier_addr::mpfr_test {
     use std::signer::address_of;
+
     use verifier_addr::fact_registry::{init_fact_registry, is_valid};
     use verifier_addr::memory_page_fact_registry::{register_continuous_memorypage, register_continuous_page_batch};
 

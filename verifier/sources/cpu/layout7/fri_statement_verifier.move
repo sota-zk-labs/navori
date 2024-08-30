@@ -5,7 +5,7 @@ module verifier_addr::fri_statement_verifier_7 {
 
     use cpu_addr::memory_access_utils_7::get_fri_step_sizes;
 
-    use lib_addr::bytes::{bytes32_to_u256, vec_to_bytes_be};
+    use lib_addr::bytes::{bytes32_to_u256, vec_to_bytes_le};
     use lib_addr::prime_field_element_0::{fmul, fpow};
     use lib_addr::vector::{assign, set_el};
     use verifier_addr::fact_registry::is_valid;
@@ -85,7 +85,7 @@ module verifier_addr::fri_statement_verifier_7 {
 
         let fri_queue = mm_fri_queue;
         // print(&slice(ctx, fri_queue, fri_queue + cur_point_index * 3));
-        bytes32_to_u256(keccak256(vec_to_bytes_be(&slice(ctx, fri_queue, fri_queue + cur_point_index * 3))))
+        bytes32_to_u256(keccak256(vec_to_bytes_le(&slice(ctx, fri_queue, fri_queue + cur_point_index * 3))))
     }
 
     // Tested: OK
@@ -112,7 +112,7 @@ module verifier_addr::fri_statement_verifier_7 {
 
         let fri_queue = MM_FRI_QUEUE;
         let input_layer_hash = bytes32_to_u256(
-            keccak256(vec_to_bytes_be(&slice(ctx, fri_queue, fri_queue + n_queries * 3)))
+            keccak256(vec_to_bytes_le(&slice(ctx, fri_queue, fri_queue + n_queries * 3)))
         );
 
         let fri_step_sizes = get_fri_step_sizes(proof_params);
@@ -130,7 +130,7 @@ module verifier_addr::fri_statement_verifier_7 {
 
             // Verify statement is registered.
             assert!(// NOLINT: calls-loop.
-                is_valid(signer_addr, bytes32_to_u256(keccak256(vec_to_bytes_be(&data_to_hash)))),
+                is_valid(signer_addr, bytes32_to_u256(keccak256(vec_to_bytes_le(&data_to_hash)))),
                 EINVALIDATED_FRI_STATEMENT
             );
 
@@ -147,7 +147,7 @@ module verifier_addr::fri_statement_verifier_7 {
         set_el(&mut data_to_hash, 4, *borrow(ctx, MM_FRI_COMMITMENTS + fri_step - 1));
 
         assert!(
-            is_valid(signer_addr, bytes32_to_u256(keccak256(vec_to_bytes_be(&data_to_hash)))),
+            is_valid(signer_addr, bytes32_to_u256(keccak256(vec_to_bytes_le(&data_to_hash)))),
             EINVALIDATED_FRI_STATEMENT
         );
     }
@@ -176,7 +176,7 @@ module verifier_addr::fri_statement_verifier_7 {
 
         let fri_queue = MM_FRI_QUEUE;
         let input_layer_hash = bytes32_to_u256(
-            keccak256(vec_to_bytes_be(&slice(ctx, fri_queue, fri_queue + n_queries * 3)))
+            keccak256(vec_to_bytes_le(&slice(ctx, fri_queue, fri_queue + n_queries * 3)))
         );
 
         let fri_step_sizes = get_fri_step_sizes(proof_params);
@@ -192,7 +192,7 @@ module verifier_addr::fri_statement_verifier_7 {
             set_el(&mut data_to_hash, 3, output_layer_hash);
             set_el(&mut data_to_hash, 4, *borrow(ctx, MM_FRI_COMMITMENTS + fri_step - 1));
 
-            push_back(&mut res, bytes32_to_u256(keccak256(vec_to_bytes_be(&data_to_hash))));
+            push_back(&mut res, bytes32_to_u256(keccak256(vec_to_bytes_le(&data_to_hash))));
             input_layer_hash = output_layer_hash;
 
             fri_step = fri_step + 1;
@@ -205,7 +205,7 @@ module verifier_addr::fri_statement_verifier_7 {
         set_el(&mut data_to_hash, 3, compute_last_layer_hash(ctx, proof, n_queries, (sum_of_step_sizes as u8)));
         set_el(&mut data_to_hash, 4, *borrow(ctx, MM_FRI_COMMITMENTS + fri_step - 1));
 
-        push_back(&mut res, bytes32_to_u256(keccak256(vec_to_bytes_be(&data_to_hash))));
+        push_back(&mut res, bytes32_to_u256(keccak256(vec_to_bytes_le(&data_to_hash))));
         res
     }
 }

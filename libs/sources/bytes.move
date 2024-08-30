@@ -1,7 +1,5 @@
 module lib_addr::bytes {
     use std::bcs::to_bytes;
-    use std::option;
-    use std::option::Option;
     use std::signer::address_of;
     use std::vector;
     use std::vector::{append, borrow, for_each_ref, length};
@@ -37,10 +35,10 @@ module lib_addr::bytes {
         return padded
     }
 
-    public fun long_vec_to_bytes_be<Element>(
+    public fun long_vec_to_bytes_le<Element>(
         signer: &signer,
         v: &vector<Element>
-    ): Option<vector<u8>> acquires Cache {
+    ): vector<u8> acquires Cache {
         let signer_addr = address_of(signer);
         if (!exists<Cache>(signer_addr)) {
             move_to(signer, Cache {
@@ -62,14 +60,17 @@ module lib_addr::bytes {
             count = count + 1;
         };
         if (*ptr < n) {
-            return option::none<vector<u8>>()
+            return vector[]
         };
-        let bytes = *bytes;
-        move_from<Cache>(signer_addr);
-        option::some(bytes)
+        
+        let Cache {
+            ptr: _,
+            bytes
+        } = move_from<Cache>(signer_addr);
+        bytes
     }
 
-    public fun vec_to_bytes_be<Element>(v: &vector<Element>): vector<u8> {
+    public fun vec_to_bytes_le<Element>(v: &vector<Element>): vector<u8> {
         let bytes: vector<u8> = vector[];
         for_each_ref(v, |e| {
             let tmp = to_bytes(e);
@@ -109,7 +110,7 @@ module lib_addr::bytes_test {
     use std::bcs::to_bytes;
     use std::vector;
 
-    use lib_addr::bytes::{pad, vec_to_bytes_be};
+    use lib_addr::bytes::{pad, vec_to_bytes_le};
 
     #[test]
     fun test_padding() {
@@ -122,7 +123,7 @@ module lib_addr::bytes_test {
 
     #[test]
     fun test_vec_to_bytes_be() {
-        let bytes = vec_to_bytes_be(&vector[
+        let bytes = vec_to_bytes_le(&vector[
             1723587082856532763241173775465496577348305577532331450336061658809521876102u256,
             2479248348687909740970436565718726357572221543762678024250834744245756360726u256,
             587272u256,

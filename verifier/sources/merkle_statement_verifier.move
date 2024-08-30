@@ -3,7 +3,7 @@ module verifier_addr::merkle_statement_verifier {
     use std::vector::{push_back, slice};
     use aptos_std::aptos_hash::keccak256;
 
-    use lib_addr::bytes::{bytes32_to_u256, vec_to_bytes_be};
+    use lib_addr::bytes::{bytes32_to_u256, vec_to_bytes_le};
     use verifier_addr::fact_registry::is_valid;
 
     // This line is used for generating constants DO NOT REMOVE!
@@ -29,7 +29,7 @@ module verifier_addr::merkle_statement_verifier {
         assert!(n <= MAX_N_MERKLE_VERIFIER_QUERIES, ETOO_MANY_MERKLE_QUERIES);
         let data_to_hash = slice(ctx, queue_ptr, queue_ptr + 2 * n);
         push_back(&mut data_to_hash, root);
-        let statement = bytes32_to_u256(keccak256(vec_to_bytes_be(&data_to_hash)));
+        let statement = bytes32_to_u256(keccak256(vec_to_bytes_le(&data_to_hash)));
         assert!(is_valid(address_of(signer), statement), EINVALIDATED_MERKLE_STATEMENT);
         root
     }

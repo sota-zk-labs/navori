@@ -2,7 +2,7 @@ module verifier_addr::prng {
     use std::vector::borrow;
     use aptos_std::aptos_hash::keccak256;
 
-    use lib_addr::bytes::{bytes32_to_u256, vec_to_bytes_be};
+    use lib_addr::bytes::{bytes32_to_u256, vec_to_bytes_le};
     use lib_addr::vector::set_el;
 
     public fun store_prng(ctx: &mut vector<u256>, prng_ptr: u64, digest: u256, counter: u256) {
@@ -22,7 +22,7 @@ module verifier_addr::prng {
 
     // Auxiliary function for getRandomBytes.
     fun get_random_bytes_inner(digest: u256, counter: u256): (u256, u256, u256) {
-        let random_bytes = bytes32_to_u256(keccak256(vec_to_bytes_be(&vector[digest, counter])));
+        let random_bytes = bytes32_to_u256(keccak256(vec_to_bytes_le(&vector[digest, counter])));
         (digest, counter + 1, random_bytes)
     }
 

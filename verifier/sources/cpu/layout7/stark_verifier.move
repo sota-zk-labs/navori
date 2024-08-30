@@ -241,7 +241,7 @@ module verifier_addr::stark_verifier_7 {
         get_offset_page_size, get_public_input_length
     };
 
-    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be, vec_to_bytes_be};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be, vec_to_bytes_le};
     use lib_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
     use lib_addr::vector::{append_vector, assign, set_el};
     use verifier_addr::fact_registry::is_valid;
@@ -383,7 +383,7 @@ module verifier_addr::stark_verifier_7 {
             let proof_ptr_offset_val = bytes32_to_u256(
                 append_vector(bytes, slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr + 1)), 0, 8))
             );
-            append(&mut bytes, vec_to_bytes_be(&slice(proof, proof_ptr + 1, proof_ptr + row_size)));
+            append(&mut bytes, vec_to_bytes_le(&slice(proof, proof_ptr + 1, proof_ptr + row_size)));
             append(&mut bytes, slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr + row_size)), 0, 8));
             assert!(length(&bytes) == row_size * 32, EWRONG_BYTES_LENGTH);
             let merkle_leaf = bytes32_to_u256(
@@ -534,7 +534,7 @@ module verifier_addr::stark_verifier_7 {
         set_el(
             ctx,
             digest_ptr,
-            bytes32_to_u256(keccak256(vec_to_bytes_be(&slice(proof, new_digest_ptr, new_digest_ptr + length + 1))))
+            bytes32_to_u256(keccak256(vec_to_bytes_le(&slice(proof, new_digest_ptr, new_digest_ptr + length + 1))))
         );
         // prng.counter = 0.
         set_el(ctx, channel_ptr + 2, 0);
@@ -886,7 +886,7 @@ module verifier_addr::stark_verifier_7 {
 
             // Verify that a corresponding fact is registered attesting to the consistency of the page
             // information with z and alpha.
-            let fact_hash = bytes32_to_u256(keccak256(vec_to_bytes_be<u256>(&vector[
+            let fact_hash = bytes32_to_u256(keccak256(vec_to_bytes_le<u256>(&vector[
                 if (page == 0) { REGULAR_PAGE } else { CONTINUOUS_PAGE },
                 K_MODULUS,
                 page_size,
@@ -918,7 +918,7 @@ module verifier_addr::stark_verifier_7 {
         let n_pages = *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES);
         let public_input_size_for_hash = get_offset_page_prod(0, n_pages);
 
-        bytes32_to_u256(keccak256(vec_to_bytes_be(&slice(public_input, 0, (public_input_size_for_hash as u64)))))
+        bytes32_to_u256(keccak256(vec_to_bytes_le(&slice(public_input, 0, (public_input_size_for_hash as u64)))))
     }
 
     //   Computes the value of the public memory quotient:
