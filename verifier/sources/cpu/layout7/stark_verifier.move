@@ -2,7 +2,6 @@ module verifier_addr::stark_verifier_7 {
     use std::signer::address_of;
     use std::vector::{append, borrow, length, slice};
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::debug::print;
     use aptos_std::math64::min;
 
     use cpu_addr::cpu_oods_7;

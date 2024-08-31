@@ -1,12 +1,12 @@
 module verifier_addr::gps_statement_verifier {
     use std::signer::address_of;
-    use std::vector::{borrow, borrow_mut, is_empty, length, slice};
+    use std::vector::{borrow, borrow_mut, is_empty, length};
     use aptos_std::math64::min;
     use aptos_framework::event::emit;
 
     use cpu_addr::cairo_bootloader_program::get_compiled_program;
 
-    use lib_addr::vector::{assign, set_el, trim_only};
+    use lib_addr::vector::{assign, set_el, trim_head, trim_only};
     use verifier_addr::cairo_verifier_contract::{get_layout_info, verify_proof_external};
     use verifier_addr::gps_output_parser;
     use verifier_addr::gps_output_parser::register_gps_facts;
@@ -236,11 +236,9 @@ module verifier_addr::gps_statement_verifier {
                 *selected_builtins = selected_builtins_;
                 assert!(cairo_aux_input_length > (public_memory_offset as u64), EINVALID_CAIROAUXINPUT_LENGTH);
 
-                *public_memory_pages = slice(
-                    cairo_public_input,
-                    (public_memory_offset as u64),
-                    new_cairo_public_input_length
-                );
+                *public_memory_pages = *cairo_public_input;
+                trim_head(public_memory_pages, (public_memory_offset as u64));
+
                 *n_pages = *borrow(public_memory_pages, 0);
                 assert!(*n_pages < 10000, EINVALID_NPAGES);
 
@@ -463,8 +461,8 @@ module verifier_addr::gps_statement_verifier {
                     *offset = *offset + 6;
                     *output_address = *output_address + 3;
 
-                    *task_metadata_slice = slice(task_metadata,
-                        METADATA_TASKS_OFFSET, length(task_metadata));
+                    *task_metadata_slice = *task_metadata;
+                    trim_head(task_metadata_slice, METADATA_TASKS_OFFSET);
                 };
 
                 let end_ptr = min(*ptr + ITERATION_LENGTH, (*n_tasks as u64));
@@ -491,9 +489,8 @@ module verifier_addr::gps_statement_verifier {
                     set_el(public_memory, *offset + 3, program_hash);
                     *offset = *offset + 4;
                     *output_address = *output_address + output_size;
-                    let tmp = length(task_metadata_slice);
-                    *task_metadata_slice = slice(task_metadata_slice,
-                        METADATA_TASK_HEADER_SIZE + (2 * n_tree_pairs as u64), tmp);
+
+                    trim_head(task_metadata_slice, METADATA_TASK_HEADER_SIZE + (2 * n_tree_pairs as u64));
                 };
                 *ptr = end_ptr;
                 if (*ptr == (*n_tasks as u64)) {

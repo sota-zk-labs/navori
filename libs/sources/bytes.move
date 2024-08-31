@@ -44,7 +44,7 @@ module lib_addr::bytes {
         len = len - count;
         let i = 0;
         if (count == 1) {
-            while (i < len) {
+            while (i != len) {
                 vector::swap(&mut bytes, i, i + 32);
                 vector::swap(&mut bytes, i + 1, i + 31);
                 vector::swap(&mut bytes, i + 2, i + 30);
@@ -65,7 +65,7 @@ module lib_addr::bytes {
             };
             vector::pop_back(&mut bytes);
         } else {
-            while (i < len) {
+            while (i != len) {
                 vector::swap(&mut bytes, i, i + 33);
                 vector::swap(&mut bytes, i + 1, i + 32);
                 vector::swap(&mut bytes, i + 2, i + 31);

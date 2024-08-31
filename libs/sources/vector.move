@@ -1,8 +1,9 @@
 module lib_addr::vector {
     use std::vector;
-    use std::vector::{borrow_mut, length, pop_back, push_back};
+    use std::vector::{borrow_mut, length, pop_back, push_back, swap};
 
     const EINVALID_NEW_LENGTH: u64 = 0;
+    const EINVALID_TRIM_NUMBER: u64 = 1;
 
     public inline fun append_vector(
         vec1: vector<u8>,
@@ -30,6 +31,21 @@ module lib_addr::vector {
         assert!(new_length <= length, EINVALID_NEW_LENGTH);
         while (length != new_length) {
             length = length - 1;
+            pop_back(v);
+        }
+    }
+
+    public fun trim_head<Element: copy + drop>(v: &mut vector<Element>, trim_number: u64) {
+        let new_length = length(v) - trim_number;
+        let i = 0;
+        while (i != new_length) {
+            swap(v, i, i + trim_number);
+            i = i + 1;
+        };
+
+        i = 0;
+        while (i != trim_number) {
+            i = i + 1;
             pop_back(v);
         }
     }

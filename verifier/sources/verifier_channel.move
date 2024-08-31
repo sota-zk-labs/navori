@@ -190,7 +190,8 @@ module verifier_addr::verifier_channel {
         should_add_8_bytes: bool
     ): u256 {
         let proof_ptr = *borrow(ctx, channel_ptr);
-        let val = (if (should_add_8_bytes) {
+        
+        let val = if (should_add_8_bytes) {
             bytes32_to_u256(
                 append_vector(
                     slice(&num_to_bytes_be(borrow(proof, (proof_ptr as u64))), 8, 32),
@@ -199,7 +200,8 @@ module verifier_addr::verifier_channel {
             )
         } else {
             *borrow(proof, (proof_ptr as u64))
-        });
+        };
+        
         set_el(ctx, channel_ptr, proof_ptr + 1);
         if (mix) {
             let digest = borrow_mut(ctx, channel_ptr + 1);
