@@ -1,6 +1,6 @@
 module verifier_addr::gps_statement_verifier {
     use std::signer::address_of;
-    use std::vector::{borrow, borrow_mut, is_empty, length};
+    use std::vector::{borrow, borrow_mut, length};
     use aptos_framework::event::emit;
 
     use cpu_addr::cairo_bootloader_program::get_compiled_program;
@@ -245,18 +245,17 @@ module verifier_addr::gps_statement_verifier {
                 );
             };
             // Process public memory.
-            let tmp = register_public_memory_main_page(
+            let (public_memory_length, memory_hash, prod) = register_public_memory_main_page(
                 signer,
                 task_metadata,
                 cairo_aux_input,
                 *selected_builtins
             );
             // The function has not finished running yet
-            if (is_empty(&tmp)) {
+            if (public_memory_length == 0) {
                 return
             };
 
-            let (public_memory_length, memory_hash, prod) = (*borrow(&tmp, 0), *borrow(&tmp, 1), *borrow(&tmp, 2));
             // Make sure the first page is valid.
             // If the size or the hash are invalid, it may indicate that there is a mismatch
             // between the prover and the verifier on the bootloader program or bootloader config.
@@ -321,7 +320,7 @@ module verifier_addr::gps_statement_verifier {
         task_metadata: &vector<u256>,
         cairo_aux_input: &vector<u256>,
         selected_builtins: u256
-    ): vector<u256> acquires ConstructorConfig, RpmmpCheckpoint, Cache3 {
+    ): (u256, u256, u256) acquires ConstructorConfig, RpmmpCheckpoint, Cache3 {
         let signer_addr = address_of(signer);
         let RpmmpCheckpoint {
             inner: checkpoint
@@ -418,7 +417,7 @@ module verifier_addr::gps_statement_verifier {
                 n_tasks,
                 public_memory_length
             };
-            return vector[]
+            return (0, 0, 0)
         };
 
         let Cache3 {
@@ -511,9 +510,9 @@ module verifier_addr::gps_statement_verifier {
             );
             *checkpoint = RPMMP_CHECKPOINT1;
 
-            return vector[*public_memory_length, memory_hash, prod]
+            return (*public_memory_length, memory_hash, prod)
         };
-        vector[]
+        (0, 0, 0)
     }
 
     #[test_only]
