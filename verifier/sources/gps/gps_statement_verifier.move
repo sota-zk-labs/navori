@@ -10,7 +10,7 @@ module verifier_addr::gps_statement_verifier {
     use verifier_addr::gps_output_parser;
     use verifier_addr::gps_output_parser::register_gps_facts;
     use verifier_addr::memory_page_fact_registry;
-    use verifier_addr::memory_page_fact_registry::register_regular_memorypage;
+    use verifier_addr::memory_page_fact_registry::register_regular_memory_page;
     use verifier_addr::stark_verifier_7;
 
     // This line is used for generating constants DO NOT REMOVE!
@@ -495,7 +495,6 @@ module verifier_addr::gps_statement_verifier {
                     EINCONSISTENT_PROGRAM_OUTPUT_LENGTH
                 );
                 *checkpoint = RPMMP_CHECKPOINT3;
-                return vector[]
             }
         };
 
@@ -504,21 +503,15 @@ module verifier_addr::gps_statement_verifier {
             let cairo_aux_input_length = length(cairo_aux_input);
             let z = *borrow(cairo_aux_input, cairo_aux_input_length - 2);
             let alpha = *borrow(cairo_aux_input, cairo_aux_input_length - 1);
-            let tmp = register_regular_memorypage(
+            let (memory_hash, prod) = register_regular_memory_page(
                 signer,
                 public_memory,
                 z,
                 alpha
             );
-            if (is_empty(&tmp)) {
-                return vector[]
-            };
-            let (memory_hash, prod) = (*borrow(&tmp, 1), *borrow(&tmp, 2));
-            let public_memory_length = *public_memory_length;
-
             *checkpoint = RPMMP_CHECKPOINT1;
 
-            return vector[public_memory_length, memory_hash, prod]
+            return vector[*public_memory_length, memory_hash, prod]
         };
         vector[]
     }
@@ -609,7 +602,6 @@ module verifier_addr::test_gps {
         registered_facts_,
         task_meta_data_
     };
-    use verifier_addr::memory_page_fact_registry::get_cfh_checkpoint;
     use verifier_addr::stark_verifier_7::{get_cffl_checkpoint, get_occ_checkpoint, get_vp_checkpoint};
 
     #[test(signer = @0xC0FFEE)]
@@ -640,12 +632,8 @@ module verifier_addr::test_gps {
         assert!(get_rpmmp_checkpoint(signer) == 2, 1);
         // register_public_memory_main_page::CHECKPOINT3::register_regular_memorypage::compute_fact_hash::CFH_CHECKPOINT1
         verify_proof_and_register(signer);
-        assert!(get_rpmmp_checkpoint(signer) == 3, 1);
-        assert!(get_cfh_checkpoint(signer) == 1, 1);
-        verify_proof_and_register(signer);
 
-        verify_proof_and_register(signer);
-        assert!(get_cfh_checkpoint(signer) == 1, 1);
+        assert!(get_rpmmp_checkpoint(signer) == 1, 1);
 
         // check if fact hash was registered
         assert!(

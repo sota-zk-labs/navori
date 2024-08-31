@@ -6,8 +6,7 @@
 // The fact consists of (pageType, prime, n, z, alpha, prod, memoryHash, address).
 // Note that address is only available for CONTINUOUS_PAGE, and otherwise it is 0.
 module verifier_addr::memory_page_fact_registry {
-    use std::signer::address_of;
-    use std::vector::{borrow, for_each, is_empty, length};
+    use std::vector::{borrow, for_each, length};
     use aptos_std::aptos_hash::keccak256;
     use aptos_framework::event::emit;
 
@@ -45,7 +44,7 @@ module verifier_addr::memory_page_fact_registry {
     // End of generating constants!
 
     #[event]
-    struct LogMemorypPageFactRegular has store, drop {
+    struct LogMemoryPageFactRegular has store, drop {
         fact_hash: u256,
         memory_hash: u256,
         prod: u256
@@ -67,73 +66,54 @@ module verifier_addr::memory_page_fact_registry {
         });
     }
 
-    public(friend) fun register_regular_memorypage(
+    public(friend) fun register_regular_memory_page(
         signer: &signer,
         memory_pairs: &vector<u256>,
         z: u256,
         alpha: u256
-    ): vector<u256> acquires CfhCheckpoint, CfhCache {
+    ): (u256, u256) {
         let memory_pairs_length = length(memory_pairs);
         assert!(memory_pairs_length < (1 << 20), ETOO_MANY_MEMORY_VALUES);
         assert!((memory_pairs_length & 1) == 0, ESIZE_OF_MEMORYPAIRS_MUST_BE_EVEN);
         assert!(z < K_MODULUS, EINVALID_VALUE_OF_Z);
         assert!(alpha < K_MODULUS, EINVALID_VALUE_OF_ALPHA);
 
-        let tmp = compute_fact_hash(signer, memory_pairs, z, alpha);
-        if (is_empty(&tmp)) {
-            return vector[]
-        };
-        let (fact_hash, memory_hash, prod) = (*borrow(&tmp, 0), *borrow(&tmp, 1), *borrow(&tmp, 2));
-        emit(LogMemorypPageFactRegular { fact_hash, memory_hash, prod });
-
+        let (fact_hash, memory_hash, prod) = compute_fact_hash(memory_pairs, z, alpha);
         register_fact(signer, fact_hash);
-        tmp
+        (memory_hash, prod)
     }
 
     fun compute_fact_hash(
-        signer: &signer,
         memory_pairs: &vector<u256>,
         z: u256,
         alpha: u256
-    ): vector<u256> acquires CfhCheckpoint, CfhCache {
-        let signer_addr = address_of(signer);
-        let CfhCheckpoint {
-            inner: checkpoint
-        } = borrow_global_mut<CfhCheckpoint>(signer_addr);
+    ): (u256, u256, u256) {
         let n = length(memory_pairs);
         let memory_size = n / 2; // NOLINT: divide-before-multiply.
-        if (*checkpoint == CFH_CHECKPOINT1) {
-            let prod = 1;
-            let memory_ptr = 0;
-            while (memory_ptr < n) {
-                // Compute address + alpha * value.
-                let address_value_lin_comb = fadd(
-                    // address
-                    *borrow(memory_pairs, memory_ptr),
-                    fmul(
-                        // value
-                        *borrow(memory_pairs, memory_ptr + 1),
-                        alpha
-                    )
-                );
-                prod = fmul(prod, z + K_MODULUS - address_value_lin_comb);
-                memory_ptr = memory_ptr + 2;
-            };
-            *borrow_global_mut<CfhCache>(signer_addr) = CfhCache {
-                prod
-            };
-            *checkpoint = CFH_CHECKPOINT2;
-            return vector[]
+        let prod = 1;
+        let memory_ptr = 0;
+        let zK_MODULUS = z + K_MODULUS;
+        while (memory_ptr != n) {
+            // Compute address + alpha * value.
+            let address_value_lin_comb = fadd(
+                // address
+                *borrow(memory_pairs, memory_ptr),
+                fmul(
+                    // value
+                    *borrow(memory_pairs, memory_ptr + 1),
+                    alpha
+                )
+            );
+            prod = fmul(prod, zK_MODULUS - address_value_lin_comb);
+            memory_ptr = memory_ptr + 2;
         };
 
         let memory_pairs_bytes = vec_to_bytes_le(memory_pairs);
         let memory_hash = bytes32_to_u256(keccak256(memory_pairs_bytes));
-        let prod = borrow_global<CfhCache>(signer_addr).prod;
         let fact_hash = bytes32_to_u256(keccak256(
-            vec_to_bytes_le(&vector[REGULAR_PAGE, K_MODULUS, (memory_size as u256), z, alpha, prod, memory_hash, 0u256])
+            vec_to_bytes_le(&vector[REGULAR_PAGE, K_MODULUS, (memory_size as u256), z, alpha, prod, memory_hash, 0])
         ));
-        *checkpoint = CFH_CHECKPOINT1;
-        vector[fact_hash, memory_hash, prod]
+        (fact_hash, memory_hash, prod)
     }
 
     // TODO: mark as entry func
@@ -219,11 +199,6 @@ module verifier_addr::memory_page_fact_registry {
         for (i in 0..length(&start_addr) ) {
             register_continuous_memorypage(s, *borrow(&start_addr, i), *borrow(&values, i), z, alpha);
         }
-    }
-
-    #[test_only]
-    public fun get_cfh_checkpoint(signer: &signer): u8 acquires CfhCheckpoint {
-        borrow_global<CfhCheckpoint>(address_of(signer)).inner
     }
 
     // Data of the function `compute_fact_hash`
