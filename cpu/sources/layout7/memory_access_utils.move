@@ -1,7 +1,5 @@
 module cpu_addr::memory_access_utils_7 {
-    use std::vector::borrow;
-
-    use lib_addr::vector::{assign, set_el};
+    use std::vector::{borrow, push_back};
 
     // This line is used for generating constants DO NOT REMOVE!
     // 9
@@ -23,9 +21,9 @@ module cpu_addr::memory_access_utils_7 {
         assert!(n_fri_steps <= MAX_FRI_STEPS, ETOO_MANY_FRI_STEPS);
         assert!(n_fri_steps > 1, ENOT_ENOUGH_FRI_STEPS);
 
-        let fri_step_sizes = assign(0u256, n_fri_steps);
+        let fri_step_sizes = vector[];
         for (i in 0..n_fri_steps) {
-            set_el(&mut fri_step_sizes, i, *borrow(proof_params, PROOF_PARAMS_FRI_STEPS_OFFSET + i));
+            push_back(&mut fri_step_sizes, *borrow(proof_params, PROOF_PARAMS_FRI_STEPS_OFFSET + i));
         };
 
         fri_step_sizes
