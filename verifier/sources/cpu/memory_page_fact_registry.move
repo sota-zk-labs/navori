@@ -249,7 +249,7 @@ module verifier_addr::mpfr_test {
     use verifier_addr::fact_registry::{init_fact_registry, is_valid};
     use verifier_addr::memory_page_fact_registry::{register_continuous_memorypage, register_continuous_page_batch};
 
-    #[test(signer = @test_signer)]
+    #[test(signer = @0xC0FFEE)]
     fun test_register_continuous_memorypage(signer: &signer) {
         init_fact_registry(signer);
         let (fact_hash, memory_hash, prod) = register_continuous_memorypage(
@@ -267,14 +267,12 @@ module verifier_addr::mpfr_test {
             3035248388910680138215389260643346358343414931640145853107361271346254998038,
             220574768071472005565941019352306850224879407895315608807402130378653737764
         );
-        // let g = emitted_events<LogMemoryPageFactContinuous>();
-        // print(&g);
         assert!(fact_hash == 0xeb243f0981ec93a0090da83d2351b8d4b2e5cd9cc44be8d4b1119450eac54a6du256, 1);
         assert!(memory_hash == 48239457587525216759117913177237902366978204066031868156075383439591598548182, 1);
         assert!(prod == 3254870901738389658383135104000411656134098647702871823979226499371705469217, 1);
     }
 
-    #[test(s = @test_signer)]
+    #[test(s = @0xC0FFEE)]
     // Transaction hash on ETH mainnet for this test: 0x6f59bed6f3df4b87c03c49f11e627e842ae5708a3670f428ddfb83c5b98d3754.
     fun test_register_continuous_page_batch(s: &signer) {
         init_fact_registry(s);

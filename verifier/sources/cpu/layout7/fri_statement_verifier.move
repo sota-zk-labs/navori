@@ -216,7 +216,7 @@ module verifier_addr::test_fri_statement_verifier_7 {
     use verifier_addr::fri_statement_verifier_7::fri_verify_layers_for_testing;
     use verifier_addr::fri_statement_verifier_7_test_data::{ctx_, proof_, proof_params_};
 
-    #[test(signer = @test_signer)]
+    #[test(signer = @0xC0FFEE)]
     fun test_fri_verify_layers(signer: &signer) {
         init_fact_registry(signer);
         let ctx = ctx_();

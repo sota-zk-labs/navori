@@ -627,7 +627,7 @@ module verifier_addr::test_gps {
     use verifier_addr::memory_page_fact_registry::get_cfh_checkpoint;
     use verifier_addr::stark_verifier_7::{get_cffl_checkpoint, get_occ_checkpoint, get_vp_checkpoint};
 
-    #[test(signer = @test_signer)]
+    #[test(signer = @0xC0FFEE)]
     fun test_verify_proof_and_register(signer: &signer) {
         init_all(signer);
 
