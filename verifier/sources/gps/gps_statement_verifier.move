@@ -1,12 +1,12 @@
 module verifier_addr::gps_statement_verifier {
     use std::signer::address_of;
-    use std::vector::{borrow, borrow_mut, is_empty, length, slice, trim};
+    use std::vector::{borrow, borrow_mut, is_empty, length, slice};
     use aptos_std::math64::min;
     use aptos_framework::event::emit;
 
     use cpu_addr::cairo_bootloader_program::get_compiled_program;
 
-    use lib_addr::vector::{assign, set_el};
+    use lib_addr::vector::{assign, set_el, trim_only};
     use verifier_addr::cairo_verifier_contract::{get_layout_info, verify_proof_external};
     use verifier_addr::gps_output_parser;
     use verifier_addr::gps_output_parser::register_gps_facts;
@@ -230,7 +230,7 @@ module verifier_addr::gps_statement_verifier {
                 *first_invoking = false;
                 let new_cairo_public_input_length = cairo_aux_input_length - 2;
                 *cairo_public_input = *cairo_aux_input;
-                trim(cairo_public_input, new_cairo_public_input_length); // z and alpha.
+                trim_only(cairo_public_input, new_cairo_public_input_length); // z and alpha.
 
                 let (public_memory_offset, selected_builtins_) = get_layout_info();
                 *selected_builtins = selected_builtins_;

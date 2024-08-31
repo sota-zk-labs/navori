@@ -2,6 +2,7 @@ module verifier_addr::stark_verifier_7 {
     use std::signer::address_of;
     use std::vector::{append, borrow, length, slice};
     use aptos_std::aptos_hash::keccak256;
+    use aptos_std::debug::print;
     use aptos_std::math64::min;
 
     use cpu_addr::cpu_oods_7;
@@ -243,7 +244,7 @@ module verifier_addr::stark_verifier_7 {
 
     use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be, vec_to_bytes_le};
     use lib_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
-    use lib_addr::vector::{append_vector, assign, set_el};
+    use lib_addr::vector::{append_vector, assign, set_el, trim_only};
     use verifier_addr::fact_registry::is_valid;
     use verifier_addr::fri_statement_verifier_7;
     use verifier_addr::merkle_statement_verifier;
@@ -918,7 +919,9 @@ module verifier_addr::stark_verifier_7 {
         let n_pages = *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES);
         let public_input_size_for_hash = get_offset_page_prod(0, n_pages);
 
-        bytes32_to_u256(keccak256(vec_to_bytes_le(&slice(public_input, 0, (public_input_size_for_hash as u64)))))
+        let temp = *public_input;
+        trim_only(&mut temp, (public_input_size_for_hash as u64));
+        bytes32_to_u256(keccak256(vec_to_bytes_le(&temp)))
     }
 
     //   Computes the value of the public memory quotient:
