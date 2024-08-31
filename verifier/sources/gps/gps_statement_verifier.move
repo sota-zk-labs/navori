@@ -1,6 +1,6 @@
 module verifier_addr::gps_statement_verifier {
     use std::signer::address_of;
-    use std::vector::{borrow, borrow_mut, is_empty, length, slice};
+    use std::vector::{borrow, borrow_mut, is_empty, length, slice, trim};
     use aptos_std::math64::min;
     use aptos_framework::event::emit;
 
@@ -206,6 +206,7 @@ module verifier_addr::gps_statement_verifier {
         let VparCheckpoint {
             inner: checkpoint
         } = borrow_global_mut<VparCheckpoint>(signer_addr);
+
         let VparCache {
             selected_builtins,
             cairo_public_input,
@@ -213,6 +214,7 @@ module verifier_addr::gps_statement_verifier {
             n_pages,
             first_invoking
         } = borrow_global_mut<VparCache>(signer_addr);
+
         let cairo_aux_input_length = length(cairo_aux_input);
         if (*checkpoint == REGISTER_PUBLIC_MEMORY_MAIN_PAGE) {
             // Aptos has no abstract contract, so we set `cairo_verifier_id` to 7, as shown in these transactions
@@ -226,18 +228,18 @@ module verifier_addr::gps_statement_verifier {
             // let cairo_public_input = cairo_aux_input[0..length(cairo_aux_input) - 2]; // z and alpha.
             if (*first_invoking) {
                 *first_invoking = false;
-                let tmp = cairo_aux_input_length - 2;
-                *cairo_public_input = slice(cairo_aux_input, 0, tmp); // z and alpha.
+                let new_cairo_public_input_length = cairo_aux_input_length - 2;
+                *cairo_public_input = *cairo_aux_input;
+                trim(cairo_public_input, new_cairo_public_input_length); // z and alpha.
 
                 let (public_memory_offset, selected_builtins_) = get_layout_info();
                 *selected_builtins = selected_builtins_;
                 assert!(cairo_aux_input_length > (public_memory_offset as u64), EINVALID_CAIROAUXINPUT_LENGTH);
 
-                tmp = length(cairo_public_input);
                 *public_memory_pages = slice(
                     cairo_public_input,
                     (public_memory_offset as u64),
-                    tmp
+                    new_cairo_public_input_length
                 );
                 *n_pages = *borrow(public_memory_pages, 0);
                 assert!(*n_pages < 10000, EINVALID_NPAGES);
