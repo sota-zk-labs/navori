@@ -132,7 +132,7 @@ module cpu_addr::layout_specific_7 {
 
     #[view]
     public fun safe_div(numerator: u256, denominator: u256): u256 {
-        assert!(denominator > 0, EDENOMINATOR_MUST_NOT_BE_ZERO);
+        assert!(denominator != 0, EDENOMINATOR_MUST_NOT_BE_ZERO);
         assert!(numerator % denominator == 0, ENUMERATOR_NOT_DIVISIBLE_BY_DENOMINATOR);
         numerator / denominator
     }

@@ -94,20 +94,76 @@ module lib_addr::prime_field_element_0 {
         res
     }
 
-    public fun inverse(val: u256): u256 {
-        expmod(val, K_MODULUS - 2, K_MODULUS)
+    fun minus(a_value: u256, a_neg: bool, b_value: u256, b_neg: bool): (u256, bool) {
+        if (!a_neg && !b_neg) {
+            if (a_value >= b_value) {
+                (a_value - b_value, false)
+            } else {
+                (b_value - a_value, true)
+            }
+        } else if (a_neg && b_neg) {
+            if (a_value >= b_value) {
+                (a_value - b_value, true)
+            } else {
+                (b_value - a_value, false)
+            }
+        } else if (!a_neg && b_neg) {
+            (a_value + b_value, false)
+        }
+        else {
+            (a_value + b_value, true)
+        }
     }
 
-    fun testmath_basic() {
+    public fun inverse(val: u256): u256 {
+        let (gcd, x, is_negative, _, _) = extended_gcd(val, K_MODULUS);
+        assert!(gcd == 1, 0);
+        if (is_negative) {
+            x = K_MODULUS - x;
+        };
+        return x % K_MODULUS
+    }
+
+    fun extended_gcd(a: u256, b: u256): (u256, u256, bool, u256, bool) {
+        if (a == 0) {
+            return (b, 0, false, 1, false)
+        };
+        let (gcd, x1, x1_negative, y1, y1_negative) = extended_gcd(b % a, a);
+
+        let temp = (b / a) * x1;
+        let (x, new_is_negative) = minus(y1, y1_negative, temp, x1_negative);
+        (gcd, x, new_is_negative, x1, x1_negative)
+    }
+}
+
+#[test_only]
+module lib_addr::test_prime_field_element {
+    use aptos_std::debug::print;
+
+    use lib_addr::prime_field_element_0::{expmod, fmul, inverse};
+
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+
+    #[test()]
+    fun test_math_basic() {
         let res = 8 % K_MODULUS;
         assert!(res == 8, 1);
     }
 
+    #[test()]
+    fun test_inverse() {
+        let res = inverse(30);
+        print(&res);
+        assert!(res == 2291718432821883102008304429293544400227967903043344576649624968886052279638, 1);
+    }
+
+    #[test()]
     fun test_expmod() {
         let res = expmod(0x5ec467b88826aba4537602d514425f3b0bdf467bbf302458337c45f6021e539, 15, K_MODULUS);
         assert!(res == 2607735469685256064975697808597423000021425046638838630471627721324227832437, 1);
     }
 
+    #[test()]
     fun tes_mulmod() {
         let res = fmul(
             0x800000000000011000000000000000000000000000000000000000000000000,
@@ -116,6 +172,7 @@ module lib_addr::prime_field_element_0 {
         assert!(res == 1, 1);
     }
 
+    #[test()]
     fun tes_mulmod1() {
         let res = fmul(
             0x6f31595cf7b7c9239fde468365c31cb213f6e99bfac7e9f13c6063a760a28f3,
@@ -125,22 +182,22 @@ module lib_addr::prime_field_element_0 {
         // assert!(res == 0x6097aa03e733f4c41191a1dd5731289c210364e1183819f428704c582a0bb05, 1);
     }
 
+    #[test()]
     fun tes_mulmod2() {
         let res = fmul(
             0x6f31595cf7b7c9239fde468365c31cb213f6e99bfac7e9f13c6063a760a28f3,
             0x5f31595cf7b7c9239fde468365c31cb213f6e99bfac7e9f13c6063a760a28f3
         );
         assert!(res == 0x2fdbdfde6ae533be13e17f0d624c8bb2b9bef967b4dfe911d5b500f2084da17, 1);
-        // assert!(res == 0x6097aa03e733f4c41191a1dd5731289c210364e1183819f428704c582a0bb05, 1);
     }
 
+    #[test()]
     fun tes_mulmod3() {
         let res = fmul(
             0x5f31595cf7b7c9239fde468365c31cb213f6e99bfac7e9f13c6063a760a28f3,
             1
         );
         assert!(res == 0x5f31595cf7b7c9239fde468365c31cb213f6e99bfac7e9f13c6063a760a28f3, 1);
-        // assert!(res == 0x6097aa03e733f4c41191a1dd5731289c210364e1183819f428704c582a0bb05, 1);
     }
 }
 
