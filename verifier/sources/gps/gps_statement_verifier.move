@@ -113,7 +113,6 @@ module verifier_addr::gps_statement_verifier {
         move_to(signer, VparParams {
             proof_params: vector[],
             proof: vector[],
-            task_metadata: vector[],
             cairo_aux_input: vector[],
             cairo_verifier_id: 0
         });
@@ -156,12 +155,11 @@ module verifier_addr::gps_statement_verifier {
         proof: vector<u256>,
         cairo_aux_input: vector<u256>,
         cairo_verifier_id: u256
-    ) acquires TaskMetaData, VparParams {
+    ) acquires VparParams {
         let signer_addr = address_of(signer);
         *borrow_global_mut<VparParams>(signer_addr) = VparParams {
             proof_params,
             proof,
-            task_metadata: borrow_global<TaskMetaData>(signer_addr).inner,
             cairo_aux_input,
             cairo_verifier_id
         };
@@ -190,16 +188,20 @@ module verifier_addr::gps_statement_verifier {
     VparCheckpoint,
     VparCache,
     RpmmpCheckpoint,
+    TaskMetaData,
     Cache3,
     Cache4 {
         let signer_addr = address_of(signer);
         let VparParams {
             proof_params,
             proof,
-            task_metadata,
             cairo_aux_input,
             cairo_verifier_id
         } = borrow_global_mut<VparParams>(signer_addr);
+
+        let TaskMetaData {
+            inner: task_metadata
+        } = borrow_global_mut<TaskMetaData>(address_of(signer));
 
         let VparCheckpoint {
             inner: checkpoint
@@ -555,7 +557,6 @@ module verifier_addr::gps_statement_verifier {
     struct VparParams has key, drop {
         proof_params: vector<u256>,
         proof: vector<u256>,
-        task_metadata: vector<u256>,
         cairo_aux_input: vector<u256>,
         cairo_verifier_id: u256
     }
