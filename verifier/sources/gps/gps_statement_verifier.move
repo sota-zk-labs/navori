@@ -1,7 +1,6 @@
 module verifier_addr::gps_statement_verifier {
     use std::signer::address_of;
     use std::vector::{borrow, borrow_mut, is_empty, length};
-    use aptos_std::math64::min;
     use aptos_framework::event::emit;
 
     use cpu_addr::cairo_bootloader_program::get_compiled_program;
@@ -138,11 +137,6 @@ module verifier_addr::gps_statement_verifier {
             n_tasks: 0,
             public_memory_length: 0
         });
-        move_to(signer, Cache4 {
-            ptr: 0,
-            task_metadata_slice: vector[],
-            output_address: 0
-        });
 
         memory_page_fact_registry::init_data_type(signer);
         gps_output_parser::init_data_type(signer);
@@ -189,8 +183,7 @@ module verifier_addr::gps_statement_verifier {
     VparCache,
     RpmmpCheckpoint,
     TaskMetaData,
-    Cache3,
-    Cache4 {
+    Cache3 {
         let signer_addr = address_of(signer);
         let VparParams {
             proof_params,
@@ -328,7 +321,7 @@ module verifier_addr::gps_statement_verifier {
         task_metadata: &vector<u256>,
         cairo_aux_input: &vector<u256>,
         selected_builtins: u256
-    ): vector<u256> acquires ConstructorConfig, RpmmpCheckpoint, Cache3, Cache4 {
+    ): vector<u256> acquires ConstructorConfig, RpmmpCheckpoint, Cache3 {
         let signer_addr = address_of(signer);
         let RpmmpCheckpoint {
             inner: checkpoint
@@ -438,42 +431,44 @@ module verifier_addr::gps_statement_verifier {
         if (*checkpoint == RPMMP_CHECKPOINT2) {
             // Program output.
             {
-                let Cache4 {
-                    ptr,
-                    task_metadata_slice,
-                    output_address
-                } = borrow_global_mut<Cache4>(signer_addr);
-                if (*ptr == 0) {
-                    let ConstructorConfig {
-                        hashed_supported_cairo_verifiers,
-                        simple_bootloader_program_hash
-                    } = borrow_global<ConstructorConfig>(address_of(signer));
-                    *output_address = *borrow(cairo_aux_input, OFFSET_OUTPUT_BEGIN_ADDR);
-                    // Force that memory[outputAddress] and memory[outputAddress + 1] contain the
-                    // bootloader config (which is 2 words size).
-                    set_el(public_memory, *offset + 0, *output_address);
-                    set_el(public_memory, *offset + 1, *simple_bootloader_program_hash);
-                    set_el(public_memory, *offset + 2, *output_address + 1);
-                    set_el(public_memory, *offset + 3, *hashed_supported_cairo_verifiers);
-                    // Force that memory[outputAddress + 2] = nTasks.
-                    set_el(public_memory, *offset + 4, *output_address + 2);
-                    set_el(public_memory, *offset + 5, *n_tasks);
-                    *offset = *offset + 6;
-                    *output_address = *output_address + 3;
+                let ConstructorConfig {
+                    hashed_supported_cairo_verifiers,
+                    simple_bootloader_program_hash
+                } = borrow_global<ConstructorConfig>(address_of(signer));
+                let output_address = *borrow(cairo_aux_input, OFFSET_OUTPUT_BEGIN_ADDR);
+                // Force that memory[outputAddress] and memory[outputAddress + 1] contain the
+                // bootloader config (which is 2 words size).
+                set_el(public_memory, *offset + 0, output_address);
+                set_el(public_memory, *offset + 1, *simple_bootloader_program_hash);
+                set_el(public_memory, *offset + 2, output_address + 1);
+                set_el(public_memory, *offset + 3, *hashed_supported_cairo_verifiers);
+                // Force that memory[outputAddress + 2] = nTasks.
+                set_el(public_memory, *offset + 4, output_address + 2);
+                set_el(public_memory, *offset + 5, *n_tasks);
+                *offset = *offset + 6;
+                output_address = output_address + 3;
 
-                    *task_metadata_slice = *task_metadata;
-                    trim_head(task_metadata_slice, METADATA_TASKS_OFFSET);
-                };
+                let current_metadata_offset = METADATA_TASKS_OFFSET;
+                let ptr = 0;
+                let end_ptr = (*n_tasks as u64);
 
-                let end_ptr = min(*ptr + ITERATION_LENGTH, (*n_tasks as u64));
-                for (task in *ptr..end_ptr) {
-                    let output_size = *borrow(task_metadata_slice, METADATA_OFFSET_TASK_OUTPUT_SIZE);
+                for (task in ptr..end_ptr) {
+                    let output_size = *borrow(
+                        task_metadata,
+                        current_metadata_offset + METADATA_OFFSET_TASK_OUTPUT_SIZE
+                    );
 
                     // Ensure 'outputSize' is at least 2 and bounded from above as a sanity check
                     // (the bound is somewhat arbitrary).
                     assert!(2 <= output_size && output_size < (1 << 30), EINVALID_TASK_OUTPUT_SIZE);
-                    let program_hash = *borrow(task_metadata_slice, METADATA_OFFSET_TASK_PROGRAM_HASH);
-                    let n_tree_pairs = *borrow(task_metadata_slice, METADATA_OFFSET_TASK_N_TREE_PAIRS);
+                    let program_hash = *borrow(
+                        task_metadata,
+                        current_metadata_offset + METADATA_OFFSET_TASK_PROGRAM_HASH
+                    );
+                    let n_tree_pairs = *borrow(
+                        task_metadata,
+                        current_metadata_offset + METADATA_OFFSET_TASK_N_TREE_PAIRS
+                    );
 
                     // Ensure 'nTreePairs' is at least 1 and bounded from above as a sanity check
                     // (the bound is somewhat arbitrary).
@@ -482,28 +477,24 @@ module verifier_addr::gps_statement_verifier {
                         EINVALID_NUMBER_OF_PAIRS_IN_MERKLE_TREE_STRUCTURE
                     );
                     // Force that memory[outputAddress] = outputSize.
-                    set_el(public_memory, *offset + 0, *output_address);
+                    set_el(public_memory, *offset + 0, output_address);
                     set_el(public_memory, *offset + 1, output_size);
                     // Force that memory[outputAddress + 1] = programHash.
-                    set_el(public_memory, *offset + 2, *output_address + 1);
+                    set_el(public_memory, *offset + 2, output_address + 1);
                     set_el(public_memory, *offset + 3, program_hash);
                     *offset = *offset + 4;
-                    *output_address = *output_address + output_size;
+                    output_address = output_address + output_size;
 
-                    trim_head(task_metadata_slice, METADATA_TASK_HEADER_SIZE + (2 * n_tree_pairs as u64));
-                };
-                *ptr = end_ptr;
-                if (*ptr == (*n_tasks as u64)) {
-                    assert!(length(task_metadata_slice) == 0, EINVALID_LENGTH_OF_TASK_METADATA);
-
-                    assert!(
-                        *borrow(cairo_aux_input, OFFSET_OUTPUT_STOP_PTR) == *output_address,
-                        EINCONSISTENT_PROGRAM_OUTPUT_LENGTH
-                    );
-                    *checkpoint = RPMMP_CHECKPOINT3;
-                    *ptr = 0;
+                    current_metadata_offset = METADATA_TASK_HEADER_SIZE + (2 * n_tree_pairs as u64) + current_metadata_offset;
                 };
 
+                assert!(length(task_metadata) == current_metadata_offset, EINVALID_LENGTH_OF_TASK_METADATA);
+
+                assert!(
+                    *borrow(cairo_aux_input, OFFSET_OUTPUT_STOP_PTR) == output_address,
+                    EINCONSISTENT_PROGRAM_OUTPUT_LENGTH
+                );
+                *checkpoint = RPMMP_CHECKPOINT3;
                 return vector[]
             }
         };
@@ -595,12 +586,6 @@ module verifier_addr::gps_statement_verifier {
     }
 
     const ITERATION_LENGTH: u64 = 50;
-
-    struct Cache4 has key, drop {
-        ptr: u64,
-        task_metadata_slice: vector<u256>,
-        output_address: u256
-    }
 }
 
 #[test_only]
@@ -650,26 +635,11 @@ module verifier_addr::test_gps {
         // register_public_memory_main_page
         // register_public_memory_main_page::checkpoint1
         assert!(get_rpmmp_checkpoint(signer) == 1, 1);
-        verify_proof_and_register(signer);
         // register_public_memory_main_page::checkpoint2, loop 1
-        assert!(get_rpmmp_checkpoint(signer) == 2, 1);
         verify_proof_and_register(signer);
-        // register_public_memory_main_page::checkpoint2, loop 2
         assert!(get_rpmmp_checkpoint(signer) == 2, 1);
-        verify_proof_and_register(signer);
-        // register_public_memory_main_page::checkpoint2, loop 3
-        assert!(get_rpmmp_checkpoint(signer) == 2, 1);
-        verify_proof_and_register(signer);
-        // register_public_memory_main_page::checkpoint2, loop 4
-        assert!(get_rpmmp_checkpoint(signer) == 2, 1);
-        verify_proof_and_register(signer);
-        // register_public_memory_main_page::checkpoint2, loop 5
-        assert!(get_rpmmp_checkpoint(signer) == 2, 1);
-        verify_proof_and_register(signer);
-        // register_public_memory_main_page::checkpoint2, loop 6
-        assert!(get_rpmmp_checkpoint(signer) == 2, 1);
-        verify_proof_and_register(signer);
         // register_public_memory_main_page::CHECKPOINT3::register_regular_memorypage::compute_fact_hash::CFH_CHECKPOINT1
+        verify_proof_and_register(signer);
         assert!(get_rpmmp_checkpoint(signer) == 3, 1);
         assert!(get_cfh_checkpoint(signer) == 1, 1);
         verify_proof_and_register(signer);
