@@ -652,15 +652,14 @@ module verifier_addr::stark_verifier_7 {
 
         if (*checkpoint == VP_CHECKPOINT4) {
             if (compute_first_fri_layer(signer, ctx, proof)) {
-                *checkpoint = VP_CHECKPOINT5;
+                fri_statement_verifier_7::fri_verify_layers(signer, ctx, proof, proof_params);
+                *checkpoint = VP_CHECKPOINT1;
+                return true
             } else {
                 return false
             }
         };
-
-        fri_statement_verifier_7::fri_verify_layers(signer, ctx, proof, proof_params);
-        *checkpoint = VP_CHECKPOINT1;
-        true
+        return false
     }
 
     fun init_verifier_params(
@@ -1062,7 +1061,6 @@ module verifier_addr::stark_verifier_7 {
     const VP_CHECKPOINT2: u8 = 2;
     const VP_CHECKPOINT3: u8 = 3;
     const VP_CHECKPOINT4: u8 = 4;
-    const VP_CHECKPOINT5: u8 = 5;
 
     struct VpCheckpoint has key, drop {
         inner: u8

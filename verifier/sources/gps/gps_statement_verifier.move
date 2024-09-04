@@ -521,8 +521,8 @@ module verifier_addr::test_gps {
             assert!(!vector::contains(&registered_facts, &fact), 1);
         });
 
-        prepush_task_metadata(signer, task_meta_data_());
-        prepush_data_to_verify_proof_and_register(
+        prepush_task_metadata(signer, task_meta_data_()); // 19171 gas
+        prepush_data_to_verify_proof_and_register( // 22203 gas
             signer,
             proof_params_(),
             proof_(),
@@ -532,7 +532,7 @@ module verifier_addr::test_gps {
 
         // REGISTER_PUBLIC_MEMORY_MAIN_PAGE
         assert!(get_vpar_checkpoint(signer) == 1, 1);
-        verify_proof_and_register(signer);
+        verify_proof_and_register(signer); // 837 gas
         assert!(get_vpar_checkpoint(signer) == 2, 1);
 
         // check if fact hash was registered
@@ -544,44 +544,44 @@ module verifier_addr::test_gps {
         // verify_proof_external
         // verify_proof_external::VP_CHECKPOINT1
         assert!(get_vp_checkpoint(signer) == 1, 1);
-        verify_proof_and_register(signer);
+        verify_proof_and_register(signer); // 16439 gas
         // verify_proof_external::VP_CHECKPOINT2
         assert!(get_vpar_checkpoint(signer) == 2, 1);
         assert!(get_vp_checkpoint(signer) == 2, 1);
-        verify_proof_and_register(signer);
-        // verify_proof_external::VP_CHECKPOINT3::oods_consistency_check::OCC_CHECKPOINT1::verify_memory_page_facts, loop 2
+        verify_proof_and_register(signer); // 282 gas
+        // verify_proof_external::VP_CHECKPOINT3
         assert!(get_vpar_checkpoint(signer) == 2, 1);
         assert!(get_vp_checkpoint(signer) == 3, 1);
-        verify_proof_and_register(signer);
+        verify_proof_and_register(signer); // 932 gas
         // verify_proof_external::VP_CHECKPOINT4::compute_first_fri_layer::CFFL_CHECKPOINT1
         assert!(get_vpar_checkpoint(signer) == 2, 1);
         assert!(get_vp_checkpoint(signer) == 4, 1);
         assert!(get_cffl_checkpoint(signer) == 1, 1);
-        verify_proof_and_register(signer);
+        verify_proof_and_register(signer); // 244 gas
         // verify_proof_external::VP_CHECKPOINT4::compute_first_fri_layer::CFFL_CHECKPOINT2 + cpu_oods_7::fallback::FB_CHECKPOINT1
         assert!(get_vpar_checkpoint(signer) == 2, 1);
         assert!(get_vp_checkpoint(signer) == 4, 1);
         assert!(get_cffl_checkpoint(signer) == 2, 1);
         assert!(get_cpu_oods_fb_checkpoint(signer) == 1, 1);
-        verify_proof_and_register(signer);
+        verify_proof_and_register(signer); // 28856 gas
         // verify_proof_external::VP_CHECKPOINT4::compute_first_fri_layer::cpu_oods_7::fallback::FB_CHECKPOINT2, loop 1
         assert!(get_vpar_checkpoint(signer) == 2, 1);
         assert!(get_vp_checkpoint(signer) == 4, 1);
         assert!(get_cffl_checkpoint(signer) == 3, 1);
         assert!(get_cpu_oods_fb_checkpoint(signer) == 2, 1);
-        verify_proof_and_register(signer);
+        verify_proof_and_register(signer); // 874 gas
         // verify_proof_external::VP_CHECKPOINT4::compute_first_fri_layer::cpu_oods_7::fallback::FB_CHECKPOINT2, loop 2, finish compute_first_fri_layer + verify_proof_external
         assert!(get_vpar_checkpoint(signer) == 2, 1);
         assert!(get_vp_checkpoint(signer) == 4, 1);
         assert!(get_cffl_checkpoint(signer) == 3, 1);
         assert!(get_cpu_oods_fb_checkpoint(signer) == 2, 1);
-        verify_proof_and_register(signer);
+        verify_proof_and_register(signer); // 587 gas
         assert!(get_cffl_checkpoint(signer) == 1, 1);
         assert!(get_vp_checkpoint(signer) == 1, 1);
 
         // register_gps_facts
         assert!(get_vpar_checkpoint(signer) == 3, 1);
-        verify_proof_and_register(signer);
+        verify_proof_and_register(signer); // 11993 gas
         assert!(get_vpar_checkpoint(signer) == 1, 1);
 
         // check if some facts were registered
