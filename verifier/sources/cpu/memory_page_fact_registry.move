@@ -57,15 +57,6 @@ module verifier_addr::memory_page_fact_registry {
         prod: u256
     }
 
-    public(friend) fun init_data_type(signer: &signer) {
-        move_to(signer, CfhCheckpoint {
-            inner: CFH_CHECKPOINT1
-        });
-        move_to(signer, CfhCache {
-            prod: 0
-        });
-    }
-
     public(friend) fun register_regular_memory_page(
         signer: &signer,
         memory_pairs: &vector<u256>,
@@ -199,21 +190,6 @@ module verifier_addr::memory_page_fact_registry {
         for (i in 0..length(&start_addr) ) {
             register_continuous_memorypage(s, *borrow(&start_addr, i), *borrow(&values, i), z, alpha);
         }
-    }
-
-    // Data of the function `compute_fact_hash`
-    // checkpoints
-    const CFH_CHECKPOINT1: u8 = 1;
-    const CFH_CHECKPOINT2: u8 = 2;
-
-    const ITERATION_LENGTH: u64 = 1500;
-
-    struct CfhCheckpoint has key {
-        inner: u8
-    }
-
-    struct CfhCache has key, drop {
-        prod: u256
     }
 }
 

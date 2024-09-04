@@ -283,9 +283,6 @@ module verifier_addr::stark_verifier_7 {
         move_to(signer, CtxCache {
             inner: vector[]
         });
-        move_to(signer, OccCheckpoint {
-            inner: OCC_CHECKPOINT1
-        });
         move_to(signer, CfflCheckpoint {
             inner: CFFL_CHECKPOINT1
         });
@@ -361,7 +358,7 @@ module verifier_addr::stark_verifier_7 {
         proof_data_ptr: u64,
         merkle_root: u256
     ) {
-        assert!(n_columns <= get_n_columns_in_trace() + get_n_columns_in_composition(), ETOO_MANY_COLUMNS);
+        assert!(n_columns <= N_COLUMNS_IN_MASK + CONSTRAINTS_DEGREE_BOUND, ETOO_MANY_COLUMNS);
         let n_unique_queries = (*borrow(ctx, MM_N_UNIQUE_QUERIES) as u64);
         let channel_ptr = MM_CHANNEL;
         let fri_queue = MM_FRI_QUEUE;
@@ -598,12 +595,12 @@ module verifier_addr::stark_verifier_7 {
                 let tmp = read_field_element(ctx, proof, channel_ptr, true);
                 set_el(ctx, i, tmp);
             };
-            *checkpoint = VP_CHECKPOINT4;
+            *checkpoint = VP_CHECKPOINT3;
             return false
         };
 
         // emit LogGas("Read OODS commitments", gasleft());
-        if (*checkpoint == VP_CHECKPOINT4) {
+        if (*checkpoint == VP_CHECKPOINT3) {
             if (oods_consistency_check(signer, ctx, public_input)) {
                 // emit LogGas("OODS consistency check", gasleft());
                 send_field_elements(ctx, channel_ptr, 1, MM_OODS_ALPHA);
@@ -647,21 +644,22 @@ module verifier_addr::stark_verifier_7 {
                 );
                 set_el(ctx, MM_N_UNIQUE_QUERIES, tmp);
 
-                *checkpoint = VP_CHECKPOINT5;
+                *checkpoint = VP_CHECKPOINT4;
             };
             return false
         };
         // emit LogGas("Send queries", gasleft());
 
-        if (*checkpoint == VP_CHECKPOINT5) {
+        if (*checkpoint == VP_CHECKPOINT4) {
             if (compute_first_fri_layer(signer, ctx, proof)) {
-                *checkpoint = VP_CHECKPOINT6;
+                *checkpoint = VP_CHECKPOINT5;
             } else {
                 return false
             }
         };
 
         fri_statement_verifier_7::fri_verify_layers(signer, ctx, proof, proof_params);
+        *checkpoint = VP_CHECKPOINT1;
         true
     }
 
@@ -1054,15 +1052,9 @@ module verifier_addr::stark_verifier_7 {
     }
 
     #[test_only]
-    public fun get_occ_checkpoint(signer: &signer): u8 acquires OccCheckpoint {
-        borrow_global<OccCheckpoint>(address_of(signer)).inner
-    }
-
-    #[test_only]
     public fun get_cffl_checkpoint(signer: &signer): u8 acquires CfflCheckpoint {
         borrow_global<CfflCheckpoint>(address_of(signer)).inner
     }
-
 
     // Data of the function `verify_proof`
     // checkpoints
@@ -1071,7 +1063,6 @@ module verifier_addr::stark_verifier_7 {
     const VP_CHECKPOINT3: u8 = 3;
     const VP_CHECKPOINT4: u8 = 4;
     const VP_CHECKPOINT5: u8 = 5;
-    const VP_CHECKPOINT6: u8 = 6;
 
     struct VpCheckpoint has key, drop {
         inner: u8
@@ -1079,20 +1070,6 @@ module verifier_addr::stark_verifier_7 {
 
     struct CtxCache has key, drop {
         inner: vector<u256>
-    }
-
-    // Data of the function `verify_memory_page_facts`
-    const VMPF_ITERATION_LENGTH: u256 = 120;
-
-    // Data of the function `oods_consistency_check`
-    // checkpoints
-    const OCC_CHECKPOINT1: u8 = 1;
-    const OCC_CHECKPOINT2: u8 = 2;
-    const OCC_CHECKPOINT3: u8 = 3;
-    const OCC_CHECKPOINT4: u8 = 4;
-
-    struct OccCheckpoint has key, drop {
-        inner: u8
     }
 
     // Data of the function `compute_first_fri_layer`

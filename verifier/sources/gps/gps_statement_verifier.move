@@ -8,7 +8,6 @@ module verifier_addr::gps_statement_verifier {
     use lib_addr::vector::{assign, set_el, trim_head, trim_only};
     use verifier_addr::cairo_verifier_contract::{get_layout_info, verify_proof_external};
     use verifier_addr::gps_output_parser::register_gps_facts;
-    use verifier_addr::memory_page_fact_registry;
     use verifier_addr::memory_page_fact_registry::register_regular_memory_page;
     use verifier_addr::stark_verifier_7;
 
@@ -104,7 +103,6 @@ module verifier_addr::gps_statement_verifier {
     }
 
     public fun init_data_type(signer: &signer) {
-        // Data of the function `verify_proof_and_register`
         move_to(signer, TaskMetaData {
             inner: vector[]
         });
@@ -118,9 +116,6 @@ module verifier_addr::gps_statement_verifier {
             inner: REGISTER_PUBLIC_MEMORY_MAIN_PAGE
         });
 
-        // Data of the function `register_public_memory_main_page`
-
-        memory_page_fact_registry::init_data_type(signer);
         stark_verifier_7::init_data_type(signer);
     }
 
@@ -465,7 +460,6 @@ module verifier_addr::gps_statement_verifier {
 
 
     // Data of the function `verify_proof_and_register`
-
     // checkpoints
     const REGISTER_PUBLIC_MEMORY_MAIN_PAGE: u8 = 1;
     const VERIFY_PROOF_EXTERNAL: u8 = 2;
@@ -490,11 +484,6 @@ module verifier_addr::gps_statement_verifier {
     struct VparFinished has store, drop {
         ok: bool
     }
-
-    // Data of the function `register_public_memory_main_page`
-    // checkpoints
-
-    const ITERATION_LENGTH: u64 = 50;
 }
 
 #[test_only]
@@ -518,7 +507,7 @@ module verifier_addr::test_gps {
         registered_facts_,
         task_meta_data_
     };
-    use verifier_addr::stark_verifier_7::{get_cffl_checkpoint, get_occ_checkpoint, get_vp_checkpoint};
+    use verifier_addr::stark_verifier_7::{get_cffl_checkpoint, get_vp_checkpoint};
 
     #[test(signer = @0xC0FFEE)]
     fun test_verify_proof_and_register(signer: &signer) {
@@ -541,8 +530,10 @@ module verifier_addr::test_gps {
             7u256
         );
 
+        // REGISTER_PUBLIC_MEMORY_MAIN_PAGE
+        assert!(get_vpar_checkpoint(signer) == 1, 1);
         verify_proof_and_register(signer);
-        verify_proof_and_register(signer);
+        assert!(get_vpar_checkpoint(signer) == 2, 1);
 
         // check if fact hash was registered
         assert!(
@@ -552,40 +543,46 @@ module verifier_addr::test_gps {
 
         // verify_proof_external
         // verify_proof_external::VP_CHECKPOINT1
+        assert!(get_vp_checkpoint(signer) == 1, 1);
+        verify_proof_and_register(signer);
+        // verify_proof_external::VP_CHECKPOINT2
+        assert!(get_vpar_checkpoint(signer) == 2, 1);
         assert!(get_vp_checkpoint(signer) == 2, 1);
         verify_proof_and_register(signer);
-        // verify_proof_external::VP_CHECKPOINT4::oods_consistency_check::OCC_CHECKPOINT1::verify_memory_page_facts, loop 2
-        assert!(get_vp_checkpoint(signer) == 4, 1);
-        assert!(get_occ_checkpoint(signer) == 1, 1);
+        // verify_proof_external::VP_CHECKPOINT3::oods_consistency_check::OCC_CHECKPOINT1::verify_memory_page_facts, loop 2
+        assert!(get_vpar_checkpoint(signer) == 2, 1);
+        assert!(get_vp_checkpoint(signer) == 3, 1);
         verify_proof_and_register(signer);
-        assert!(get_occ_checkpoint(signer) == 1, 1);
-        // verify_proof_external::VP_CHECKPOINT5::compute_first_fri_layer::CFFL_CHECKPOINT1
-        assert!(get_vp_checkpoint(signer) == 5, 1);
+        // verify_proof_external::VP_CHECKPOINT4::compute_first_fri_layer::CFFL_CHECKPOINT1
+        assert!(get_vpar_checkpoint(signer) == 2, 1);
+        assert!(get_vp_checkpoint(signer) == 4, 1);
         assert!(get_cffl_checkpoint(signer) == 1, 1);
         verify_proof_and_register(signer);
-        // verify_proof_external::VP_CHECKPOINT5::compute_first_fri_layer::CFFL_CHECKPOINT2 + cpu_oods_7::fallback::FB_CHECKPOINT1
-        assert!(get_vp_checkpoint(signer) == 5, 1);
+        // verify_proof_external::VP_CHECKPOINT4::compute_first_fri_layer::CFFL_CHECKPOINT2 + cpu_oods_7::fallback::FB_CHECKPOINT1
+        assert!(get_vpar_checkpoint(signer) == 2, 1);
+        assert!(get_vp_checkpoint(signer) == 4, 1);
         assert!(get_cffl_checkpoint(signer) == 2, 1);
         assert!(get_cpu_oods_fb_checkpoint(signer) == 1, 1);
         verify_proof_and_register(signer);
-        // verify_proof_external::VP_CHECKPOINT5::compute_first_fri_layer::cpu_oods_7::fallback::FB_CHECKPOINT2, loop 1
-        assert!(get_vp_checkpoint(signer) == 5, 1);
+        // verify_proof_external::VP_CHECKPOINT4::compute_first_fri_layer::cpu_oods_7::fallback::FB_CHECKPOINT2, loop 1
+        assert!(get_vpar_checkpoint(signer) == 2, 1);
+        assert!(get_vp_checkpoint(signer) == 4, 1);
         assert!(get_cffl_checkpoint(signer) == 3, 1);
         assert!(get_cpu_oods_fb_checkpoint(signer) == 2, 1);
         verify_proof_and_register(signer);
-        // verify_proof_external::VP_CHECKPOINT5::compute_first_fri_layer::cpu_oods_7::fallback::FB_CHECKPOINT2, loop 2, finish compute_first_fri_layer + verify_proof_external
-        assert!(get_vp_checkpoint(signer) == 5, 1);
+        // verify_proof_external::VP_CHECKPOINT4::compute_first_fri_layer::cpu_oods_7::fallback::FB_CHECKPOINT2, loop 2, finish compute_first_fri_layer + verify_proof_external
+        assert!(get_vpar_checkpoint(signer) == 2, 1);
+        assert!(get_vp_checkpoint(signer) == 4, 1);
         assert!(get_cffl_checkpoint(signer) == 3, 1);
         assert!(get_cpu_oods_fb_checkpoint(signer) == 2, 1);
         verify_proof_and_register(signer);
         assert!(get_cffl_checkpoint(signer) == 1, 1);
+        assert!(get_vp_checkpoint(signer) == 1, 1);
 
         // register_gps_facts
-        // register_gps_facts, loop 1
         assert!(get_vpar_checkpoint(signer) == 3, 1);
         verify_proof_and_register(signer);
-        // register_gps_facts, loop 2
-        verify_proof_and_register(signer);
+        assert!(get_vpar_checkpoint(signer) == 1, 1);
 
         // check if some facts were registered
         for_each(registered_facts, |fact| {

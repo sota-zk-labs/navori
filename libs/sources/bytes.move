@@ -71,19 +71,6 @@ module lib_addr::bytes {
         vector::reverse(&mut bytes);
         to_u256(bytes)
     }
-
-    // Data of the function `long_vec_to_bytes_be`
-
-    // checkpoints
-    const IN_ITERATION: u8 = 1;
-    const END_ITERATION: u8 = 1;
-
-    const ITERATION_LENGTH: u64 = 1000;
-
-    struct Cache has key, drop {
-        ptr: u64,
-        bytes: vector<u8>
-    }
 }
 
 #[test_only]
