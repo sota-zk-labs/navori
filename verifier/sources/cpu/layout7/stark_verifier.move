@@ -10,7 +10,7 @@ module verifier_addr::stark_verifier_7 {
         get_offset_page_size, get_public_input_length
     };
 
-    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be, vec_to_bytes_le};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le, vec_to_bytes_le};
     use lib_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
     use lib_addr::vector::{append_vector, assign, set_el, trim_only};
     use verifier_addr::fact_registry::is_valid;
@@ -374,12 +374,12 @@ module verifier_addr::stark_verifier_7 {
 
         while (fri_queue < fri_queue_end) {
             // adding 8 bytes
-            let bytes = slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr)), 8, 32);
+            let bytes = slice(&num_to_bytes_le<u256>(borrow(proof, proof_ptr)), 8, 32);
             let proof_ptr_offset_val = bytes32_to_u256(
-                append_vector(bytes, slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr + 1)), 0, 8))
+                append_vector(bytes, slice(&num_to_bytes_le<u256>(borrow(proof, proof_ptr + 1)), 0, 8))
             );
             append(&mut bytes, vec_to_bytes_le(&slice(proof, proof_ptr + 1, proof_ptr + row_size)));
-            append(&mut bytes, slice(&num_to_bytes_be<u256>(borrow(proof, proof_ptr + row_size)), 0, 8));
+            append(&mut bytes, slice(&num_to_bytes_le<u256>(borrow(proof, proof_ptr + row_size)), 0, 8));
             assert!(length(&bytes) == row_size * 32, EWRONG_BYTES_LENGTH);
             let merkle_leaf = bytes32_to_u256(
                 keccak256(bytes)
@@ -444,8 +444,8 @@ module verifier_addr::stark_verifier_7 {
                 signer,
                 ctx,
                 proof,
-                get_n_columns_in_trace(),
-                get_n_columns_in_trace_0(),
+                N_COLUMNS_IN_MASK,
+                N_COLUMNS_IN_TRACE0,
                 MM_TRACE_QUERY_RESPONSES,
                 tmp
             );
@@ -457,9 +457,9 @@ module verifier_addr::stark_verifier_7 {
                     signer,
                     ctx,
                     proof,
-                    get_n_columns_in_trace(),
-                    get_n_columns_in_trace_1(),
-                    MM_TRACE_QUERY_RESPONSES + get_n_columns_in_trace_0(),
+                    N_COLUMNS_IN_MASK,
+                    N_COLUMNS_IN_TRACE1,
+                    MM_TRACE_QUERY_RESPONSES + N_COLUMNS_IN_TRACE0,
                     tmp
                 );
                 // emit LogGas("Read and decommit second trace", gasleft());
@@ -474,8 +474,8 @@ module verifier_addr::stark_verifier_7 {
                 signer,
                 ctx,
                 proof,
-                get_n_columns_in_composition(),
-                get_n_columns_in_composition(),
+                CONSTRAINTS_DEGREE_BOUND,
+                CONSTRAINTS_DEGREE_BOUND,
                 MM_COMPOSITION_QUERY_RESPONSES,
                 tmp
             );
@@ -574,8 +574,8 @@ module verifier_addr::stark_verifier_7 {
                 send_field_elements(
                     ctx,
                     channel_ptr,
-                    get_n_interaction_elements(),
-                    get_mm_interaction_elements()
+                    N_INTERACTION_ELEMENTS,
+                    MM_INTERACTION_ELEMENTS
                 );
 
                 // Read second trace commitment.
@@ -945,7 +945,6 @@ module verifier_addr::stark_verifier_7 {
 
         // Calculate the numerator.
         let numerator = fpow(z, public_memory_size);
-
         // Compute the final result: numerator * denominator^(-1).
         fmul(numerator, inverse(denominator))
     }
@@ -1014,52 +1013,8 @@ module verifier_addr::stark_verifier_7 {
         true
     }
 
-    fun get_n_columns_in_trace(): u64 {
-        N_COLUMNS_IN_MASK
-    }
-
-    fun get_n_columns_in_trace_0(): u64 {
-        N_COLUMNS_IN_TRACE0
-    }
-
-    fun get_n_columns_in_trace_1(): u64 {
-        N_COLUMNS_IN_TRACE1
-    }
-
-    fun get_n_columns_in_composition(): u64 {
-        CONSTRAINTS_DEGREE_BOUND
-    }
-
-    fun get_mm_interaction_elements(): u64 {
-        MM_INTERACTION_ELEMENTS
-    }
-
-    fun get_mm_oods_values(): u256 {
-        (MM_OODS_VALUES as u256)
-    }
-
-    fun get_n_interaction_elements(): u64 {
-        N_INTERACTION_ELEMENTS
-    }
-
-    fun get_n_coefficients(): u256 {
-        N_COEFFICIENTS
-    }
-
-    fun get_n_oods_values(): u64 {
-        N_OODS_VALUES
-    }
-
-    fun get_n_oods_coefficients(): u64 {
-        N_OODS_COEFFICIENTS
-    }
-
-    fun get_public_memory_offset(): u64 {
-        OFFSET_PUBLIC_MEMORY
-    }
-
     fun has_interaction(): bool {
-        get_n_columns_in_trace_1() > 0
+        N_COLUMNS_IN_TRACE1 > 0
     }
 
     fun bit_reverse(value: u256, number_of_bits: u8): u256 {

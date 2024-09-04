@@ -6,7 +6,7 @@ module verifier_addr::merkle_statement_contract {
     use aptos_std::math64::pow;
     use aptos_framework::event;
 
-    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le};
     use lib_addr::convert_memory::copy_vec_to_memory;
     use verifier_addr::fact_registry::register_fact;
     use verifier_addr::fri::{get_fri, new_fri, update_fri};
@@ -161,7 +161,7 @@ module verifier_addr::merkle_statement_contract {
         for (i in 0..(n_queries * 2 + 1)) {
             vector::append(
                 &mut input_hash,
-                num_to_bytes_be(vector::borrow(fri, data_to_hash_ptr + i))
+                num_to_bytes_le(vector::borrow(fri, data_to_hash_ptr + i))
             );
         };
         // register fact

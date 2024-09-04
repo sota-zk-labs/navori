@@ -3,7 +3,7 @@ module verifier_addr::fri_layer {
     use std::vector;
     use aptos_std::aptos_hash::keccak256;
 
-    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le};
     use lib_addr::prime_field_element_0::{fmul, fpow};
     use verifier_addr::fri::{get_fri, update_fri};
     use verifier_addr::fri_transform::transform_coset;
@@ -179,7 +179,7 @@ module verifier_addr::fri_layer {
 
             let hash = vector::empty();
             for (i in 0..fri_coset_size) {
-                vector::append(&mut hash, num_to_bytes_be(vector::borrow(fri, evaluation_on_coset_ptr + i)));
+                vector::append(&mut hash, num_to_bytes_le(vector::borrow(fri, evaluation_on_coset_ptr + i)));
             };
 
             *vector::borrow_mut(fri, merkle_queue_ptr + 1) = COMMITMENT_MASK & bytes32_to_u256(keccak256(hash));

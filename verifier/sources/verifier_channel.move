@@ -2,7 +2,7 @@ module verifier_addr::verifier_channel {
     use std::vector::{append, borrow, borrow_mut, enumerate_ref, slice};
     use aptos_std::aptos_hash::keccak256;
 
-    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be, vec_to_bytes_le};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le, vec_to_bytes_le};
     use lib_addr::prime_field_element_0::{fmul, from_montgomery};
     use lib_addr::vector::{append_vector, set_el};
     use verifier_addr::prng::{get_random_bytes, init_prng};
@@ -31,12 +31,12 @@ module verifier_addr::verifier_channel {
         init_prng(ctx, channel_ptr + 1, public_input_hash);
     }
 
-     // 
-      // Sends a field element through the verifier channel.
-      //
-      // Note that the logic of this function is inlined in many places throughout the code to reduce
-      // gas costs.
-      //
+    //
+    // Sends a field element through the verifier channel.
+    //
+    // Note that the logic of this function is inlined in many places throughout the code to reduce
+    // gas costs.
+    //
     public(friend) fun send_field_elements(
         ctx: &mut vector<u256>,
         channel_ptr: u64,
@@ -163,15 +163,15 @@ module verifier_addr::verifier_channel {
 
         let proof_ptr = *borrow(ctx, channel_ptr);
         // proofOfWorkDigest:= keccak256(keccak256(0123456789abcded || digest || workBits) || nonce).
-        let hash_input = num_to_bytes_be<u64>(&0x0123456789abcdedu64);
-        append(&mut hash_input, num_to_bytes_be<u256>(&digest));
-        append(&mut hash_input, num_to_bytes_be<u8>(&proof_of_work_bits));
+        let hash_input = num_to_bytes_le<u64>(&0x0123456789abcdedu64);
+        append(&mut hash_input, num_to_bytes_le<u256>(&digest));
+        append(&mut hash_input, num_to_bytes_le<u8>(&proof_of_work_bits));
         hash_input = keccak256(hash_input);
-        append(&mut hash_input, slice(&num_to_bytes_be<u256>(borrow(proof, (proof_ptr as u64))), 0, 8));
+        append(&mut hash_input, slice(&num_to_bytes_le<u256>(borrow(proof, (proof_ptr as u64))), 0, 8));
         let proof_of_work_digest = bytes32_to_u256(keccak256(hash_input));
 
         // prng.digest := keccak256(digest + 1||nonce), nonce was written earlier.
-        enumerate_ref(&num_to_bytes_be(&(digest + 1)), |i, byte| {
+        enumerate_ref(&num_to_bytes_le(&(digest + 1)), |i, byte| {
             set_el(&mut hash_input, i, *byte);
         });
         set_el(ctx, channel_ptr + 1, bytes32_to_u256(keccak256(hash_input)));
@@ -220,7 +220,7 @@ module verifier_addr::test_verifier_channel {
     use std::vector::{append, length, slice};
     use aptos_std::aptos_hash::keccak256;
 
-    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le};
 
     #[test]
     fun test_verify_proof_of_work() {
@@ -229,9 +229,9 @@ module verifier_addr::test_verifier_channel {
 
         // let proof_ptr = *borrow(ctx, channel_ptr);
         // proofOfWorkDigest:= keccak256(keccak256(0123456789abcded || digest || workBits) || nonce).
-        let hash_input = num_to_bytes_be<u64>(&0x0123456789abcdedu64);
-        append(&mut hash_input, num_to_bytes_be<u256>(&digest));
-        append(&mut hash_input, num_to_bytes_be<u8>(&proof_of_work_bits));
+        let hash_input = num_to_bytes_le<u64>(&0x0123456789abcdedu64);
+        append(&mut hash_input, num_to_bytes_le<u256>(&digest));
+        append(&mut hash_input, num_to_bytes_le<u8>(&proof_of_work_bits));
         hash_input = keccak256(hash_input);
         assert!(
             bytes32_to_u256(
@@ -239,7 +239,7 @@ module verifier_addr::test_verifier_channel {
             ) == 6838760435758358717748204741702738474564120725378941118720130852105265839032,
             1
         );
-        append(&mut hash_input, slice(&num_to_bytes_be<u256>(
+        append(&mut hash_input, slice(&num_to_bytes_le<u256>(
             &(5122894908359966063365751743241561245605455810076508980447074811081u256)
         ), 0, 8));
         assert!(length(&hash_input) == 0x28, 1);
