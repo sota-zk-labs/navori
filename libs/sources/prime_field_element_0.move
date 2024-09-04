@@ -37,28 +37,18 @@ module lib_addr::prime_field_element_0 {
         let b_1 = b & MAX_U128;
 
         let ab_mid = a_0 * b_1 + b_0 * a_1;
-        let ab_mid_0 = ab_mid >> 128;
-        let ab_mid_1 = ab_mid & MAX_U128;
 
-        let ab_0 = a_0 * b_0 + ab_mid_0;
+        let ab_0 = a_0 * b_0 + (ab_mid >> 128);
 
         let q_0 = ab_0 / K_MODULUS_0;
 
-        let qk_mid_1 = q_0;
-        let qk_0 = q_0 * K_MODULUS_0;
-
-        let upper_left = ab_0 - qk_0;
-
-        let upper_left_a = upper_left << 128;
+        let upper_left_a = (ab_0 - q_0 * K_MODULUS_0) << 128;
 
         // compute div of x =(x_0 * 2 ^ 256 + x_1 * 2 ^ 128) / 2 ^ 128
-        let div = upper_left_a / K_MODULUS_0;
-        let remainder = upper_left_a - div * K_MODULUS_0;
-        let remainder = ((remainder << 128) - div) % K_MODULUS;
+        let remainder = ((upper_left_a % K_MODULUS_0) << 128) - upper_left_a / K_MODULUS_0;
 
-        let ab_1 = (remainder + (a_1 * b_1) % K_MODULUS + (ab_mid_1 << 128) % K_MODULUS);
-        let qk_1 = (qk_mid_1 << 128) % K_MODULUS;
-
+        let ab_1 = (remainder + (a_1 * b_1) % K_MODULUS + ((ab_mid & MAX_U128) << 128) % K_MODULUS);
+        let qk_1 = (q_0 << 128) % K_MODULUS;
         let res = (K_MODULUS - qk_1 + ab_1) % K_MODULUS;
         res
     }
