@@ -4,7 +4,7 @@ module verifier_addr::verifier_channel {
 
     use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le, vec_to_bytes_le};
     use lib_addr::prime_field_element_0::{fmul, from_montgomery};
-    use lib_addr::vector::{append_vector, set_el};
+    use lib_addr::vector::{set_el};
     use verifier_addr::prng::{get_random_bytes, init_prng};
 
     // This line is used for generating constants DO NOT REMOVE!
@@ -189,20 +189,18 @@ module verifier_addr::verifier_channel {
         mix: bool,
         should_add_8_bytes: bool
     ): u256 {
-        let proof_ptr = *borrow(ctx, channel_ptr);
-        
+        let proof_ptr = (*borrow(ctx, channel_ptr) as u64);
+
         let val = if (should_add_8_bytes) {
-            bytes32_to_u256(
-                append_vector(
-                    slice(&num_to_bytes_be(borrow(proof, (proof_ptr as u64))), 8, 32),
-                    slice(&num_to_bytes_be(borrow(proof, (proof_ptr + 1 as u64))), 0, 8)
-                )
-            )
+            let x = *borrow(proof, proof_ptr) % (1 << 192);
+            let y = *borrow(proof, proof_ptr + 1) / (1 << 192);
+
+            (x * (1 << 64)) + y
         } else {
-            *borrow(proof, (proof_ptr as u64))
+            *borrow(proof, proof_ptr)
         };
-        
-        set_el(ctx, channel_ptr, proof_ptr + 1);
+
+        set_el(ctx, channel_ptr, (proof_ptr + 1 as u256));
         if (mix) {
             let digest = borrow_mut(ctx, channel_ptr + 1);
 
