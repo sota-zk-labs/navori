@@ -7,7 +7,6 @@ module verifier_addr::gps_statement_verifier {
 
     use lib_addr::vector::{assign, set_el, trim_head, trim_only};
     use verifier_addr::cairo_verifier_contract::{get_layout_info, verify_proof_external};
-    use verifier_addr::gps_output_parser;
     use verifier_addr::gps_output_parser::register_gps_facts;
     use verifier_addr::memory_page_fact_registry;
     use verifier_addr::memory_page_fact_registry::register_regular_memory_page;
@@ -129,7 +128,6 @@ module verifier_addr::gps_statement_verifier {
         // Data of the function `register_public_memory_main_page`
 
         memory_page_fact_registry::init_data_type(signer);
-        gps_output_parser::init_data_type(signer);
         stark_verifier_7::init_data_type(signer);
     }
 
@@ -269,18 +267,16 @@ module verifier_addr::gps_statement_verifier {
         };
 
         if (*checkpoint == REGISTER_GPS_FACT) {
-            if (register_gps_facts(
+            register_gps_facts(
                 signer,
                 task_metadata,
                 public_memory_pages,
                 *borrow(cairo_aux_input, OFFSET_OUTPUT_BEGIN_ADDR)
-            )) {
-                emit(VparFinished {
-                    ok: true
-                });
-                *checkpoint = REGISTER_PUBLIC_MEMORY_MAIN_PAGE;
-                return
-            };
+            );
+            emit(VparFinished {
+                ok: true
+            });
+            *checkpoint = REGISTER_PUBLIC_MEMORY_MAIN_PAGE;
         };
     }
 
@@ -609,7 +605,6 @@ module verifier_addr::test_gps {
         assert!(get_vpar_checkpoint(signer) == 3, 1);
         verify_proof_and_register(signer);
         // register_gps_facts, loop 2
-        assert!(get_vpar_checkpoint(signer) == 3, 1);
         verify_proof_and_register(signer);
 
         // check if some facts were registered

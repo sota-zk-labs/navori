@@ -1,10 +1,8 @@
 module verifier_addr::gps_output_parser {
-    use std::signer::address_of;
     use std::vector::borrow;
     use std::vector::length;
-    use std::vector::{for_each_mut, push_back, slice};
+    use std::vector::slice;
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::math64::min;
     use aptos_std::vector;
     use aptos_framework::event::emit;
 
@@ -69,19 +67,6 @@ module verifier_addr::gps_output_parser {
         pages_hashes: vector<u256>,
     }
 
-    public(friend) fun init_data_type(signer: &signer) {
-        move_to(signer, IterationCache {
-            ptr: 0,
-            total_num_pages: 0,
-            n_task: 0,
-            page_hashed_log_data: vector[],
-            task_metadata_offset: 0,
-            cur_addr: 0,
-            cur_page: 0,
-            node_stack: vector[],
-            page_info_ptr_start: 0
-        });
-    }
 
     // Parses the GPS program output (using taskMetadata, which should be verified by the caller),
     // and registers the facts of the tasks which were executed.
@@ -119,63 +104,48 @@ module verifier_addr::gps_output_parser {
         task_metadata: &vector<u256>,
         public_memory_pages: &vector<u256>,
         output_start_address: u256
-    ): bool acquires IterationCache {
-        let signer_addr = address_of(signer);
-        let IterationCache {
-            ptr,
-            total_num_pages,
-            n_task,
-            page_hashed_log_data,
-            task_metadata_offset,
-            cur_addr,
-            cur_page,
-            node_stack,
-            page_info_ptr_start
-        } = borrow_global_mut<IterationCache>(signer_addr);
-        if (*ptr == 0) {
-            *total_num_pages = (*borrow(public_memory_pages, 0) as u64);
+    ) {
+        let total_num_pages = (*borrow(public_memory_pages, 0) as u64);
+        let n_task = (*borrow(task_metadata, 0) as u64);
 
-            *n_task = (*borrow(task_metadata, 0) as u64);
+        // Contains fact hash with the relevant memory pages' hashes.
+        // Size is bounded from above with the total number of pages. Three extra places are
+        // dedicated for the fact hash and the array address and length.
+        let page_hashed_log_data = assign(0u256, total_num_pages + 3);
+        // Relative address to the beginning of the memory pages' hashes in the array.
+        set_el(&mut page_hashed_log_data, 1, 0x40);
 
-            // Contains fact hash with the relevant memory pages' hashes.
-            // Size is bounded from above with the total number of pages. Three extra places are
-            // dedicated for the fact hash and the array address and length.
-            *page_hashed_log_data = assign(0u256, *total_num_pages + 3);
-            // Relative address to the beginning of the memory pages' hashes in the array.
-            set_el(page_hashed_log_data, 1, 0x40);
+        let task_metadata_offset = METADATA_TASKS_OFFSET;
 
-            *task_metadata_offset = METADATA_TASKS_OFFSET;
+        // Skip the 5 first output cells which contain the bootloader config, the number of tasks
+        // and the size and program hash of the first task. curAddr points to the output of the
+        // first task.
+        let cur_addr = output_start_address + 5;
 
-            // Skip the 5 first output cells which contain the bootloader config, the number of tasks
-            // and the size and program hash of the first task. curAddr points to the output of the
-            // first task.
-            *cur_addr = output_start_address + 5;
+        // Skip the main page.
+        let cur_page = FIRST_CONTINUOUS_PAGE_INDEX;
 
-            // Skip the main page.
-            *cur_page = FIRST_CONTINUOUS_PAGE_INDEX;
+        // Bound the size of the stack by the total number of pages.
+        // TODO(lior, 15/04/2022): Get a better bound on the size of the stack.
+        let node_stack = assign(0u256, NODE_STACK_ITEM_SIZE * total_num_pages);
 
-            // Bound the size of the stack by the total number of pages.
-            // TODO(lior, 15/04/2022): Get a better bound on the size of the stack.
-            *node_stack = assign(0u256, NODE_STACK_ITEM_SIZE * *total_num_pages);
-
-            // Skip the array length and the first page.
-            *page_info_ptr_start = (PAGE_INFO_SIZE as u64);
-        };
-        let end_ptr = min(*n_task, *ptr + ITERATION_LENGTH);
+        // Skip the array length and the first page.
+        let page_info_ptr_start = (PAGE_INFO_SIZE as u64);
+        let count = 0;
         // Register the fact for each task.
-        for (task in *ptr..end_ptr) {
+        for (task in 0..n_task) {
             let cur_offset = 0;
-            let first_page_of_task = *cur_page;
+            let first_page_of_task = cur_page;
             let n_tree_pairs = (*borrow(
                 task_metadata,
-                *task_metadata_offset + METADATA_OFFSET_TASK_N_TREE_PAIRS
+                task_metadata_offset + METADATA_OFFSET_TASK_N_TREE_PAIRS
             ) as u64);
 
             // Build the Merkle tree using a stack (see the function documentation) to compute the fact.
             let node_stack_len = 0;
-            for (tree_pairs in 0u64..n_tree_pairs) {
+            for (tree_pairs in 0..n_tree_pairs) {
                 let n_pages = *borrow(task_metadata,
-                    (*task_metadata_offset + METADATA_TASK_HEADER_SIZE
+                    (task_metadata_offset + METADATA_TASK_HEADER_SIZE
                         + 2 * tree_pairs + METADATA_OFFSET_TREE_PAIR_N_PAGES)
                 );
 
@@ -183,36 +153,37 @@ module verifier_addr::gps_output_parser {
                 // (the bound is somewhat arbitrary).
                 assert!(n_pages <= (1 << 20), EINVALID_VALUE_OF_N_PAGES_IN_TREE_STRUCTURE);
                 for (i in 0..n_pages) {
-                    let page_info_ptr = slice(public_memory_pages, *page_info_ptr_start,
-                        *page_info_ptr_start + (PAGE_INFO_SIZE as u64)
+                    count = count + 1;
+                    let page_info_ptr = slice(public_memory_pages, page_info_ptr_start,
+                        page_info_ptr_start + (PAGE_INFO_SIZE as u64)
                     );
                     let (page_size, page_hash) = push_page_to_stack(
                         page_info_ptr,
-                        *cur_addr,
+                        cur_addr,
                         cur_offset,
-                        node_stack,
+                        &mut node_stack,
                         node_stack_len
                     );
-                    set_el(page_hashed_log_data, *cur_page - first_page_of_task + 3, page_hash);
-                    *cur_page = *cur_page + 1;
+                    set_el(&mut page_hashed_log_data, cur_page - first_page_of_task + 3, page_hash);
+                    cur_page = cur_page + 1;
                     node_stack_len = node_stack_len + 1;
-                    *cur_addr = *cur_addr + page_size;
+                    cur_addr = cur_addr + page_size;
                     cur_offset = cur_offset + page_size;
 
-                    *page_info_ptr_start = *page_info_ptr_start + (PAGE_INFO_SIZE as u64);
+                    page_info_ptr_start = page_info_ptr_start + (PAGE_INFO_SIZE as u64);
                 };
                 let n_nodes = *vector::borrow(task_metadata,
-                    (*task_metadata_offset + METADATA_TASK_HEADER_SIZE
+                    (task_metadata_offset + METADATA_TASK_HEADER_SIZE
                         + 2 * tree_pairs + METADATA_OFFSET_TREE_PAIR_N_NODES)
                 );
                 if (n_nodes != 0) {
-                    node_stack_len = construct_node(node_stack, node_stack_len, n_nodes);
+                    node_stack_len = construct_node(&mut node_stack, node_stack_len, n_nodes);
                 }
             };
             assert!(node_stack_len == 1, ENODE_STACK_MUST_CONTAIN_EXACTLY_ONE_ITEM);
             let program_hash = *vector::borrow(
                 task_metadata,
-                *task_metadata_offset + METADATA_OFFSET_TASK_PROGRAM_HASH
+                task_metadata_offset + METADATA_OFFSET_TASK_PROGRAM_HASH
             );
 
             // Verify that the sizes of the pages correspond to the task output, to make
@@ -220,42 +191,37 @@ module verifier_addr::gps_output_parser {
             {
                 let output_size = *borrow(
                     task_metadata,
-                    *task_metadata_offset + METADATA_OFFSET_TASK_OUTPUT_SIZE
+                    task_metadata_offset + METADATA_OFFSET_TASK_OUTPUT_SIZE
                 );
 
                 assert!(
-                    *borrow(node_stack, NODE_STACK_OFFSET_END) + 2 == output_size,
+                    *borrow(&mut node_stack, NODE_STACK_OFFSET_END) + 2 == output_size,
                     ESUM_OF_THE_PAGE_SIZES_DOES_NOT_MATCH_OUTPUT_SIZE
                 );
             };
 
-            let program_output_fact = *vector::borrow(node_stack, NODE_STACK_OFFSET_HASH);
+            let program_output_fact = *vector::borrow(&mut node_stack, NODE_STACK_OFFSET_HASH);
             let fact = bytes32_to_u256(
                 keccak256(vec_to_bytes_le(&vector[program_hash, program_output_fact]))
             );
-            *task_metadata_offset = *task_metadata_offset + METADATA_TASK_HEADER_SIZE + 2 * n_tree_pairs;
+            task_metadata_offset = task_metadata_offset + METADATA_TASK_HEADER_SIZE + 2 * n_tree_pairs;
 
             {
                 // Emit the output Merkle root with the hashes of the relevant memory pages.
                 // set_el(&mut page_hashed_log_data, 0, program_output_fact);
-                let length = *cur_page - first_page_of_task;
-                set_el(page_hashed_log_data, 2, (length as u256));
+                let length = cur_page - first_page_of_task;
+                set_el(&mut page_hashed_log_data, 2, (length as u256));
                 emit(LogMemoryPagesHashes {
                     program_output_fact,
-                    pages_hashes: slice(page_hashed_log_data, 1, length + 3),
+                    pages_hashes: slice(&mut page_hashed_log_data, 1, length + 3),
                 });
             };
 
             register_fact(signer, fact);
-            *cur_addr = *cur_addr + 2;
+            cur_addr = cur_addr + 2;
         };
-        *ptr = end_ptr;
-        if (*ptr == *n_task) {
-            assert!(*total_num_pages == *cur_page, ENOT_ALL_MEMORY_PAGES_WERE_PROCESSED);
-            *ptr = 0;
-            return true
-        };
-        false
+
+        assert!(total_num_pages == cur_page, ENOT_ALL_MEMORY_PAGES_WERE_PROCESSED);
     }
 
     //
@@ -299,33 +265,13 @@ module verifier_addr::gps_output_parser {
         );
         let new_stack_len = node_stack_len - n_nodes;
         let node_start = 1 + (new_stack_len as u64) * NODE_STACK_ITEM_SIZE;
-        let node_stack_ref = vector[];
-        for_each_mut(node_stack, |el| {
-            push_back(&mut node_stack_ref, *el);
-        });
         let new_node_hash = bytes32_to_u256(
-            keccak256(vec_to_bytes_le(&slice(&node_stack_ref, node_start, node_start + (n_nodes * 2 as u64))))
+            keccak256(vec_to_bytes_le(&slice(node_stack, node_start, node_start + (n_nodes * 2 as u64))))
         );
 
         set_el(node_stack, NODE_STACK_ITEM_SIZE * (new_stack_len as u64) + NODE_STACK_OFFSET_END, new_node_end);
         set_el(node_stack, NODE_STACK_ITEM_SIZE * (new_stack_len as u64) + NODE_STACK_OFFSET_HASH, new_node_hash + 1);
 
         return new_stack_len + 1
-    }
-
-    // Data of the function `register_gps_facts`
-
-    const ITERATION_LENGTH: u64 = 150;
-
-    struct IterationCache has key, drop {
-        ptr: u64,
-        total_num_pages: u64,
-        n_task: u64,
-        page_hashed_log_data: vector<u256>,
-        task_metadata_offset: u64,
-        cur_addr: u256,
-        cur_page: u64,
-        node_stack: vector<u256>,
-        page_info_ptr_start: u64
     }
 }
