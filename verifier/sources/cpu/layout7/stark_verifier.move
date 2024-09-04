@@ -2,11 +2,23 @@ module verifier_addr::stark_verifier_7 {
     use std::signer::address_of;
     use std::vector::{append, borrow, length, slice};
     use aptos_std::aptos_hash::keccak256;
-    use aptos_std::math64::min;
 
     use cpu_addr::cpu_oods_7;
     use cpu_addr::layout_specific_7::{layout_specific_init, prepare_for_oods_check, safe_div};
     use cpu_addr::memory_access_utils_7::get_fri_step_sizes;
+    use cpu_addr::public_memory_offsets_7::{get_offset_page_addr, get_offset_page_hash, get_offset_page_prod,
+        get_offset_page_size, get_public_input_length
+    };
+
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be, vec_to_bytes_le};
+    use lib_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
+    use lib_addr::vector::{append_vector, assign, set_el, trim_only};
+    use verifier_addr::fact_registry::is_valid;
+    use verifier_addr::fri_statement_verifier_7;
+    use verifier_addr::merkle_statement_verifier;
+    use verifier_addr::verifier_channel::{init_channel, read_field_element, read_hash, send_field_elements,
+        send_random_queries, verify_proof_of_work
+    };
 
     // This line is used for generating constants DO NOT REMOVE!
     // 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
@@ -237,20 +249,6 @@ module verifier_addr::stark_verifier_7 {
     const REGULAR_PAGE: u256 = 0x0;
     // End of generating constants!
 
-    use cpu_addr::public_memory_offsets_7::{get_offset_page_addr, get_offset_page_hash, get_offset_page_prod,
-        get_offset_page_size, get_public_input_length
-    };
-
-    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_be, vec_to_bytes_le};
-    use lib_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
-    use lib_addr::vector::{append_vector, assign, set_el, trim_only};
-    use verifier_addr::fact_registry::is_valid;
-    use verifier_addr::fri_statement_verifier_7;
-    use verifier_addr::merkle_statement_verifier;
-    use verifier_addr::verifier_channel::{init_channel, read_field_element, read_hash, send_field_elements,
-        send_random_queries, verify_proof_of_work
-    };
-
     friend verifier_addr::gps_statement_verifier;
     friend verifier_addr::cpu_verifier_7;
 
@@ -284,9 +282,6 @@ module verifier_addr::stark_verifier_7 {
         });
         move_to(signer, CtxCache {
             inner: vector[]
-        });
-        move_to(signer, VmpfIterationCache {
-            ptr: 0
         });
         move_to(signer, OccCheckpoint {
             inner: OCC_CHECKPOINT1
@@ -550,7 +545,7 @@ module verifier_addr::stark_verifier_7 {
         proof_params: &vector<u256>,
         proof: &mut vector<u256>,
         public_input: &vector<u256>
-    ): bool acquires ConstructorConfig, VpCheckpoint, CtxCache, VmpfIterationCache, OccCheckpoint, CfflCheckpoint {
+    ): bool acquires ConstructorConfig, VpCheckpoint, CtxCache, CfflCheckpoint {
         let signer_addr = address_of(signer);
         let VpCheckpoint {
             inner: checkpoint
@@ -597,12 +592,6 @@ module verifier_addr::stark_verifier_7 {
             // Send Out of Domain Sampling point.
             send_field_elements(ctx, channel_ptr, 1, MM_OODS_POINT);
 
-            *checkpoint = VP_CHECKPOINT3;
-            return false
-        };
-        // emit LogGas(Initializations, gasleft());
-
-        if (*checkpoint == VP_CHECKPOINT3) {
             // Read the answers to the Out of Domain Sampling.
             let lmm_oods_values = MM_OODS_VALUES;
             for (i in lmm_oods_values..(lmm_oods_values + N_OODS_VALUES)) {
@@ -673,8 +662,6 @@ module verifier_addr::stark_verifier_7 {
         };
 
         fri_statement_verifier_7::fri_verify_layers(signer, ctx, proof, proof_params);
-        // option::some(true)
-        *checkpoint = VP_CHECKPOINT1;
         true
     }
 
@@ -831,17 +818,17 @@ module verifier_addr::stark_verifier_7 {
         {
             // Compute the total number of public memory entries.
             let n_public_memory_entries = 0;
-            let n_pages = *borrow(&ctx, MM_N_PUBLIC_MEM_PAGES);
+            let n_pages = (*borrow(&ctx, MM_N_PUBLIC_MEM_PAGES) as u64);
             for (page in 0..n_pages) {
-                let n_page_entries = *borrow(public_input, (get_offset_page_size(page) as u64));
+                let n_page_entries = *borrow(public_input, get_offset_page_size(page));
                 assert!(n_page_entries < (1 << 30), ETOO_MANY_PUBLIC_MEMORY_ENTRIES_IN_ONE_PAGE);
                 n_public_memory_entries = n_public_memory_entries + n_page_entries;
             };
             set_el(&mut ctx, MM_N_PUBLIC_MEM_ENTRIES, n_public_memory_entries);
         };
 
-        let expected_public_input_length = get_public_input_length(*borrow(&ctx, MM_N_PUBLIC_MEM_PAGES));
-        assert!(expected_public_input_length == (public_input_length as u256), EPUBLIC_INPUT_LENGTH_MISMATCH);
+        let expected_public_input_length = get_public_input_length((*borrow(&ctx, MM_N_PUBLIC_MEM_PAGES) as u64));
+        assert!(expected_public_input_length == public_input_length, EPUBLIC_INPUT_LENGTH_MISMATCH);
 
         let lmm_public_input_ptr = MM_PUBLIC_INPUT_PTR;
         // store 0 instead of the address of public_input[0] as in original contract
@@ -862,26 +849,23 @@ module verifier_addr::stark_verifier_7 {
         signer: &signer,
         ctx: &mut vector<u256>,
         public_input: &vector<u256>
-    ): bool acquires VmpfIterationCache {
+    ) {
         let signer_addr = address_of(signer);
-        let VmpfIterationCache {
-            ptr
-        } = borrow_global_mut<VmpfIterationCache>(signer_addr);
-        let n_public_memory_pages = *borrow(ctx, MM_N_PUBLIC_MEM_PAGES);
+        let ptr = 0;
+        let n_public_memory_pages = (*borrow(ctx, MM_N_PUBLIC_MEM_PAGES) as u64);
 
-        let end_ptr = (min((n_public_memory_pages as u64), (*ptr + VMPF_ITERATION_LENGTH as u64)) as u256);
-        for (page in *ptr..end_ptr) {
-            let mm_public_input_ptr = *borrow(ctx, MM_PUBLIC_INPUT_PTR);
+        let mm_public_input_ptr = (*borrow(ctx, MM_PUBLIC_INPUT_PTR) as u64);
+        for (page in ptr..n_public_memory_pages) {
             // Fetch page values from the public input (hash, product and size).
-            let memory_hash = *borrow(public_input, (mm_public_input_ptr + get_offset_page_hash(page) as u64));
+            let memory_hash = *borrow(public_input, mm_public_input_ptr + get_offset_page_hash(page));
             let prod = *borrow(public_input,
-                (mm_public_input_ptr + get_offset_page_prod(page, n_public_memory_pages) as u64)
+                mm_public_input_ptr + get_offset_page_prod(page, n_public_memory_pages)
             );
-            let page_size = *borrow(public_input, (mm_public_input_ptr + get_offset_page_size(page) as u64));
+            let page_size = *borrow(public_input, mm_public_input_ptr + get_offset_page_size(page));
 
             let page_addr = 0;
             if (page > 0) {
-                page_addr = *borrow(public_input, (mm_public_input_ptr + get_offset_page_addr(page) as u64));
+                page_addr = *borrow(public_input, mm_public_input_ptr + get_offset_page_addr(page));
             };
 
             // Verify that a corresponding fact is registered attesting to the consistency of the page
@@ -901,13 +885,6 @@ module verifier_addr::stark_verifier_7 {
 
             assert!(is_valid(signer_addr, fact_hash), EMEMORY_PAGE_FACT_NOT_REGISTERED);
         };
-        *ptr = end_ptr;
-        if (end_ptr == n_public_memory_pages) {
-            *ptr = 0;
-            true
-        } else {
-            false
-        }
     }
 
     // In Starknet's contracts, this function is implemented in `CpuVerifier.sol`
@@ -915,11 +892,11 @@ module verifier_addr::stark_verifier_7 {
         // The initial seed consists of the first part of publicInput. Specifically, it does not
         // include the page products (which are only known later in the process, as they depend on
         // the values of z and alpha).
-        let n_pages = *borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES);
+        let n_pages = (*borrow(public_input, OFFSET_N_PUBLIC_MEMORY_PAGES) as u64);
         let public_input_size_for_hash = get_offset_page_prod(0, n_pages);
 
         let temp = *public_input;
-        trim_only(&mut temp, (public_input_size_for_hash as u64));
+        trim_only(&mut temp, public_input_size_for_hash);
         bytes32_to_u256(keccak256(vec_to_bytes_le(&temp)))
     }
 
@@ -944,12 +921,15 @@ module verifier_addr::stark_verifier_7 {
         assert!(n_values < 0x1000000, EOVERFLOW_PROTECTION_FAILED);
         assert!(n_values <= public_memory_size, ENUMBER_OF_VALUES_OF_PUBLIC_MEMORY_IS_TOO_LARGE);
 
-        let n_public_memory_pages = *borrow(ctx, MM_N_PUBLIC_MEM_PAGES);
-        let cumulative_prods_ptr = *borrow(ctx, MM_PUBLIC_INPUT_PTR) + get_offset_page_prod(0, n_public_memory_pages);
+        let n_public_memory_pages = (*borrow(ctx, MM_N_PUBLIC_MEM_PAGES) as u64);
+        let cumulative_prods_ptr = (*borrow(ctx, MM_PUBLIC_INPUT_PTR) as u64) + get_offset_page_prod(
+            0,
+            n_public_memory_pages
+        );
         let denominator = compute_public_memory_prod(
             public_input,
-            (cumulative_prods_ptr as u64),
-            (n_public_memory_pages as u64)
+            cumulative_prods_ptr,
+            n_public_memory_pages
         );
 
         // Compute address + alpha * value for the first address-value pair for padding.
@@ -993,31 +973,18 @@ module verifier_addr::stark_verifier_7 {
         signer: &signer,
         ctx: &mut vector<u256>,
         public_input: &vector<u256>
-    ): bool acquires VmpfIterationCache, OccCheckpoint {
-        let signer_addr = address_of(signer);
-        let OccCheckpoint {
-            inner: checkpoint
-        } = borrow_global_mut<OccCheckpoint>(signer_addr);
-        if (*checkpoint == OCC_CHECKPOINT1) {
-            if (verify_memory_page_facts(signer, ctx, public_input)) {
-                let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS);
-                set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM, temp);
-                let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 1);
-                set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0, temp);
-                let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 2);
-                set_el(ctx, MM_RANGE_CHECK16__PERM__INTERACTION_ELM, temp);
-                *checkpoint = OCC_CHECKPOINT2;
-            };
-            return false
-        };
-        if (*checkpoint == OCC_CHECKPOINT2) {
-            let public_memory_prod = compute_public_memory_quotient(ctx, public_input);
-            set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__PUBLIC_MEMORY_PROD, public_memory_prod);
+    ): bool {
+        verify_memory_page_facts(signer, ctx, public_input);
+        let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS);
+        set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM, temp);
+        let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 1);
+        set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0, temp);
+        let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 2);
+        set_el(ctx, MM_RANGE_CHECK16__PERM__INTERACTION_ELM, temp);
 
-            prepare_for_oods_check(ctx);
-            *checkpoint = OCC_CHECKPOINT3;
-            // return false
-        };
+        let public_memory_prod = compute_public_memory_quotient(ctx, public_input);
+        set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__PUBLIC_MEMORY_PROD, public_memory_prod);
+        prepare_for_oods_check(ctx);
 
         // Todo
         // let composition_from_trace_value;
@@ -1044,7 +1011,6 @@ module verifier_addr::stark_verifier_7 {
         //     composition_from_trace_value == claimed_composition,
         //     CLAIMED_COMPOSITION_DOES_NOT_MATCH_TRACE
         // );
-        *checkpoint = OCC_CHECKPOINT1;
         true
     }
 
@@ -1162,10 +1128,6 @@ module verifier_addr::stark_verifier_7 {
 
     // Data of the function `verify_memory_page_facts`
     const VMPF_ITERATION_LENGTH: u256 = 120;
-
-    struct VmpfIterationCache has key, drop {
-        ptr: u256
-    }
 
     // Data of the function `oods_consistency_check`
     // checkpoints
