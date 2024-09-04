@@ -117,10 +117,6 @@ module verifier_addr::gps_statement_verifier {
         move_to(signer, VparCheckpoint {
             inner: REGISTER_PUBLIC_MEMORY_MAIN_PAGE
         });
-        move_to(signer, VparCache {
-            selected_builtins: 0,
-            n_pages: 0,
-        });
 
         // Data of the function `register_public_memory_main_page`
 
@@ -165,7 +161,6 @@ module verifier_addr::gps_statement_verifier {
     ) acquires ConstructorConfig,
     VparParams,
     VparCheckpoint,
-    VparCache,
     TaskMetaData {
         let signer_addr = address_of(signer);
         let VparParams {
@@ -183,11 +178,6 @@ module verifier_addr::gps_statement_verifier {
             inner: checkpoint
         } = borrow_global_mut<VparCheckpoint>(signer_addr);
 
-        let VparCache {
-            selected_builtins,
-            n_pages,
-        } = borrow_global_mut<VparCache>(signer_addr);
-
         let cairo_aux_input_length = length(cairo_aux_input);
         if (*checkpoint == REGISTER_PUBLIC_MEMORY_MAIN_PAGE) {
             // Aptos has no abstract contract, so we set `cairo_verifier_id` to 7, as shown in these transactions
@@ -203,22 +193,21 @@ module verifier_addr::gps_statement_verifier {
             let cairo_public_input = *cairo_aux_input;
             trim_only(&mut cairo_public_input, new_cairo_public_input_length); // z and alpha.
 
-            let (public_memory_offset, selected_builtins_) = get_layout_info();
-            *selected_builtins = selected_builtins_;
+            let (public_memory_offset, selected_builtins) = get_layout_info();
             assert!(cairo_aux_input_length > (public_memory_offset as u64), EINVALID_CAIROAUXINPUT_LENGTH);
 
             let public_memory_pages = cairo_public_input;
             trim_head(&mut public_memory_pages, (public_memory_offset as u64));
 
-            *n_pages = *borrow(&public_memory_pages, 0);
-            assert!(*n_pages < 10000, EINVALID_NPAGES);
+            let n_pages = *borrow(&public_memory_pages, 0);
+            assert!(n_pages < 10000, EINVALID_NPAGES);
 
             // Validate publicMemoryPages.length.
             // Each page has a page info and a cumulative product.
             // There is no 'page address' in the page info for page 0, but this 'free' slot is
             // used to store the number of pages.
             assert!(
-                (length(&public_memory_pages) as u256) == *n_pages * (PAGE_INFO_SIZE + 1),
+                (length(&public_memory_pages) as u256) == n_pages * (PAGE_INFO_SIZE + 1),
                 EINVALID_PUBLIC_MEMORY_PAGES_LENGTH
             );
             
@@ -227,7 +216,7 @@ module verifier_addr::gps_statement_verifier {
                 signer,
                 task_metadata,
                 cairo_aux_input,
-                *selected_builtins
+                selected_builtins
             );
 
             // Make sure the first page is valid.
@@ -242,7 +231,7 @@ module verifier_addr::gps_statement_verifier {
                 EINVALID_HASH_FOR_MEMORY_PAGE_0
             );
             assert!(
-                *borrow(&public_memory_pages, (*n_pages * PAGE_INFO_SIZE as u64)) == prod,
+                *borrow(&public_memory_pages, (n_pages * PAGE_INFO_SIZE as u64)) == prod,
                 EINVALID_CUMULATIVE_PRODUCT
             );
             *checkpoint = VERIFY_PROOF_EXTERNAL;
@@ -497,11 +486,6 @@ module verifier_addr::gps_statement_verifier {
         inner: u8
     }
 
-    struct VparCache has key, drop {
-        selected_builtins: u256,
-        n_pages: u256,
-    }
-
     #[event]
     struct VparFinished has store, drop {
         ok: bool
@@ -568,9 +552,6 @@ module verifier_addr::test_gps {
 
         // verify_proof_external
         // verify_proof_external::VP_CHECKPOINT1
-        assert!(get_vp_checkpoint(signer) == 1, 1);
-        verify_proof_and_register(signer);
-        // verify_proof_external::VP_CHECKPOINT2
         assert!(get_vp_checkpoint(signer) == 2, 1);
         verify_proof_and_register(signer);
         // verify_proof_external::VP_CHECKPOINT4::oods_consistency_check::OCC_CHECKPOINT1::verify_memory_page_facts, loop 2
