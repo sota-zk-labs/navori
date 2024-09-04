@@ -119,10 +119,7 @@ module verifier_addr::gps_statement_verifier {
         });
         move_to(signer, VparCache {
             selected_builtins: 0,
-            cairo_public_input: vector[],
-            public_memory_pages: vector[],
             n_pages: 0,
-            first_invoking: true
         });
 
         // Data of the function `register_public_memory_main_page`
@@ -188,10 +185,7 @@ module verifier_addr::gps_statement_verifier {
 
         let VparCache {
             selected_builtins,
-            cairo_public_input,
-            public_memory_pages,
             n_pages,
-            first_invoking
         } = borrow_global_mut<VparCache>(signer_addr);
 
         let cairo_aux_input_length = length(cairo_aux_input);
@@ -205,32 +199,29 @@ module verifier_addr::gps_statement_verifier {
             // They are not part of the public input of CpuVerifier as they are computed there.
             // Take the relevant slice from 'cairoAuxInput'.
             // let cairo_public_input = cairo_aux_input[0..length(cairo_aux_input) - 2]; // z and alpha.
-            if (*first_invoking) {
-                *first_invoking = false;
-                let new_cairo_public_input_length = cairo_aux_input_length - 2;
-                *cairo_public_input = *cairo_aux_input;
-                trim_only(cairo_public_input, new_cairo_public_input_length); // z and alpha.
+            let new_cairo_public_input_length = cairo_aux_input_length - 2;
+            let cairo_public_input = *cairo_aux_input;
+            trim_only(&mut cairo_public_input, new_cairo_public_input_length); // z and alpha.
 
-                let (public_memory_offset, selected_builtins_) = get_layout_info();
-                *selected_builtins = selected_builtins_;
-                assert!(cairo_aux_input_length > (public_memory_offset as u64), EINVALID_CAIROAUXINPUT_LENGTH);
+            let (public_memory_offset, selected_builtins_) = get_layout_info();
+            *selected_builtins = selected_builtins_;
+            assert!(cairo_aux_input_length > (public_memory_offset as u64), EINVALID_CAIROAUXINPUT_LENGTH);
 
-                *public_memory_pages = *cairo_public_input;
-                trim_head(public_memory_pages, (public_memory_offset as u64));
+            let public_memory_pages = cairo_public_input;
+            trim_head(&mut public_memory_pages, (public_memory_offset as u64));
 
-                *n_pages = *borrow(public_memory_pages, 0);
-                assert!(*n_pages < 10000, EINVALID_NPAGES);
+            *n_pages = *borrow(&public_memory_pages, 0);
+            assert!(*n_pages < 10000, EINVALID_NPAGES);
 
-                // Validate publicMemoryPages.length.
-                // Each page has a page info and a cumulative product.
-                // There is no 'page address' in the page info for page 0, but this 'free' slot is
-                // used to store the number of pages.
-                assert!(
-                    (length(public_memory_pages) as u256) == *n_pages * (PAGE_INFO_SIZE + 1),
-                    EINVALID_PUBLIC_MEMORY_PAGES_LENGTH
-                );
-                return
-            };
+            // Validate publicMemoryPages.length.
+            // Each page has a page info and a cumulative product.
+            // There is no 'page address' in the page info for page 0, but this 'free' slot is
+            // used to store the number of pages.
+            assert!(
+                (length(&public_memory_pages) as u256) == *n_pages * (PAGE_INFO_SIZE + 1),
+                EINVALID_PUBLIC_MEMORY_PAGES_LENGTH
+            );
+            
             // Process public memory.
             let (public_memory_length, memory_hash, prod) = register_public_memory_main_page(
                 signer,
@@ -243,15 +234,15 @@ module verifier_addr::gps_statement_verifier {
             // If the size or the hash are invalid, it may indicate that there is a mismatch
             // between the prover and the verifier on the bootloader program or bootloader config.
             assert!(
-                *borrow(public_memory_pages, (PAGE_INFO_SIZE_OFFSET as u64)) == public_memory_length,
+                *borrow(&public_memory_pages, (PAGE_INFO_SIZE_OFFSET as u64)) == public_memory_length,
                 EINVALID_SIZE_FOR_MEMORY_PAGE_0
             );
             assert!(
-                *borrow(public_memory_pages, (PAGE_INFO_HASH_OFFSET as u64)) == memory_hash,
+                *borrow(&public_memory_pages, (PAGE_INFO_HASH_OFFSET as u64)) == memory_hash,
                 EINVALID_HASH_FOR_MEMORY_PAGE_0
             );
             assert!(
-                *borrow(public_memory_pages, (*n_pages * PAGE_INFO_SIZE as u64)) == prod,
+                *borrow(&public_memory_pages, (*n_pages * PAGE_INFO_SIZE as u64)) == prod,
                 EINVALID_CUMULATIVE_PRODUCT
             );
             *checkpoint = VERIFY_PROOF_EXTERNAL;
@@ -260,17 +251,28 @@ module verifier_addr::gps_statement_verifier {
 
         // NOLINTNEXTLINE: reentrancy-benign.
         if (*checkpoint == VERIFY_PROOF_EXTERNAL) {
-            if (verify_proof_external(signer, proof_params, proof, cairo_public_input)) {
+            let new_cairo_public_input_length = cairo_aux_input_length - 2;
+            let cairo_public_input = *cairo_aux_input;
+            trim_only(&mut cairo_public_input, new_cairo_public_input_length); // z and alpha.
+
+            if (verify_proof_external(signer, proof_params, proof, &cairo_public_input)) {
                 *checkpoint = REGISTER_GPS_FACT;
             };
             return
         };
 
         if (*checkpoint == REGISTER_GPS_FACT) {
+            let new_cairo_public_input_length = cairo_aux_input_length - 2;
+            let cairo_public_input = *cairo_aux_input;
+            trim_only(&mut cairo_public_input, new_cairo_public_input_length); // z and alpha.
+            let public_memory_pages = cairo_public_input;
+            let (public_memory_offset, _) = get_layout_info();
+            trim_head(&mut public_memory_pages, (public_memory_offset as u64));
+
             register_gps_facts(
                 signer,
                 task_metadata,
-                public_memory_pages,
+                &public_memory_pages,
                 *borrow(cairo_aux_input, OFFSET_OUTPUT_BEGIN_ADDR)
             );
             emit(VparFinished {
@@ -497,10 +499,7 @@ module verifier_addr::gps_statement_verifier {
 
     struct VparCache has key, drop {
         selected_builtins: u256,
-        cairo_public_input: vector<u256>,
-        public_memory_pages: vector<u256>,
         n_pages: u256,
-        first_invoking: bool
     }
 
     #[event]
