@@ -128,16 +128,6 @@ module verifier_addr::gps_statement_verifier {
 
         // Data of the function `register_public_memory_main_page`
 
-        move_to(signer, RpmmpCheckpoint {
-            inner: RPMMP_CHECKPOINT1
-        });
-        move_to(signer, Cache3 {
-            public_memory: vector[],
-            offset: 0,
-            n_tasks: 0,
-            public_memory_length: 0
-        });
-
         memory_page_fact_registry::init_data_type(signer);
         gps_output_parser::init_data_type(signer);
         stark_verifier_7::init_data_type(signer);
@@ -181,9 +171,7 @@ module verifier_addr::gps_statement_verifier {
     VparParams,
     VparCheckpoint,
     VparCache,
-    RpmmpCheckpoint,
-    TaskMetaData,
-    Cache3 {
+    TaskMetaData {
         let signer_addr = address_of(signer);
         let VparParams {
             proof_params,
@@ -243,6 +231,7 @@ module verifier_addr::gps_statement_verifier {
                     (length(public_memory_pages) as u256) == *n_pages * (PAGE_INFO_SIZE + 1),
                     EINVALID_PUBLIC_MEMORY_PAGES_LENGTH
                 );
+                return
             };
             // Process public memory.
             let (public_memory_length, memory_hash, prod) = register_public_memory_main_page(
@@ -251,10 +240,6 @@ module verifier_addr::gps_statement_verifier {
                 cairo_aux_input,
                 *selected_builtins
             );
-            // The function has not finished running yet
-            if (public_memory_length == 0) {
-                return
-            };
 
             // Make sure the first page is valid.
             // If the size or the hash are invalid, it may indicate that there is a mismatch
@@ -320,199 +305,170 @@ module verifier_addr::gps_statement_verifier {
         task_metadata: &vector<u256>,
         cairo_aux_input: &vector<u256>,
         selected_builtins: u256
-    ): (u256, u256, u256) acquires ConstructorConfig, RpmmpCheckpoint, Cache3 {
-        let signer_addr = address_of(signer);
-        let RpmmpCheckpoint {
-            inner: checkpoint
-        } = borrow_global_mut<RpmmpCheckpoint>(signer_addr);
-        if (*checkpoint == RPMMP_CHECKPOINT1) {
-            let n_tasks = *borrow(task_metadata, 0);
-            // Ensure 'n_tasks' is bounded as a sanity check (the bound is somewhat arbitrary).
-            assert!(n_tasks < (1 << 30), EINVALID_NUMBER_OF_TASKS);
+    ): (u256, u256, u256) acquires ConstructorConfig {
+        let n_tasks = *borrow(task_metadata, 0);
+        // Ensure 'n_tasks' is bounded as a sanity check (the bound is somewhat arbitrary).
+        assert!(n_tasks < (1 << 30), EINVALID_NUMBER_OF_TASKS);
 
-            // Public memory length.
-            let public_memory_length = (PROGRAM_SIZE +
-                // return fp and pc =
-                2 +
-                N_MAIN_ARGS +
-                N_MAIN_RETURN_VALUES +
-                // Bootloader config size =
-                2 +
-                // Number of tasks cell =
-                1 +
-                2 *
-                    n_tasks);
+        // Public memory length.
+        let public_memory_length = (PROGRAM_SIZE +
+            // return fp and pc =
+            2 +
+            N_MAIN_ARGS +
+            N_MAIN_RETURN_VALUES +
+            // Bootloader config size =
+            2 +
+            // Number of tasks cell =
+            1 +
+            2 *
+                n_tasks);
 
-            let public_memory = assign(0u256, (MEMORY_PAIR_SIZE * public_memory_length as u64));
-            let offset = 0u64;
+        let public_memory = assign(0u256, (MEMORY_PAIR_SIZE * public_memory_length as u64));
+        let offset = 0u64;
 
-            // Write public memory, which is a list of pairs (address, value).
-            {
-                let bootloader_program = get_compiled_program(signer);
-                let n = length(&bootloader_program);
-                for (i in 0..n) {
-                    *borrow_mut(&mut public_memory, offset) = (i + INITIAL_PC as u256);
-                    *borrow_mut(&mut public_memory, offset + 1) = *borrow(&bootloader_program, i);
-                    offset = offset + 2;
-                }
-            };
-
-            {
-                // Execution segment - Make sure [initial_fp - 2] = initial_fp and .
-                // This is required for the safe call feature (that is, all call instructions will
-                // return, even if the called function is malicious).
-                // It guarantees that it's not possible to create a cycle in the call stack.
-                let initial_fp = *borrow(cairo_aux_input, OFFSET_EXECUTION_BEGIN_ADDR);
-                assert!(initial_fp >= 2, EINVALID_EXECUTION_BEGIN_ADDRESS);
-                *borrow_mut(&mut public_memory, offset + 0) = initial_fp - 2;
-                *borrow_mut(&mut public_memory, offset + 1) = initial_fp;
-                // Make sure [initial_fp - 1] = 0.
-                *borrow_mut(&mut public_memory, offset + 2) = initial_fp - 1;
-                *borrow_mut(&mut public_memory, offset + 3) = 0;
-                offset = offset + 4;
-
-                // Execution segment: Enforce main's arguments and return values.
-                // Note that the page hash depends on the order of the (address, value) pair in the
-                // public_memory and consequently the arguments must be written before the return values.
-                let return_values_address = *borrow(cairo_aux_input, OFFSET_EXECUTION_STOP_PTR) - N_BUILTINS;
-                let builtin_segment_info_offset = OFFSET_OUTPUT_BEGIN_ADDR;
-
-                for (i in 0..N_BUILTINS) {
-                    // Write argument address.
-                    set_el(&mut public_memory, offset, initial_fp + i);
-                    let return_value_offset = offset + (2 * N_BUILTINS as u64);
-
-                    // Write return value address.
-                    set_el(&mut public_memory, return_value_offset, return_values_address + i);
-
-                    // Write values.
-                    if ((selected_builtins & 1) != 0) {
-                        // Set the argument to the builtin start pointer.
-                        set_el(
-                            &mut public_memory,
-                            offset + 1,
-                            *borrow(cairo_aux_input, builtin_segment_info_offset)
-                        );
-                        // Set the return value to the builtin stop pointer.
-                        set_el(&mut public_memory, return_value_offset + 1, *borrow(cairo_aux_input,
-                            builtin_segment_info_offset + 1
-                        ));
-                        builtin_segment_info_offset = builtin_segment_info_offset + 2;
-                    } else {
-                        // Builtin is not present in layout, set the argument value and return value to 0.
-                        set_el(&mut public_memory, offset + 1, 0);
-                        set_el(&mut public_memory, return_value_offset + 1, 0);
-                    };
-                    offset = offset + 2;
-                    selected_builtins = selected_builtins >> 1;
-                };
-                assert!(selected_builtins == 0, ESELECTED_BUILTINS_VECTOR_IS_TOO_LONG);
-                // Skip the return values which were already written.
-                offset = offset + (2 * N_BUILTINS as u64);
-            };
-            *checkpoint = RPMMP_CHECKPOINT2;
-            *borrow_global_mut<Cache3>(signer_addr) = Cache3 {
-                public_memory,
-                offset,
-                n_tasks,
-                public_memory_length
-            };
-            return (0, 0, 0)
-        };
-
-        let Cache3 {
-            public_memory,
-            offset,
-            n_tasks,
-            public_memory_length
-        } = borrow_global_mut<Cache3>(signer_addr);
-
-        if (*checkpoint == RPMMP_CHECKPOINT2) {
-            // Program output.
-            {
-                let ConstructorConfig {
-                    hashed_supported_cairo_verifiers,
-                    simple_bootloader_program_hash
-                } = borrow_global<ConstructorConfig>(address_of(signer));
-                let output_address = *borrow(cairo_aux_input, OFFSET_OUTPUT_BEGIN_ADDR);
-                // Force that memory[outputAddress] and memory[outputAddress + 1] contain the
-                // bootloader config (which is 2 words size).
-                set_el(public_memory, *offset + 0, output_address);
-                set_el(public_memory, *offset + 1, *simple_bootloader_program_hash);
-                set_el(public_memory, *offset + 2, output_address + 1);
-                set_el(public_memory, *offset + 3, *hashed_supported_cairo_verifiers);
-                // Force that memory[outputAddress + 2] = nTasks.
-                set_el(public_memory, *offset + 4, output_address + 2);
-                set_el(public_memory, *offset + 5, *n_tasks);
-                *offset = *offset + 6;
-                output_address = output_address + 3;
-
-                let current_metadata_offset = METADATA_TASKS_OFFSET;
-                let ptr = 0;
-                let end_ptr = (*n_tasks as u64);
-
-                for (task in ptr..end_ptr) {
-                    let output_size = *borrow(
-                        task_metadata,
-                        current_metadata_offset + METADATA_OFFSET_TASK_OUTPUT_SIZE
-                    );
-
-                    // Ensure 'outputSize' is at least 2 and bounded from above as a sanity check
-                    // (the bound is somewhat arbitrary).
-                    assert!(2 <= output_size && output_size < (1 << 30), EINVALID_TASK_OUTPUT_SIZE);
-                    let program_hash = *borrow(
-                        task_metadata,
-                        current_metadata_offset + METADATA_OFFSET_TASK_PROGRAM_HASH
-                    );
-                    let n_tree_pairs = *borrow(
-                        task_metadata,
-                        current_metadata_offset + METADATA_OFFSET_TASK_N_TREE_PAIRS
-                    );
-
-                    // Ensure 'nTreePairs' is at least 1 and bounded from above as a sanity check
-                    // (the bound is somewhat arbitrary).
-                    assert!(
-                        1 <= n_tree_pairs && n_tree_pairs < (1 << 20),
-                        EINVALID_NUMBER_OF_PAIRS_IN_MERKLE_TREE_STRUCTURE
-                    );
-                    // Force that memory[outputAddress] = outputSize.
-                    set_el(public_memory, *offset + 0, output_address);
-                    set_el(public_memory, *offset + 1, output_size);
-                    // Force that memory[outputAddress + 1] = programHash.
-                    set_el(public_memory, *offset + 2, output_address + 1);
-                    set_el(public_memory, *offset + 3, program_hash);
-                    *offset = *offset + 4;
-                    output_address = output_address + output_size;
-
-                    current_metadata_offset = METADATA_TASK_HEADER_SIZE + (2 * n_tree_pairs as u64) + current_metadata_offset;
-                };
-
-                assert!(length(task_metadata) == current_metadata_offset, EINVALID_LENGTH_OF_TASK_METADATA);
-
-                assert!(
-                    *borrow(cairo_aux_input, OFFSET_OUTPUT_STOP_PTR) == output_address,
-                    EINCONSISTENT_PROGRAM_OUTPUT_LENGTH
-                );
-                *checkpoint = RPMMP_CHECKPOINT3;
+        // Write public memory, which is a list of pairs (address, value).
+        {
+            let bootloader_program = get_compiled_program(signer);
+            let n = length(&bootloader_program);
+            for (i in 0..n) {
+                *borrow_mut(&mut public_memory, offset) = (i + INITIAL_PC as u256);
+                *borrow_mut(&mut public_memory, offset + 1) = *borrow(&bootloader_program, i);
+                offset = offset + 2;
             }
         };
 
-        if (*checkpoint == RPMMP_CHECKPOINT3) {
-            assert!(length(public_memory) == *offset, ENOT_ALL_CAIRO_PUBLIC_INPUTS_WERE_WRITTEN);
-            let cairo_aux_input_length = length(cairo_aux_input);
-            let z = *borrow(cairo_aux_input, cairo_aux_input_length - 2);
-            let alpha = *borrow(cairo_aux_input, cairo_aux_input_length - 1);
-            let (memory_hash, prod) = register_regular_memory_page(
-                signer,
-                public_memory,
-                z,
-                alpha
-            );
-            *checkpoint = RPMMP_CHECKPOINT1;
+        {
+            // Execution segment - Make sure [initial_fp - 2] = initial_fp and .
+            // This is required for the safe call feature (that is, all call instructions will
+            // return, even if the called function is malicious).
+            // It guarantees that it's not possible to create a cycle in the call stack.
+            let initial_fp = *borrow(cairo_aux_input, OFFSET_EXECUTION_BEGIN_ADDR);
+            assert!(initial_fp >= 2, EINVALID_EXECUTION_BEGIN_ADDRESS);
+            *borrow_mut(&mut public_memory, offset + 0) = initial_fp - 2;
+            *borrow_mut(&mut public_memory, offset + 1) = initial_fp;
+            // Make sure [initial_fp - 1] = 0.
+            *borrow_mut(&mut public_memory, offset + 2) = initial_fp - 1;
+            *borrow_mut(&mut public_memory, offset + 3) = 0;
+            offset = offset + 4;
 
-            return (*public_memory_length, memory_hash, prod)
+            // Execution segment: Enforce main's arguments and return values.
+            // Note that the page hash depends on the order of the (address, value) pair in the
+            // public_memory and consequently the arguments must be written before the return values.
+            let return_values_address = *borrow(cairo_aux_input, OFFSET_EXECUTION_STOP_PTR) - N_BUILTINS;
+            let builtin_segment_info_offset = OFFSET_OUTPUT_BEGIN_ADDR;
+
+            for (i in 0..N_BUILTINS) {
+                // Write argument address.
+                set_el(&mut public_memory, offset, initial_fp + i);
+                let return_value_offset = offset + (2 * N_BUILTINS as u64);
+
+                // Write return value address.
+                set_el(&mut public_memory, return_value_offset, return_values_address + i);
+
+                // Write values.
+                if ((selected_builtins & 1) != 0) {
+                    // Set the argument to the builtin start pointer.
+                    set_el(
+                        &mut public_memory,
+                        offset + 1,
+                        *borrow(cairo_aux_input, builtin_segment_info_offset)
+                    );
+                    // Set the return value to the builtin stop pointer.
+                    set_el(&mut public_memory, return_value_offset + 1, *borrow(cairo_aux_input,
+                        builtin_segment_info_offset + 1
+                    ));
+                    builtin_segment_info_offset = builtin_segment_info_offset + 2;
+                } else {
+                    // Builtin is not present in layout, set the argument value and return value to 0.
+                    set_el(&mut public_memory, offset + 1, 0);
+                    set_el(&mut public_memory, return_value_offset + 1, 0);
+                };
+                offset = offset + 2;
+                selected_builtins = selected_builtins >> 1;
+            };
+            assert!(selected_builtins == 0, ESELECTED_BUILTINS_VECTOR_IS_TOO_LONG);
+            // Skip the return values which were already written.
+            offset = offset + (2 * N_BUILTINS as u64);
         };
-        (0, 0, 0)
+
+        // Program output.
+        {
+            let ConstructorConfig {
+                hashed_supported_cairo_verifiers,
+                simple_bootloader_program_hash
+            } = borrow_global<ConstructorConfig>(address_of(signer));
+            let output_address = *borrow(cairo_aux_input, OFFSET_OUTPUT_BEGIN_ADDR);
+            // Force that memory[outputAddress] and memory[outputAddress + 1] contain the
+            // bootloader config (which is 2 words size).
+            set_el(&mut public_memory, offset + 0, output_address);
+            set_el(&mut public_memory, offset + 1, *simple_bootloader_program_hash);
+            set_el(&mut public_memory, offset + 2, output_address + 1);
+            set_el(&mut public_memory, offset + 3, *hashed_supported_cairo_verifiers);
+            // Force that memory[outputAddress + 2] = nTasks.
+            set_el(&mut public_memory, offset + 4, output_address + 2);
+            set_el(&mut public_memory, offset + 5, n_tasks);
+            offset = offset + 6;
+            output_address = output_address + 3;
+
+            let current_metadata_offset = METADATA_TASKS_OFFSET;
+            let ptr = 0;
+            let end_ptr = (n_tasks as u64);
+
+            for (task in ptr..end_ptr) {
+                let output_size = *borrow(
+                    task_metadata,
+                    current_metadata_offset + METADATA_OFFSET_TASK_OUTPUT_SIZE
+                );
+
+                // Ensure 'outputSize' is at least 2 and bounded from above as a sanity check
+                // (the bound is somewhat arbitrary).
+                assert!(2 <= output_size && output_size < (1 << 30), EINVALID_TASK_OUTPUT_SIZE);
+                let program_hash = *borrow(
+                    task_metadata,
+                    current_metadata_offset + METADATA_OFFSET_TASK_PROGRAM_HASH
+                );
+                let n_tree_pairs = *borrow(
+                    task_metadata,
+                    current_metadata_offset + METADATA_OFFSET_TASK_N_TREE_PAIRS
+                );
+
+                // Ensure 'nTreePairs' is at least 1 and bounded from above as a sanity check
+                // (the bound is somewhat arbitrary).
+                assert!(
+                    1 <= n_tree_pairs && n_tree_pairs < (1 << 20),
+                    EINVALID_NUMBER_OF_PAIRS_IN_MERKLE_TREE_STRUCTURE
+                );
+                // Force that memory[outputAddress] = outputSize.
+                set_el(&mut public_memory, offset + 0, output_address);
+                set_el(&mut public_memory, offset + 1, output_size);
+                // Force that memory[outputAddress + 1] = programHash.
+                set_el(&mut public_memory, offset + 2, output_address + 1);
+                set_el(&mut public_memory, offset + 3, program_hash);
+                offset = offset + 4;
+                output_address = output_address + output_size;
+
+                current_metadata_offset = METADATA_TASK_HEADER_SIZE + (2 * n_tree_pairs as u64) + current_metadata_offset;
+            };
+
+            assert!(length(task_metadata) == current_metadata_offset, EINVALID_LENGTH_OF_TASK_METADATA);
+
+            assert!(
+                *borrow(cairo_aux_input, OFFSET_OUTPUT_STOP_PTR) == output_address,
+                EINCONSISTENT_PROGRAM_OUTPUT_LENGTH
+            );
+        };
+
+        assert!(length(&public_memory) == offset, ENOT_ALL_CAIRO_PUBLIC_INPUTS_WERE_WRITTEN);
+        let cairo_aux_input_length = length(cairo_aux_input);
+        let z = *borrow(cairo_aux_input, cairo_aux_input_length - 2);
+        let alpha = *borrow(cairo_aux_input, cairo_aux_input_length - 1);
+        let (memory_hash, prod) = register_regular_memory_page(
+            signer,
+            &public_memory,
+            z,
+            alpha
+        );
+        return (public_memory_length, memory_hash, prod)
     }
 
     #[test_only]
@@ -520,10 +476,6 @@ module verifier_addr::gps_statement_verifier {
         borrow_global<VparCheckpoint>(address_of(signer)).inner
     }
 
-    #[test_only]
-    public fun get_rpmmp_checkpoint(signer: &signer): u8 acquires RpmmpCheckpoint {
-        borrow_global<RpmmpCheckpoint>(address_of(signer)).inner
-    }
 
     // Data of the function `verify_proof_and_register`
 
@@ -562,20 +514,6 @@ module verifier_addr::gps_statement_verifier {
 
     // Data of the function `register_public_memory_main_page`
     // checkpoints
-    const RPMMP_CHECKPOINT1: u8 = 1;
-    const RPMMP_CHECKPOINT2: u8 = 2;
-    const RPMMP_CHECKPOINT3: u8 = 3;
-
-    struct RpmmpCheckpoint has key, drop {
-        inner: u8
-    }
-
-    struct Cache3 has key, drop {
-        public_memory: vector<u256>,
-        offset: u64,
-        n_tasks: u256,
-        public_memory_length: u256
-    }
 
     const ITERATION_LENGTH: u64 = 50;
 }
@@ -590,7 +528,7 @@ module verifier_addr::test_gps {
 
     use verifier_addr::constructor::init_all;
     use verifier_addr::fact_registry::{is_valid, register_facts};
-    use verifier_addr::gps_statement_verifier::{get_rpmmp_checkpoint, get_vpar_checkpoint,
+    use verifier_addr::gps_statement_verifier::{get_vpar_checkpoint,
         prepush_data_to_verify_proof_and_register, prepush_task_metadata, verify_proof_and_register
     };
     use verifier_addr::gps_statement_verifier_test_data::{
@@ -623,16 +561,9 @@ module verifier_addr::test_gps {
             cairo_aux_input_(),
             7u256
         );
-        // register_public_memory_main_page
-        // register_public_memory_main_page::checkpoint1
-        assert!(get_rpmmp_checkpoint(signer) == 1, 1);
-        // register_public_memory_main_page::checkpoint2, loop 1
-        verify_proof_and_register(signer);
-        assert!(get_rpmmp_checkpoint(signer) == 2, 1);
-        // register_public_memory_main_page::CHECKPOINT3::register_regular_memorypage::compute_fact_hash::CFH_CHECKPOINT1
-        verify_proof_and_register(signer);
 
-        assert!(get_rpmmp_checkpoint(signer) == 1, 1);
+        verify_proof_and_register(signer);
+        verify_proof_and_register(signer);
 
         // check if fact hash was registered
         assert!(
@@ -647,24 +578,9 @@ module verifier_addr::test_gps {
         // verify_proof_external::VP_CHECKPOINT2
         assert!(get_vp_checkpoint(signer) == 2, 1);
         verify_proof_and_register(signer);
-        // verify_proof_external::VP_CHECKPOINT3
-        assert!(get_vp_checkpoint(signer) == 3, 1);
-        verify_proof_and_register(signer);
-        // verify_proof_external::VP_CHECKPOINT4::oods_consistency_check::OCC_CHECKPOINT1::verify_memory_page_facts, loop 1
-        assert!(get_vp_checkpoint(signer) == 4, 1);
-        assert!(get_occ_checkpoint(signer) == 1, 1);
-        verify_proof_and_register(signer);
         // verify_proof_external::VP_CHECKPOINT4::oods_consistency_check::OCC_CHECKPOINT1::verify_memory_page_facts, loop 2
         assert!(get_vp_checkpoint(signer) == 4, 1);
         assert!(get_occ_checkpoint(signer) == 1, 1);
-        verify_proof_and_register(signer);
-        // verify_proof_external::VP_CHECKPOINT4::oods_consistency_check::OCC_CHECKPOINT1::verify_memory_page_facts, loop 3
-        assert!(get_vp_checkpoint(signer) == 4, 1);
-        assert!(get_occ_checkpoint(signer) == 1, 1);
-        verify_proof_and_register(signer);
-        // verify_proof_external::VP_CHECKPOINT4::oods_consistency_check::OCC_CHECKPOINT2, finish oods_consistency_check + VP_CHECKPOINT4
-        assert!(get_vp_checkpoint(signer) == 4, 1);
-        assert!(get_occ_checkpoint(signer) == 2, 1);
         verify_proof_and_register(signer);
         assert!(get_occ_checkpoint(signer) == 1, 1);
         // verify_proof_external::VP_CHECKPOINT5::compute_first_fri_layer::CFFL_CHECKPOINT1
