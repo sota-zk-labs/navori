@@ -19,4 +19,4 @@ jobs:
         with:
           version: 4.0.0
       - name: test_contract
-        run: (cd libs && aptos move test --coverage --dev --skip-fetch-latest-git-deps --skip-attribute-checks) & (cd verifier && aptos move test --coverage --dev --skip-fetch-latest-git-deps --skip-attribute-checks)
+        run: (cd libs && aptos move test --coverage --dev --skip-fetch-latest-git-deps --skip-attribute-checks) & (cd verifier && aptos move test --coverage --dev --skip-fetch-latest-git-deps --skip-attribute-checks) & (cd cpu && aptos move test --coverage --dev --skip-fetch-latest-git-deps --skip-attribute-checks)
