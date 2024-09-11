@@ -1,16 +1,17 @@
 module cpu_addr::cpu_constraint_poly {
-
     use std::vector;
     use std::vector::{borrow, borrow_mut, push_back};
-
-    use lib_addr::prime_field_element_0::{fmul, fpow};
-
     #[test_only]
     use aptos_std::debug;
 
-    const EPRODUCT_INVERSE_ZERO: u64 = 0x0001;
+    use lib_addr::prime_field_element_0::{fmul, fpow};
 
-    const PRIME: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // This line is used for generating constants DO NOT REMOVE!
+    // 0x0001
+    const EPRODUCT_INVERSE_ZERO: u64 = 0x1;
+    // 3618502788666131213697322783095070105623107215331596699973092056135872020481
+    const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
+    // End of generating constants!
 
     // The Memory map during the execution of this contract is as follows:
     // [0x0, 0x20) - pedersen__points__x
@@ -110,8 +111,7 @@ module cpu_addr::cpu_constraint_poly {
     // [0x31c0, 0x3280) - expmod_context
 
 
-    public fun fallback(ctx: &vector<u256>): u256 {
-        let ctx = *ctx;
+    public fun fallback(ctx: vector<u256>): u256 {
         let res = 0;
 
         let remain = 404 - vector::length(&ctx);
@@ -347,59 +347,31 @@ module cpu_addr::cpu_constraint_poly {
             };
             // expmods[41] = trace_generator^(trace_length - 16)
             {
-                let val = fpow(/*trace_generator*/
-                    trace_generator,
-                    ((/*trace_length*/ trace_length + (PRIME - 16)) % PRIME)
-                );
-                *borrow_mut(&mut ctx, 327) = val;
+                *borrow_mut(&mut ctx, 327) = fpow(trace_generator, trace_length - 16);
             };
             // expmods[42] = trace_generator^(trace_length - 2)
             {
-                let val = fpow(/*trace_generator*/
-                    trace_generator,
-                    ((/*trace_length*/ trace_length + (PRIME - 2)) % PRIME)
-                );
-                *borrow_mut(&mut ctx, 328) = val;
+                *borrow_mut(&mut ctx, 328) = fpow(trace_generator, trace_length - 2);
             };
             // expmods[43] = trace_generator^(trace_length - 4)
             {
-                let val = fpow(/*trace_generator*/
-                    trace_generator,
-                    ((/*trace_length*/ trace_length + (PRIME - 4)) % PRIME)
-                );
-                *borrow_mut(&mut ctx, 329) = val;
+                *borrow_mut(&mut ctx, 329) = fpow(trace_generator, trace_length - 4);
             };
             // expmods[44] = trace_generator^(trace_length - 1)
             {
-                let val = fpow(/*trace_generator*/
-                    trace_generator,
-                    ((/*trace_length*/ trace_length + (PRIME - 1)) % PRIME)
-                );
-                *borrow_mut(&mut ctx, 330) = val;
+                *borrow_mut(&mut ctx, 330) = fpow(trace_generator, trace_length - 1);
             };
             // expmods[45] = trace_generator^(trace_length - 2048)
             {
-                let val = fpow(/*trace_generator*/
-                    trace_generator,
-                    ((/*trace_length*/ trace_length + (PRIME - 2048)) % PRIME)
-                );
-                *borrow_mut(&mut ctx, 331) = val;
+                *borrow_mut(&mut ctx, 331) = fpow(trace_generator, trace_length - 2048);
             };
             // expmods[46] = trace_generator^(trace_length - 128)
             {
-                let val = fpow(/*trace_generator*/
-                    trace_generator,
-                    ((/*trace_length*/ trace_length + (PRIME - 128)) % PRIME)
-                );
-                *borrow_mut(&mut ctx, 332) = val;
+                *borrow_mut(&mut ctx, 332) = fpow(trace_generator, trace_length - 128);
             };
             // expmods[47] = trace_generator^(trace_length - 64)
             {
-                let val = fpow(/*trace_generator*/
-                    trace_generator,
-                    ((/*trace_length*/ trace_length + (PRIME - 64)) % PRIME)
-                );
-                *borrow_mut(&mut ctx, 333) = val;
+                *borrow_mut(&mut ctx, 333) = fpow(trace_generator, trace_length - 64);
             };
         };
 
@@ -407,17 +379,17 @@ module cpu_addr::cpu_constraint_poly {
             // compute domains
             // domains[0] = point^trace_length - 1
             {
-                let val = ((/*(point^trace_length)*/ *borrow(&ctx, 294) + (PRIME - 1)) % PRIME);
+                let val = ((/*(point^trace_length)*/ *borrow(&ctx, 294) + (K_MODULUS - 1)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 334) = val;
             };
             // domains[1] = point^(trace_length / 2) - 1
             {
-                let val = ((/*(point^(trace_length/2))*/ *borrow(&ctx, 293) + (PRIME - 1)) % PRIME);
+                let val = ((/*(point^(trace_length/2))*/ *borrow(&ctx, 293) + (K_MODULUS - 1)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 335) = val;
             };
             // domains[2] = point^(trace_length / 4) - 1
             {
-                let val = ((/*(point^(trace_length/4))*/ *borrow(&ctx, 292) + (PRIME - 1)) % PRIME);
+                let val = ((/*(point^(trace_length/4))*/ *borrow(&ctx, 292) + (K_MODULUS - 1)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 336) = val;
             };
             // domains[3] = point^(trace_length / 16) - trace_generator^(15 * trace_length / 16)
@@ -425,22 +397,22 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*(point^(trace_length/16))*/ *borrow(
                     &ctx,
                     291
-                ) + (PRIME - /*(trace_generator^((15*trace_length)/16))*/ *borrow(&ctx, 322))) % PRIME);
+                ) + (K_MODULUS - /*(trace_generator^((15*trace_length)/16))*/ *borrow(&ctx, 322))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 337) = val;
             };
             // domains[4] = point^(trace_length / 16) - 1
             {
-                let val = ((/*(point^(trace_length/16))*/ *borrow(&ctx, 291) + (PRIME - 1)) % PRIME);
+                let val = ((/*(point^(trace_length/16))*/ *borrow(&ctx, 291) + (K_MODULUS - 1)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 338) = val;
             };
             // domains[5] = point^(trace_length / 32) - 1
             {
-                let val = ((/*(point^(trace_length/32))*/ *borrow(&ctx, 290) + (PRIME - 1)) % PRIME);
+                let val = ((/*(point^(trace_length/32))*/ *borrow(&ctx, 290) + (K_MODULUS - 1)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 339) = val;
             };
             // domains[6] = point^(trace_length / 64) - 1
             {
-                let val = ((/*(point^(trace_length/64))*/ *borrow(&ctx, 289) + (PRIME - 1)) % PRIME);
+                let val = ((/*(point^(trace_length/64))*/ *borrow(&ctx, 289) + (K_MODULUS - 1)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 340) = val;
             };
             // domains[7] = point^(trace_length / 64) - trace_generator^(3 * trace_length / 4)
@@ -448,12 +420,12 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*(point^(trace_length/64))*/ *borrow(
                     &ctx,
                     289
-                ) + (PRIME - /*(trace_generator^((3*trace_length)/4))*/ *borrow(&ctx, 316))) % PRIME);
+                ) + (K_MODULUS - /*(trace_generator^((3*trace_length)/4))*/ *borrow(&ctx, 316))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 341) = val;
             };
             // domains[8] = point^(trace_length / 128) - 1
             {
-                let val = ((/*(point^(trace_length/128))*/ *borrow(&ctx, 288) + (PRIME - 1)) % PRIME);
+                let val = ((/*(point^(trace_length/128))*/ *borrow(&ctx, 288) + (K_MODULUS - 1)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 342) = val;
             };
             // domains[9] = point^(trace_length / 128) - trace_generator^(3 * trace_length / 4)
@@ -461,7 +433,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*(point^(trace_length/128))*/ *borrow(
                     &ctx,
                     288
-                ) + (PRIME - /*(trace_generator^((3*trace_length)/4))*/ *borrow(&ctx, 316))) % PRIME);
+                ) + (K_MODULUS - /*(trace_generator^((3*trace_length)/4))*/ *borrow(&ctx, 316))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 343) = val;
             };
             // domains[10] = (point^(trace_length / 128) - trace_generator^(trace_length / 64)) * (point^(trace_length / 128) - trace_generator^(trace_length / 32)) * (point^(trace_length / 128) - trace_generator^(3 * trace_length / 64)) * (point^(trace_length / 128) - trace_generator^(trace_length / 16)) * (point^(trace_length / 128) - trace_generator^(5 * trace_length / 64)) * (point^(trace_length / 128) - trace_generator^(3 * trace_length / 32)) * (point^(trace_length / 128) - trace_generator^(7 * trace_length / 64)) * (point^(trace_length / 128) - trace_generator^(trace_length / 8)) * (point^(trace_length / 128) - trace_generator^(9 * trace_length / 64)) * (point^(trace_length / 128) - trace_generator^(5 * trace_length / 32)) * (point^(trace_length / 128) - trace_generator^(11 * trace_length / 64)) * (point^(trace_length / 128) - trace_generator^(3 * trace_length / 16)) * (point^(trace_length / 128) - trace_generator^(13 * trace_length / 64)) * (point^(trace_length / 128) - trace_generator^(7 * trace_length / 32)) * (point^(trace_length / 128) - trace_generator^(15 * trace_length / 64)) * domain8
@@ -484,112 +456,112 @@ module cpu_addr::cpu_constraint_poly {
                                                                             ((/*(point^(trace_length/128))*/ *borrow(
                                                                                 &ctx,
                                                                                 288
-                                                                            ) + (PRIME - /*(trace_generator^(trace_length/64))*/ *borrow(
+                                                                            ) + (K_MODULUS - /*(trace_generator^(trace_length/64))*/ *borrow(
                                                                                 &ctx,
                                                                                 295
-                                                                            ))) % PRIME),
+                                                                            ))) % K_MODULUS),
                                                                             ((/*(point^(trace_length/128))*/ *borrow(
                                                                                 &ctx,
                                                                                 288
-                                                                            ) + (PRIME - /*(trace_generator^(trace_length/32))*/ *borrow(
+                                                                            ) + (K_MODULUS - /*(trace_generator^(trace_length/32))*/ *borrow(
                                                                                 &ctx,
                                                                                 296
-                                                                            ))) % PRIME)
+                                                                            ))) % K_MODULUS)
                                                                         ),
                                                                         ((/*(point^(trace_length/128))*/ *borrow(
                                                                             &ctx,
                                                                             288
-                                                                        ) + (PRIME - /*(trace_generator^((3*trace_length)/64))*/ *borrow(
+                                                                        ) + (K_MODULUS - /*(trace_generator^((3*trace_length)/64))*/ *borrow(
                                                                             &ctx,
                                                                             297
-                                                                        ))) % PRIME)
+                                                                        ))) % K_MODULUS)
                                                                     ),
                                                                     ((/*(point^(trace_length/128))*/ *borrow(
                                                                         &ctx,
                                                                         288
-                                                                    ) + (PRIME - /*(trace_generator^(trace_length/16))*/ *borrow(
+                                                                    ) + (K_MODULUS - /*(trace_generator^(trace_length/16))*/ *borrow(
                                                                         &ctx,
                                                                         298
-                                                                    ))) % PRIME)
+                                                                    ))) % K_MODULUS)
                                                                 ),
                                                                 ((/*(point^(trace_length/128))*/ *borrow(
                                                                     &ctx,
                                                                     288
-                                                                ) + (PRIME - /*(trace_generator^((5*trace_length)/64))*/ *borrow(
+                                                                ) + (K_MODULUS - /*(trace_generator^((5*trace_length)/64))*/ *borrow(
                                                                     &ctx,
                                                                     299
-                                                                ))) % PRIME)
+                                                                ))) % K_MODULUS)
                                                             ),
                                                             ((/*(point^(trace_length/128))*/ *borrow(
                                                                 &ctx,
                                                                 288
-                                                            ) + (PRIME - /*(trace_generator^((3*trace_length)/32))*/ *borrow(
+                                                            ) + (K_MODULUS - /*(trace_generator^((3*trace_length)/32))*/ *borrow(
                                                                 &ctx,
                                                                 300
-                                                            ))) % PRIME)
+                                                            ))) % K_MODULUS)
                                                         ),
                                                         ((/*(point^(trace_length/128))*/ *borrow(
                                                             &ctx,
                                                             288
-                                                        ) + (PRIME - /*(trace_generator^((7*trace_length)/64))*/ *borrow(
+                                                        ) + (K_MODULUS - /*(trace_generator^((7*trace_length)/64))*/ *borrow(
                                                             &ctx,
                                                             301
-                                                        ))) % PRIME)
+                                                        ))) % K_MODULUS)
                                                     ),
                                                     ((/*(point^(trace_length/128))*/ *borrow(
                                                         &ctx,
                                                         288
-                                                    ) + (PRIME - /*(trace_generator^(trace_length/8))*/ *borrow(
+                                                    ) + (K_MODULUS - /*(trace_generator^(trace_length/8))*/ *borrow(
                                                         &ctx,
                                                         302
-                                                    ))) % PRIME)
+                                                    ))) % K_MODULUS)
                                                 ),
                                                 ((/*(point^(trace_length/128))*/ *borrow(
                                                     &ctx,
                                                     288
-                                                ) + (PRIME - /*(trace_generator^((9*trace_length)/64))*/ *borrow(
+                                                ) + (K_MODULUS - /*(trace_generator^((9*trace_length)/64))*/ *borrow(
                                                     &ctx,
                                                     303
-                                                ))) % PRIME)
+                                                ))) % K_MODULUS)
                                             ),
                                             ((/*(point^(trace_length/128))*/ *borrow(
                                                 &ctx,
                                                 288
-                                            ) + (PRIME - /*(trace_generator^((5*trace_length)/32))*/ *borrow(
+                                            ) + (K_MODULUS - /*(trace_generator^((5*trace_length)/32))*/ *borrow(
                                                 &ctx,
                                                 304
-                                            ))) % PRIME)
+                                            ))) % K_MODULUS)
                                         ),
                                         ((/*(point^(trace_length/128))*/ *borrow(
                                             &ctx,
                                             288
-                                        ) + (PRIME - /*(trace_generator^((11*trace_length)/64))*/ *borrow(
+                                        ) + (K_MODULUS - /*(trace_generator^((11*trace_length)/64))*/ *borrow(
                                             &ctx,
                                             305
-                                        ))) % PRIME)
+                                        ))) % K_MODULUS)
                                     ),
                                     ((/*(point^(trace_length/128))*/ *borrow(
                                         &ctx,
                                         288
-                                    ) + (PRIME - /*(trace_generator^((3*trace_length)/16))*/ *borrow(
+                                    ) + (K_MODULUS - /*(trace_generator^((3*trace_length)/16))*/ *borrow(
                                         &ctx,
                                         306
-                                    ))) % PRIME)
+                                    ))) % K_MODULUS)
                                 ),
                                 ((/*(point^(trace_length/128))*/ *borrow(
                                     &ctx,
                                     288
-                                ) + (PRIME - /*(trace_generator^((13*trace_length)/64))*/ *borrow(&ctx, 307))) % PRIME)
+                                ) + (K_MODULUS - /*(trace_generator^((13*trace_length)/64))*/ *borrow(&ctx, 307))) % K_MODULUS)
                             ),
                             ((/*(point^(trace_length/128))*/ *borrow(
                                 &ctx,
                                 288
-                            ) + (PRIME - /*(trace_generator^((7*trace_length)/32))*/ *borrow(&ctx, 308))) % PRIME)
+                            ) + (K_MODULUS - /*(trace_generator^((7*trace_length)/32))*/ *borrow(&ctx, 308))) % K_MODULUS)
                         ),
                         ((/*(point^(trace_length/128))*/ *borrow(
                             &ctx,
                             288
-                        ) + (PRIME - /*(trace_generator^((15*trace_length)/64))*/ *borrow(&ctx, 309))) % PRIME)
+                        ) + (K_MODULUS - /*(trace_generator^((15*trace_length)/64))*/ *borrow(&ctx, 309))) % K_MODULUS)
                     ), /*domain8*/
                     *borrow(&ctx, 342)
                 );
@@ -600,7 +572,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*(point^(trace_length/128))*/ *borrow(
                     &ctx,
                     288
-                ) + (PRIME - /*(trace_generator^((31*trace_length)/32))*/ *borrow(&ctx, 324))) % PRIME);
+                ) + (K_MODULUS - /*(trace_generator^((31*trace_length)/32))*/ *borrow(&ctx, 324))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 345) = val;
             };
             // domains[12] = (point^(trace_length / 128) - trace_generator^(11 * trace_length / 16)) * (point^(trace_length / 128) - trace_generator^(23 * trace_length / 32)) * (point^(trace_length / 128) - trace_generator^(25 * trace_length / 32)) * (point^(trace_length / 128) - trace_generator^(13 * trace_length / 16)) * (point^(trace_length / 128) - trace_generator^(27 * trace_length / 32)) * (point^(trace_length / 128) - trace_generator^(7 * trace_length / 8)) * (point^(trace_length / 128) - trace_generator^(29 * trace_length / 32)) * (point^(trace_length / 128) - trace_generator^(15 * trace_length / 16)) * domain9 * domain11
@@ -617,59 +589,59 @@ module cpu_addr::cpu_constraint_poly {
                                                     ((/*(point^(trace_length/128))*/ *borrow(
                                                         &ctx,
                                                         288
-                                                    ) + (PRIME - /*(trace_generator^((11*trace_length)/16))*/ *borrow(
+                                                    ) + (K_MODULUS - /*(trace_generator^((11*trace_length)/16))*/ *borrow(
                                                         &ctx,
                                                         314
-                                                    ))) % PRIME),
+                                                    ))) % K_MODULUS),
                                                     ((/*(point^(trace_length/128))*/ *borrow(
                                                         &ctx,
                                                         288
-                                                    ) + (PRIME - /*(trace_generator^((23*trace_length)/32))*/ *borrow(
+                                                    ) + (K_MODULUS - /*(trace_generator^((23*trace_length)/32))*/ *borrow(
                                                         &ctx,
                                                         315
-                                                    ))) % PRIME)
+                                                    ))) % K_MODULUS)
                                                 ),
                                                 ((/*(point^(trace_length/128))*/ *borrow(
                                                     &ctx,
                                                     288
-                                                ) + (PRIME - /*(trace_generator^((25*trace_length)/32))*/ *borrow(
+                                                ) + (K_MODULUS - /*(trace_generator^((25*trace_length)/32))*/ *borrow(
                                                     &ctx,
                                                     317
-                                                ))) % PRIME)
+                                                ))) % K_MODULUS)
                                             ),
                                             ((/*(point^(trace_length/128))*/ *borrow(
                                                 &ctx,
                                                 288
-                                            ) + (PRIME - /*(trace_generator^((13*trace_length)/16))*/ *borrow(
+                                            ) + (K_MODULUS - /*(trace_generator^((13*trace_length)/16))*/ *borrow(
                                                 &ctx,
                                                 318
-                                            ))) % PRIME)
+                                            ))) % K_MODULUS)
                                         ),
                                         ((/*(point^(trace_length/128))*/ *borrow(
                                             &ctx,
                                             288
-                                        ) + (PRIME - /*(trace_generator^((27*trace_length)/32))*/ *borrow(
+                                        ) + (K_MODULUS - /*(trace_generator^((27*trace_length)/32))*/ *borrow(
                                             &ctx,
                                             319
-                                        ))) % PRIME)
+                                        ))) % K_MODULUS)
                                     ),
                                     ((/*(point^(trace_length/128))*/ *borrow(
                                         &ctx,
                                         288
-                                    ) + (PRIME - /*(trace_generator^((7*trace_length)/8))*/ *borrow(
+                                    ) + (K_MODULUS - /*(trace_generator^((7*trace_length)/8))*/ *borrow(
                                         &ctx,
                                         320
-                                    ))) % PRIME)
+                                    ))) % K_MODULUS)
                                 ),
                                 ((/*(point^(trace_length/128))*/ *borrow(
                                     &ctx,
                                     288
-                                ) + (PRIME - /*(trace_generator^((29*trace_length)/32))*/ *borrow(&ctx, 321))) % PRIME)
+                                ) + (K_MODULUS - /*(trace_generator^((29*trace_length)/32))*/ *borrow(&ctx, 321))) % K_MODULUS)
                             ),
                             ((/*(point^(trace_length/128))*/ *borrow(
                                 &ctx,
                                 288
-                            ) + (PRIME - /*(trace_generator^((15*trace_length)/16))*/ *borrow(&ctx, 322))) % PRIME)
+                            ) + (K_MODULUS - /*(trace_generator^((15*trace_length)/16))*/ *borrow(&ctx, 322))) % K_MODULUS)
                         ), /*domain9*/
                         *borrow(&ctx, 343)
                     ), /*domain11*/
@@ -684,11 +656,11 @@ module cpu_addr::cpu_constraint_poly {
                         ((/*(point^(trace_length/128))*/ *borrow(
                             &ctx,
                             288
-                        ) + (PRIME - /*(trace_generator^((61*trace_length)/64))*/ *borrow(&ctx, 323))) % PRIME),
+                        ) + (K_MODULUS - /*(trace_generator^((61*trace_length)/64))*/ *borrow(&ctx, 323))) % K_MODULUS),
                         ((/*(point^(trace_length/128))*/ *borrow(
                             &ctx,
                             288
-                        ) + (PRIME - /*(trace_generator^((63*trace_length)/64))*/ *borrow(&ctx, 325))) % PRIME)
+                        ) + (K_MODULUS - /*(trace_generator^((63*trace_length)/64))*/ *borrow(&ctx, 325))) % K_MODULUS)
                     ), /*domain11*/
                     *borrow(&ctx, 345)
                 );
@@ -702,16 +674,16 @@ module cpu_addr::cpu_constraint_poly {
                             ((/*(point^(trace_length/128))*/ *borrow(
                                 &ctx,
                                 288
-                            ) + (PRIME - /*(trace_generator^((19*trace_length)/32))*/ *borrow(&ctx, 311))) % PRIME),
+                            ) + (K_MODULUS - /*(trace_generator^((19*trace_length)/32))*/ *borrow(&ctx, 311))) % K_MODULUS),
                             ((/*(point^(trace_length/128))*/ *borrow(
                                 &ctx,
                                 288
-                            ) + (PRIME - /*(trace_generator^((5*trace_length)/8))*/ *borrow(&ctx, 312))) % PRIME)
+                            ) + (K_MODULUS - /*(trace_generator^((5*trace_length)/8))*/ *borrow(&ctx, 312))) % K_MODULUS)
                         ),
                         ((/*(point^(trace_length/128))*/ *borrow(
                             &ctx,
                             288
-                        ) + (PRIME - /*(trace_generator^((21*trace_length)/32))*/ *borrow(&ctx, 313))) % PRIME)
+                        ) + (K_MODULUS - /*(trace_generator^((21*trace_length)/32))*/ *borrow(&ctx, 313))) % K_MODULUS)
                     ), /*domain12*/
                     *borrow(&ctx, 346)
                 );
@@ -719,7 +691,7 @@ module cpu_addr::cpu_constraint_poly {
             };
             // domains[15] = point^(trace_length / 1024) - 1
             {
-                let val = ((/*(point^(trace_length/1024))*/ *borrow(&ctx, 287) + (PRIME - 1)) % PRIME);
+                let val = ((/*(point^(trace_length/1024))*/ *borrow(&ctx, 287) + (K_MODULUS - 1)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 349) = val;
             };
             // domains[16] = point^(trace_length / 1024) - trace_generator^(255 * trace_length / 256)
@@ -727,7 +699,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*(point^(trace_length/1024))*/ *borrow(
                     &ctx,
                     287
-                ) + (PRIME - /*(trace_generator^((255*trace_length)/256))*/ *borrow(&ctx, 326))) % PRIME);
+                ) + (K_MODULUS - /*(trace_generator^((255*trace_length)/256))*/ *borrow(&ctx, 326))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 350) = val;
             };
             // domains[17] = point^(trace_length / 1024) - trace_generator^(63 * trace_length / 64)
@@ -735,7 +707,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*(point^(trace_length/1024))*/ *borrow(
                     &ctx,
                     287
-                ) + (PRIME - /*(trace_generator^((63*trace_length)/64))*/ *borrow(&ctx, 325))) % PRIME);
+                ) + (K_MODULUS - /*(trace_generator^((63*trace_length)/64))*/ *borrow(&ctx, 325))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 351) = val;
             };
             // domains[18] = point^(trace_length / 2048) - trace_generator^(trace_length / 2)
@@ -743,73 +715,73 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*(point^(trace_length/2048))*/ *borrow(
                     &ctx,
                     286
-                ) + (PRIME - /*(trace_generator^(trace_length/2))*/ *borrow(&ctx, 310))) % PRIME);
+                ) + (K_MODULUS - /*(trace_generator^(trace_length/2))*/ *borrow(&ctx, 310))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 352) = val;
             };
             // domains[19] = point^(trace_length / 2048) - 1
             {
-                let val = ((/*(point^(trace_length/2048))*/ *borrow(&ctx, 286) + (PRIME - 1)) % PRIME);
+                let val = ((/*(point^(trace_length/2048))*/ *borrow(&ctx, 286) + (K_MODULUS - 1)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 353) = val;
             };
             // domains[20] = point - trace_generator^(trace_length - 16)
             {
-                let val = ((/*point*/ point + (PRIME - /*(trace_generator^(trace_length-16))*/ *borrow(
+                let val = ((/*point*/ point + (K_MODULUS - /*(trace_generator^(trace_length-16))*/ *borrow(
                     &ctx,
                     327
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 354) = val;
             };
             // domains[21] = point - 1
             {
-                let val = ((/*point*/ point + (PRIME - 1)) % PRIME);
+                let val = ((/*point*/ point + (K_MODULUS - 1)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 355) = val;
             };
             // domains[22] = point - trace_generator^(trace_length - 2)
             {
-                let val = ((/*point*/ point + (PRIME - /*(trace_generator^(trace_length-2))*/ *borrow(
+                let val = ((/*point*/ point + (K_MODULUS - /*(trace_generator^(trace_length-2))*/ *borrow(
                     &ctx,
                     328
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 356) = val;
             };
             // domains[23] = point - trace_generator^(trace_length - 4)
             {
-                let val = ((/*point*/ point + (PRIME - /*(trace_generator^(trace_length-4))*/ *borrow(
+                let val = ((/*point*/ point + (K_MODULUS - /*(trace_generator^(trace_length-4))*/ *borrow(
                     &ctx,
                     329
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 357) = val;
             };
             // domains[24] = point - trace_generator^(trace_length - 1)
             {
-                let val = ((/*point*/ point + (PRIME - /*(trace_generator^(trace_length-1))*/ *borrow(
+                let val = ((/*point*/ point + (K_MODULUS - /*(trace_generator^(trace_length-1))*/ *borrow(
                     &ctx,
                     330
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 358) = val;
             };
             // domains[25] = point - trace_generator^(trace_length - 2048)
             {
-                let val = ((/*point*/ point + (PRIME - /*(trace_generator^(trace_length-2048))*/ *borrow(
+                let val = ((/*point*/ point + (K_MODULUS - /*(trace_generator^(trace_length-2048))*/ *borrow(
                     &ctx,
                     331
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 359) = val;
             };
             // domains[26] = point - trace_generator^(trace_length - 128)
             {
-                let val = ((/*point*/ point + (PRIME - /*(trace_generator^(trace_length-128))*/ *borrow(
+                let val = ((/*point*/ point + (K_MODULUS - /*(trace_generator^(trace_length-128))*/ *borrow(
                     &ctx,
                     332
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 360) = val;
             };
             // domains[27] = point - trace_generator^(trace_length - 64)
             {
-                let val = ((/*point*/ point + (PRIME - /*(trace_generator^(trace_length-64))*/ *borrow(
+                let val = ((/*point*/ point + (K_MODULUS - /*(trace_generator^(trace_length-64))*/ *borrow(
                     &ctx,
                     333
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 361) = val;
             };
         };
@@ -930,7 +902,7 @@ module cpu_addr::cpu_constraint_poly {
             let firstPartialProductPtr = 362;
             // Compute the inverse of the product.
 
-            let prodInv = fpow(prod, PRIME - 2);
+            let prodInv = fpow(prod, K_MODULUS - 2);
 
             assert!(prodInv != 0, EPRODUCT_INVERSE_ZERO);
 
@@ -953,139 +925,139 @@ module cpu_addr::cpu_constraint_poly {
         {
             // cpu/decode/opcode_range_check/bit_0 = column0_row0 - (column0_row1 + column0_row1)
             {
-                let val = ((/*column0_row0*/ *borrow(&ctx, 42) + (PRIME - ((/*column0_row1*/ *borrow(
+                let val = ((/*column0_row0*/ *borrow(&ctx, 42) + (K_MODULUS - ((/*column0_row1*/ *borrow(
                     &ctx,
                     43
-                ) + /*column0_row1*/ *borrow(&ctx, 43)) % PRIME))) % PRIME);
+                ) + /*column0_row1*/ *borrow(&ctx, 43)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 234) = val;
             };
             // cpu/decode/opcode_range_check/bit_2 = column0_row2 - (column0_row3 + column0_row3)
             {
-                let val = ((/*column0_row2*/ *borrow(&ctx, 44) + (PRIME - ((/*column0_row3*/ *borrow(
+                let val = ((/*column0_row2*/ *borrow(&ctx, 44) + (K_MODULUS - ((/*column0_row3*/ *borrow(
                     &ctx,
                     45
-                ) + /*column0_row3*/ *borrow(&ctx, 45)) % PRIME))) % PRIME);
+                ) + /*column0_row3*/ *borrow(&ctx, 45)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 235) = val;
             };
             // cpu/decode/opcode_range_check/bit_4 = column0_row4 - (column0_row5 + column0_row5)
             {
-                let val = ((/*column0_row4*/ *borrow(&ctx, 46) + (PRIME - ((/*column0_row5*/ *borrow(
+                let val = ((/*column0_row4*/ *borrow(&ctx, 46) + (K_MODULUS - ((/*column0_row5*/ *borrow(
                     &ctx,
                     47
-                ) + /*column0_row5*/ *borrow(&ctx, 47)) % PRIME))) % PRIME);
+                ) + /*column0_row5*/ *borrow(&ctx, 47)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 236) = val;
             };
             // cpu/decode/opcode_range_check/bit_3 = column0_row3 - (column0_row4 + column0_row4)
             {
-                let val = ((/*column0_row3*/ *borrow(&ctx, 45) + (PRIME - ((/*column0_row4*/ *borrow(
+                let val = ((/*column0_row3*/ *borrow(&ctx, 45) + (K_MODULUS - ((/*column0_row4*/ *borrow(
                     &ctx,
                     46
-                ) + /*column0_row4*/ *borrow(&ctx, 46)) % PRIME))) % PRIME);
+                ) + /*column0_row4*/ *borrow(&ctx, 46)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 237) = val;
             };
             // cpu/decode/flag_op1_base_op0_0 = 1 - (cpu__decode__opcode_range_check__bit_2 + cpu__decode__opcode_range_check__bit_4 + cpu__decode__opcode_range_check__bit_3)
             {
-                let val = ((1 + (PRIME - ((((/*cpu__decode__opcode_range_check__bit_2*/ *borrow(
+                let val = ((1 + (K_MODULUS - ((((/*cpu__decode__opcode_range_check__bit_2*/ *borrow(
                     &ctx,
                     235
                 ) + /*cpu__decode__opcode_range_check__bit_4*/ *borrow(
                     &ctx,
                     236
-                )) % PRIME) + /*cpu__decode__opcode_range_check__bit_3*/ *borrow(&ctx, 237)) % PRIME))) % PRIME);
+                )) % K_MODULUS) + /*cpu__decode__opcode_range_check__bit_3*/ *borrow(&ctx, 237)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 238) = val;
             };
             // cpu/decode/opcode_range_check/bit_5 = column0_row5 - (column0_row6 + column0_row6)
             {
-                let val = ((/*column0_row5*/ *borrow(&ctx, 47) + (PRIME - ((/*column0_row6*/ *borrow(
+                let val = ((/*column0_row5*/ *borrow(&ctx, 47) + (K_MODULUS - ((/*column0_row6*/ *borrow(
                     &ctx,
                     48
-                ) + /*column0_row6*/ *borrow(&ctx, 48)) % PRIME))) % PRIME);
+                ) + /*column0_row6*/ *borrow(&ctx, 48)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 239) = val;
             };
             // cpu/decode/opcode_range_check/bit_6 = column0_row6 - (column0_row7 + column0_row7)
             {
-                let val = ((/*column0_row6*/ *borrow(&ctx, 48) + (PRIME - ((/*column0_row7*/ *borrow(
+                let val = ((/*column0_row6*/ *borrow(&ctx, 48) + (K_MODULUS - ((/*column0_row7*/ *borrow(
                     &ctx,
                     49
-                ) + /*column0_row7*/ *borrow(&ctx, 49)) % PRIME))) % PRIME);
+                ) + /*column0_row7*/ *borrow(&ctx, 49)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 240) = val;
             };
             // cpu/decode/opcode_range_check/bit_9 = column0_row9 - (column0_row10 + column0_row10)
             {
-                let val = ((/*column0_row9*/ *borrow(&ctx, 51) + (PRIME - ((/*column0_row10*/ *borrow(
+                let val = ((/*column0_row9*/ *borrow(&ctx, 51) + (K_MODULUS - ((/*column0_row10*/ *borrow(
                     &ctx,
                     52
-                ) + /*column0_row10*/ *borrow(&ctx, 52)) % PRIME))) % PRIME);
+                ) + /*column0_row10*/ *borrow(&ctx, 52)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 241) = val;
             };
             // cpu/decode/flag_res_op1_0 = 1 - (cpu__decode__opcode_range_check__bit_5 + cpu__decode__opcode_range_check__bit_6 + cpu__decode__opcode_range_check__bit_9)
             {
-                let val = ((1 + (PRIME - ((((/*cpu__decode__opcode_range_check__bit_5*/ *borrow(
+                let val = ((1 + (K_MODULUS - ((((/*cpu__decode__opcode_range_check__bit_5*/ *borrow(
                     &ctx,
                     239
                 ) + /*cpu__decode__opcode_range_check__bit_6*/ *borrow(
                     &ctx,
                     240
-                )) % PRIME) + /*cpu__decode__opcode_range_check__bit_9*/ *borrow(&ctx, 241)) % PRIME))) % PRIME);
+                )) % K_MODULUS) + /*cpu__decode__opcode_range_check__bit_9*/ *borrow(&ctx, 241)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 242) = val;
             };
             // cpu/decode/opcode_range_check/bit_7 = column0_row7 - (column0_row8 + column0_row8)
             {
-                let val = ((/*column0_row7*/ *borrow(&ctx, 49) + (PRIME - ((/*column0_row8*/ *borrow(
+                let val = ((/*column0_row7*/ *borrow(&ctx, 49) + (K_MODULUS - ((/*column0_row8*/ *borrow(
                     &ctx,
                     50
-                ) + /*column0_row8*/ *borrow(&ctx, 50)) % PRIME))) % PRIME);
+                ) + /*column0_row8*/ *borrow(&ctx, 50)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 243) = val;
             };
             // cpu/decode/opcode_range_check/bit_8 = column0_row8 - (column0_row9 + column0_row9)
             {
-                let val = ((/*column0_row8*/ *borrow(&ctx, 50) + (PRIME - ((/*column0_row9*/ *borrow(
+                let val = ((/*column0_row8*/ *borrow(&ctx, 50) + (K_MODULUS - ((/*column0_row9*/ *borrow(
                     &ctx,
                     51
-                ) + /*column0_row9*/ *borrow(&ctx, 51)) % PRIME))) % PRIME);
+                ) + /*column0_row9*/ *borrow(&ctx, 51)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 244) = val;
             };
             // cpu/decode/flag_pc_update_regular_0 = 1 - (cpu__decode__opcode_range_check__bit_7 + cpu__decode__opcode_range_check__bit_8 + cpu__decode__opcode_range_check__bit_9)
             {
-                let val = ((1 + (PRIME - ((((/*cpu__decode__opcode_range_check__bit_7*/ *borrow(
+                let val = ((1 + (K_MODULUS - ((((/*cpu__decode__opcode_range_check__bit_7*/ *borrow(
                     &ctx,
                     243
                 ) + /*cpu__decode__opcode_range_check__bit_8*/ *borrow(
                     &ctx,
                     244
-                )) % PRIME) + /*cpu__decode__opcode_range_check__bit_9*/ *borrow(&ctx, 241)) % PRIME))) % PRIME);
+                )) % K_MODULUS) + /*cpu__decode__opcode_range_check__bit_9*/ *borrow(&ctx, 241)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 245) = val;
             };
             // cpu/decode/opcode_range_check/bit_12 = column0_row12 - (column0_row13 + column0_row13)
             {
-                let val = ((/*column0_row12*/ *borrow(&ctx, 54) + (PRIME - ((/*column0_row13*/ *borrow(
+                let val = ((/*column0_row12*/ *borrow(&ctx, 54) + (K_MODULUS - ((/*column0_row13*/ *borrow(
                     &ctx,
                     55
-                ) + /*column0_row13*/ *borrow(&ctx, 55)) % PRIME))) % PRIME);
+                ) + /*column0_row13*/ *borrow(&ctx, 55)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 246) = val;
             };
             // cpu/decode/opcode_range_check/bit_13 = column0_row13 - (column0_row14 + column0_row14)
             {
-                let val = ((/*column0_row13*/ *borrow(&ctx, 55) + (PRIME - ((/*column0_row14*/ *borrow(
+                let val = ((/*column0_row13*/ *borrow(&ctx, 55) + (K_MODULUS - ((/*column0_row14*/ *borrow(
                     &ctx,
                     56
-                ) + /*column0_row14*/ *borrow(&ctx, 56)) % PRIME))) % PRIME);
+                ) + /*column0_row14*/ *borrow(&ctx, 56)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 247) = val;
             };
             // cpu/decode/fp_update_regular_0 = 1 - (cpu__decode__opcode_range_check__bit_12 + cpu__decode__opcode_range_check__bit_13)
             {
-                let val = ((1 + (PRIME - ((/*cpu__decode__opcode_range_check__bit_12*/ *borrow(
+                let val = ((1 + (K_MODULUS - ((/*cpu__decode__opcode_range_check__bit_12*/ *borrow(
                     &ctx,
                     246
-                ) + /*cpu__decode__opcode_range_check__bit_13*/ *borrow(&ctx, 247)) % PRIME))) % PRIME);
+                ) + /*cpu__decode__opcode_range_check__bit_13*/ *borrow(&ctx, 247)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 248) = val;
             };
             // cpu/decode/opcode_range_check/bit_1 = column0_row1 - (column0_row2 + column0_row2)
             {
-                let val = ((/*column0_row1*/ *borrow(&ctx, 43) + (PRIME - ((/*column0_row2*/ *borrow(
+                let val = ((/*column0_row1*/ *borrow(&ctx, 43) + (K_MODULUS - ((/*column0_row2*/ *borrow(
                     &ctx,
                     44
-                ) + /*column0_row2*/ *borrow(&ctx, 44)) % PRIME))) % PRIME);
+                ) + /*column0_row2*/ *borrow(&ctx, 44)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 249) = val;
             };
             // npc_reg_0 = column3_row0 + cpu__decode__opcode_range_check__bit_2 + 1
@@ -1093,60 +1065,60 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((((/*column3_row0*/ *borrow(&ctx, 91) + /*cpu__decode__opcode_range_check__bit_2*/ *borrow(
                     &ctx,
                     235
-                )) % PRIME) + 1) % PRIME);
+                )) % K_MODULUS) + 1) % K_MODULUS);
                 *borrow_mut(&mut ctx, 250) = val;
             };
             // cpu/decode/opcode_range_check/bit_10 = column0_row10 - (column0_row11 + column0_row11)
             {
-                let val = ((/*column0_row10*/ *borrow(&ctx, 52) + (PRIME - ((/*column0_row11*/ *borrow(
+                let val = ((/*column0_row10*/ *borrow(&ctx, 52) + (K_MODULUS - ((/*column0_row11*/ *borrow(
                     &ctx,
                     53
-                ) + /*column0_row11*/ *borrow(&ctx, 53)) % PRIME))) % PRIME);
+                ) + /*column0_row11*/ *borrow(&ctx, 53)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 251) = val;
             };
             // cpu/decode/opcode_range_check/bit_11 = column0_row11 - (column0_row12 + column0_row12)
             {
-                let val = ((/*column0_row11*/ *borrow(&ctx, 53) + (PRIME - ((/*column0_row12*/ *borrow(
+                let val = ((/*column0_row11*/ *borrow(&ctx, 53) + (K_MODULUS - ((/*column0_row12*/ *borrow(
                     &ctx,
                     54
-                ) + /*column0_row12*/ *borrow(&ctx, 54)) % PRIME))) % PRIME);
+                ) + /*column0_row12*/ *borrow(&ctx, 54)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 252) = val;
             };
             // cpu/decode/opcode_range_check/bit_14 = column0_row14 - (column0_row15 + column0_row15)
             {
-                let val = ((/*column0_row14*/ *borrow(&ctx, 56) + (PRIME - ((/*column0_row15*/ *borrow(
+                let val = ((/*column0_row14*/ *borrow(&ctx, 56) + (K_MODULUS - ((/*column0_row15*/ *borrow(
                     &ctx,
                     57
-                ) + /*column0_row15*/ *borrow(&ctx, 57)) % PRIME))) % PRIME);
+                ) + /*column0_row15*/ *borrow(&ctx, 57)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 253) = val;
             };
             // memory/address_diff_0 = column4_row2 - column4_row0
             {
-                let val = ((/*column4_row2*/ *borrow(&ctx, 135) + (PRIME - /*column4_row0*/ *borrow(
+                let val = ((/*column4_row2*/ *borrow(&ctx, 135) + (K_MODULUS - /*column4_row0*/ *borrow(
                     &ctx,
                     133
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 254) = val;
             };
             // range_check16/diff_0 = column6_row6 - column6_row2
             {
-                let val = ((/*column6_row6*/ *borrow(&ctx, 153) + (PRIME - /*column6_row2*/ *borrow(
+                let val = ((/*column6_row6*/ *borrow(&ctx, 153) + (K_MODULUS - /*column6_row2*/ *borrow(
                     &ctx,
                     149
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 255) = val;
             };
             // pedersen/hash0/ec_subset_sum/bit_0 = column7_row0 - (column7_row4 + column7_row4)
             {
-                let val = ((/*column7_row0*/ *borrow(&ctx, 169) + (PRIME - ((/*column7_row4*/ *borrow(
+                let val = ((/*column7_row0*/ *borrow(&ctx, 169) + (K_MODULUS - ((/*column7_row4*/ *borrow(
                     &ctx,
                     173
-                ) + /*column7_row4*/ *borrow(&ctx, 173)) % PRIME))) % PRIME);
+                ) + /*column7_row4*/ *borrow(&ctx, 173)) % K_MODULUS))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 256) = val;
             };
             // pedersen/hash0/ec_subset_sum/bit_neg_0 = 1 - pedersen__hash0__ec_subset_sum__bit_0
             {
-                let val = ((1 + (PRIME - /*pedersen__hash0__ec_subset_sum__bit_0*/ *borrow(&ctx, 256))) % PRIME);
+                let val = ((1 + (K_MODULUS - /*pedersen__hash0__ec_subset_sum__bit_0*/ *borrow(&ctx, 256))) % K_MODULUS);
                 *borrow_mut(&mut ctx, 257) = val;
             };
             // range_check_builtin/value0_0 = column6_row12
@@ -1159,7 +1131,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*range_check_builtin__value0_0*/
                     *borrow(&ctx, 258), /*offset_size*/
                     offset_size
-                ) + /*column6_row28*/ *borrow(&ctx, 157)) % PRIME);
+                ) + /*column6_row28*/ *borrow(&ctx, 157)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 259) = val;
             };
             // range_check_builtin/value2_0 = range_check_builtin__value1_0 * offset_size + column6_row44
@@ -1167,7 +1139,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*range_check_builtin__value1_0*/
                     *borrow(&ctx, 259), /*offset_size*/
                     offset_size
-                ) + /*column6_row44*/ *borrow(&ctx, 158)) % PRIME);
+                ) + /*column6_row44*/ *borrow(&ctx, 158)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 260) = val;
             };
             // range_check_builtin/value3_0 = range_check_builtin__value2_0 * offset_size + column6_row60
@@ -1175,7 +1147,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*range_check_builtin__value2_0*/
                     *borrow(&ctx, 260), /*offset_size*/
                     offset_size
-                ) + /*column6_row60*/ *borrow(&ctx, 159)) % PRIME);
+                ) + /*column6_row60*/ *borrow(&ctx, 159)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 261) = val;
             };
             // range_check_builtin/value4_0 = range_check_builtin__value3_0 * offset_size + column6_row76
@@ -1183,7 +1155,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*range_check_builtin__value3_0*/
                     *borrow(&ctx, 261), /*offset_size*/
                     offset_size
-                ) + /*column6_row76*/ *borrow(&ctx, 160)) % PRIME);
+                ) + /*column6_row76*/ *borrow(&ctx, 160)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 262) = val;
             };
             // range_check_builtin/value5_0 = range_check_builtin__value4_0 * offset_size + column6_row92
@@ -1191,7 +1163,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*range_check_builtin__value4_0*/
                     *borrow(&ctx, 262), /*offset_size*/
                     offset_size
-                ) + /*column6_row92*/ *borrow(&ctx, 161)) % PRIME);
+                ) + /*column6_row92*/ *borrow(&ctx, 161)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 263) = val;
             };
             // range_check_builtin/value6_0 = range_check_builtin__value5_0 * offset_size + column6_row108
@@ -1199,7 +1171,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*range_check_builtin__value5_0*/
                     *borrow(&ctx, 263), /*offset_size*/
                     offset_size
-                ) + /*column6_row108*/ *borrow(&ctx, 162)) % PRIME);
+                ) + /*column6_row108*/ *borrow(&ctx, 162)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 264) = val;
             };
             // range_check_builtin/value7_0 = range_check_builtin__value6_0 * offset_size + column6_row124
@@ -1207,7 +1179,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*range_check_builtin__value6_0*/
                     *borrow(&ctx, 264), /*offset_size*/
                     offset_size
-                ) + /*column6_row124*/ *borrow(&ctx, 163)) % PRIME);
+                ) + /*column6_row124*/ *borrow(&ctx, 163)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 265) = val;
             };
             // bitwise/sum_var_0_0 = column1_row0 + column1_row2 * 2 + column1_row4 * 4 + column1_row6 * 8 + column1_row8 * 18446744073709551616 + column1_row10 * 36893488147419103232 + column1_row12 * 73786976294838206464 + column1_row14 * 147573952589676412928
@@ -1215,19 +1187,19 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((((((((((((((/*column1_row0*/ *borrow(&ctx, 58) + fmul(/*column1_row2*/
                     *borrow(&ctx, 60),
                     2
-                )) % PRIME) + fmul(/*column1_row4*/ *borrow(&ctx, 61), 4)) % PRIME) + fmul(/*column1_row6*/
+                )) % K_MODULUS) + fmul(/*column1_row4*/ *borrow(&ctx, 61), 4)) % K_MODULUS) + fmul(/*column1_row6*/
                     *borrow(&ctx, 62),
                     8
-                )) % PRIME) + fmul(/*column1_row8*/
+                )) % K_MODULUS) + fmul(/*column1_row8*/
                     *borrow(&ctx, 63),
                     18446744073709551616
-                )) % PRIME) + fmul(/*column1_row10*/
+                )) % K_MODULUS) + fmul(/*column1_row10*/
                     *borrow(&ctx, 64),
                     36893488147419103232
-                )) % PRIME) + fmul(/*column1_row12*/
+                )) % K_MODULUS) + fmul(/*column1_row12*/
                     *borrow(&ctx, 65),
                     73786976294838206464
-                )) % PRIME) + fmul(/*column1_row14*/ *borrow(&ctx, 66), 147573952589676412928)) % PRIME);
+                )) % K_MODULUS) + fmul(/*column1_row14*/ *borrow(&ctx, 66), 147573952589676412928)) % K_MODULUS);
                 *borrow_mut(&mut ctx, 266) = val;
             };
             // bitwise/sum_var_8_0 = column1_row16 * 340282366920938463463374607431768211456 + column1_row18 * 680564733841876926926749214863536422912 + column1_row20 * 1361129467683753853853498429727072845824 + column1_row22 * 2722258935367507707706996859454145691648 + column1_row24 * 6277101735386680763835789423207666416102355444464034512896 + column1_row26 * 12554203470773361527671578846415332832204710888928069025792 + column1_row28 * 25108406941546723055343157692830665664409421777856138051584 + column1_row30 * 50216813883093446110686315385661331328818843555712276103168
@@ -1238,25 +1210,25 @@ module cpu_addr::cpu_constraint_poly {
                 ) + fmul(/*column1_row18*/
                     *borrow(&ctx, 68),
                     680564733841876926926749214863536422912
-                )) % PRIME) + fmul(/*column1_row20*/
+                )) % K_MODULUS) + fmul(/*column1_row20*/
                     *borrow(&ctx, 69),
                     1361129467683753853853498429727072845824
-                )) % PRIME) + fmul(/*column1_row22*/
+                )) % K_MODULUS) + fmul(/*column1_row22*/
                     *borrow(&ctx, 70),
                     2722258935367507707706996859454145691648
-                )) % PRIME) + fmul(/*column1_row24*/
+                )) % K_MODULUS) + fmul(/*column1_row24*/
                     *borrow(&ctx, 71),
                     6277101735386680763835789423207666416102355444464034512896
-                )) % PRIME) + fmul(/*column1_row26*/
+                )) % K_MODULUS) + fmul(/*column1_row26*/
                     *borrow(&ctx, 72),
                     12554203470773361527671578846415332832204710888928069025792
-                )) % PRIME) + fmul(/*column1_row28*/
+                )) % K_MODULUS) + fmul(/*column1_row28*/
                     *borrow(&ctx, 73),
                     25108406941546723055343157692830665664409421777856138051584
-                )) % PRIME) + fmul(/*column1_row30*/
+                )) % K_MODULUS) + fmul(/*column1_row30*/
                     *borrow(&ctx, 74),
                     50216813883093446110686315385661331328818843555712276103168
-                )) % PRIME);
+                )) % K_MODULUS);
                 *borrow_mut(&mut ctx, 267) = val;
             };
             // poseidon/poseidon/full_rounds_state0_cubed_0 = column8_row6 * column8_row9
@@ -1362,7 +1334,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*cpu__decode__opcode_range_check__bit_0*/
                     *borrow(&ctx, 234), /*cpu__decode__opcode_range_check__bit_0*/
                     *borrow(&ctx, 234)
-                ) + (PRIME - /*cpu__decode__opcode_range_check__bit_0*/ *borrow(&ctx, 234))) % PRIME);
+                ) + (K_MODULUS - /*cpu__decode__opcode_range_check__bit_0*/ *borrow(&ctx, 234))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 381));
@@ -1371,7 +1343,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 362));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1383,28 +1355,28 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 363));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for cpu/decode/opcode_range_check_input: column3_row1 - (((column0_row0 * offset_size + column6_row4) * offset_size + column6_row8) * offset_size + column6_row0)
             {
-                let val = ((/*column3_row1*/ *borrow(&ctx, 92) + (PRIME - ((fmul(
+                let val = ((/*column3_row1*/ *borrow(&ctx, 92) + (K_MODULUS - ((fmul(
                     ((fmul(
                         ((fmul(/*column0_row0*/
                             *borrow(&ctx, 42), /*offset_size*/
                             offset_size
-                        ) + /*column6_row4*/ *borrow(&ctx, 151)) % PRIME), /*offset_size*/
+                        ) + /*column6_row4*/ *borrow(&ctx, 151)) % K_MODULUS), /*offset_size*/
                         offset_size
-                    ) + /*column6_row8*/ *borrow(&ctx, 155)) % PRIME), /*offset_size*/
+                    ) + /*column6_row8*/ *borrow(&ctx, 155)) % K_MODULUS), /*offset_size*/
                     offset_size
-                ) + /*column6_row0*/ *borrow(&ctx, 147)) % PRIME))) % PRIME);
+                ) + /*column6_row0*/ *borrow(&ctx, 147)) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1413,13 +1385,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*cpu__decode__flag_op1_base_op0_0*/
                     *borrow(&ctx, 238), /*cpu__decode__flag_op1_base_op0_0*/
                     *borrow(&ctx, 238)
-                ) + (PRIME - /*cpu__decode__flag_op1_base_op0_0*/ *borrow(&ctx, 238))) % PRIME);
+                ) + (K_MODULUS - /*cpu__decode__flag_op1_base_op0_0*/ *borrow(&ctx, 238))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1428,13 +1400,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*cpu__decode__flag_res_op1_0*/
                     *borrow(&ctx, 242), /*cpu__decode__flag_res_op1_0*/
                     *borrow(&ctx, 242)
-                ) + (PRIME - /*cpu__decode__flag_res_op1_0*/ *borrow(&ctx, 242))) % PRIME);
+                ) + (K_MODULUS - /*cpu__decode__flag_res_op1_0*/ *borrow(&ctx, 242))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1443,13 +1415,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*cpu__decode__flag_pc_update_regular_0*/
                     *borrow(&ctx, 245), /*cpu__decode__flag_pc_update_regular_0*/
                     *borrow(&ctx, 245)
-                ) + (PRIME - /*cpu__decode__flag_pc_update_regular_0*/ *borrow(&ctx, 245))) % PRIME);
+                ) + (K_MODULUS - /*cpu__decode__flag_pc_update_regular_0*/ *borrow(&ctx, 245))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1458,13 +1430,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*cpu__decode__fp_update_regular_0*/
                     *borrow(&ctx, 248), /*cpu__decode__fp_update_regular_0*/
                     *borrow(&ctx, 248)
-                ) + (PRIME - /*cpu__decode__fp_update_regular_0*/ *borrow(&ctx, 248))) % PRIME);
+                ) + (K_MODULUS - /*cpu__decode__fp_update_regular_0*/ *borrow(&ctx, 248))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1473,22 +1445,22 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((((/*column3_row8*/ *borrow(
                     &ctx,
                     99
-                ) + /*half_offset_size*/ half_offset_size) % PRIME) + (PRIME - ((((fmul(/*cpu__decode__opcode_range_check__bit_0*/
+                ) + /*half_offset_size*/ half_offset_size) % K_MODULUS) + (K_MODULUS - ((((fmul(/*cpu__decode__opcode_range_check__bit_0*/
                     *borrow(&ctx, 234), /*column8_row8*/
                     *borrow(&ctx, 200)
                 ) + fmul(
-                    ((1 + (PRIME - /*cpu__decode__opcode_range_check__bit_0*/ *borrow(
+                    ((1 + (K_MODULUS - /*cpu__decode__opcode_range_check__bit_0*/ *borrow(
                         &ctx,
                         234
-                    ))) % PRIME), /*column8_row0*/
+                    ))) % K_MODULUS), /*column8_row0*/
                     *borrow(&ctx, 194)
-                )) % PRIME) + /*column6_row0*/ *borrow(&ctx, 147)) % PRIME))) % PRIME);
+                )) % K_MODULUS) + /*column6_row0*/ *borrow(&ctx, 147)) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1497,22 +1469,22 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((((/*column3_row4*/ *borrow(
                     &ctx,
                     95
-                ) + /*half_offset_size*/ half_offset_size) % PRIME) + (PRIME - ((((fmul(/*cpu__decode__opcode_range_check__bit_1*/
+                ) + /*half_offset_size*/ half_offset_size) % K_MODULUS) + (K_MODULUS - ((((fmul(/*cpu__decode__opcode_range_check__bit_1*/
                     *borrow(&ctx, 249), /*column8_row8*/
                     *borrow(&ctx, 200)
                 ) + fmul(
-                    ((1 + (PRIME - /*cpu__decode__opcode_range_check__bit_1*/ *borrow(
+                    ((1 + (K_MODULUS - /*cpu__decode__opcode_range_check__bit_1*/ *borrow(
                         &ctx,
                         249
-                    ))) % PRIME), /*column8_row0*/
+                    ))) % K_MODULUS), /*column8_row0*/
                     *borrow(&ctx, 194)
-                )) % PRIME) + /*column6_row8*/ *borrow(&ctx, 155)) % PRIME))) % PRIME);
+                )) % K_MODULUS) + /*column6_row8*/ *borrow(&ctx, 155)) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1521,67 +1493,67 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((((/*column3_row12*/ *borrow(
                     &ctx,
                     103
-                ) + /*half_offset_size*/ half_offset_size) % PRIME) + (PRIME - ((((((((fmul(/*cpu__decode__opcode_range_check__bit_2*/
+                ) + /*half_offset_size*/ half_offset_size) % K_MODULUS) + (K_MODULUS - ((((((((fmul(/*cpu__decode__opcode_range_check__bit_2*/
                     *borrow(&ctx, 235), /*column3_row0*/
                     *borrow(&ctx, 91)
                 ) + fmul(/*cpu__decode__opcode_range_check__bit_4*/
                     *borrow(&ctx, 236), /*column8_row0*/
                     *borrow(&ctx, 194)
-                )) % PRIME) + fmul(/*cpu__decode__opcode_range_check__bit_3*/
+                )) % K_MODULUS) + fmul(/*cpu__decode__opcode_range_check__bit_3*/
                     *borrow(&ctx, 237), /*column8_row8*/
                     *borrow(&ctx, 200)
-                )) % PRIME) + fmul(/*cpu__decode__flag_op1_base_op0_0*/
+                )) % K_MODULUS) + fmul(/*cpu__decode__flag_op1_base_op0_0*/
                     *borrow(&ctx, 238), /*column3_row5*/
                     *borrow(&ctx, 96)
-                )) % PRIME) + /*column6_row4*/ *borrow(&ctx, 151)) % PRIME))) % PRIME);
+                )) % K_MODULUS) + /*column6_row4*/ *borrow(&ctx, 151)) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for cpu/operands/ops_mul: column8_row4 - column3_row5 * column3_row13
             {
-                let val = ((/*column8_row4*/ *borrow(&ctx, 197) + (PRIME - fmul(/*column3_row5*/
+                let val = ((/*column8_row4*/ *borrow(&ctx, 197) + (K_MODULUS - fmul(/*column3_row5*/
                     *borrow(&ctx, 96), /*column3_row13*/
                     *borrow(&ctx, 104)
-                ))) % PRIME);
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for cpu/operands/res: (1 - cpu__decode__opcode_range_check__bit_9) * column8_row12 - (cpu__decode__opcode_range_check__bit_5 * (column3_row5 + column3_row13) + cpu__decode__opcode_range_check__bit_6 * column8_row4 + cpu__decode__flag_res_op1_0 * column3_row13)
             {
                 let val = ((fmul(
-                    ((1 + (PRIME - /*cpu__decode__opcode_range_check__bit_9*/ *borrow(
+                    ((1 + (K_MODULUS - /*cpu__decode__opcode_range_check__bit_9*/ *borrow(
                         &ctx,
                         241
-                    ))) % PRIME), /*column8_row12*/
+                    ))) % K_MODULUS), /*column8_row12*/
                     *borrow(&ctx, 203)
-                ) + (PRIME - ((((fmul(/*cpu__decode__opcode_range_check__bit_5*/
+                ) + (K_MODULUS - ((((fmul(/*cpu__decode__opcode_range_check__bit_5*/
                     *borrow(&ctx, 239),
-                    ((/*column3_row5*/ *borrow(&ctx, 96) + /*column3_row13*/ *borrow(&ctx, 104)) % PRIME)
+                    ((/*column3_row5*/ *borrow(&ctx, 96) + /*column3_row13*/ *borrow(&ctx, 104)) % K_MODULUS)
                 ) + fmul(/*cpu__decode__opcode_range_check__bit_6*/
                     *borrow(&ctx, 240), /*column8_row4*/
                     *borrow(&ctx, 197)
-                )) % PRIME) + fmul(/*cpu__decode__flag_res_op1_0*/
+                )) % K_MODULUS) + fmul(/*cpu__decode__flag_res_op1_0*/
                     *borrow(&ctx, 242), /*column3_row13*/
                     *borrow(&ctx, 104)
-                )) % PRIME))) % PRIME);
+                )) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1590,10 +1562,10 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column8_row2*/ *borrow(
                     &ctx,
                     196
-                ) + (PRIME - fmul(/*cpu__decode__opcode_range_check__bit_9*/
+                ) + (K_MODULUS - fmul(/*cpu__decode__opcode_range_check__bit_9*/
                     *borrow(&ctx, 241), /*column3_row9*/
                     *borrow(&ctx, 100)
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 383));
@@ -1602,16 +1574,16 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for cpu/update_registers/update_pc/tmp1: column8_row10 - column8_row2 * column8_row12
             {
-                let val = ((/*column8_row10*/ *borrow(&ctx, 202) + (PRIME - fmul(/*column8_row2*/
+                let val = ((/*column8_row10*/ *borrow(&ctx, 202) + (K_MODULUS - fmul(/*column8_row2*/
                     *borrow(&ctx, 196), /*column8_row12*/
                     *borrow(&ctx, 203)
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 383));
@@ -1620,34 +1592,34 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for cpu/update_registers/update_pc/pc_cond_negative: (1 - cpu__decode__opcode_range_check__bit_9) * column3_row16 + column8_row2 * (column3_row16 - (column3_row0 + column3_row13)) - (cpu__decode__flag_pc_update_regular_0 * npc_reg_0 + cpu__decode__opcode_range_check__bit_7 * column8_row12 + cpu__decode__opcode_range_check__bit_8 * (column3_row0 + column8_row12))
             {
                 let val = ((((fmul(
-                    ((1 + (PRIME - /*cpu__decode__opcode_range_check__bit_9*/ *borrow(
+                    ((1 + (K_MODULUS - /*cpu__decode__opcode_range_check__bit_9*/ *borrow(
                         &ctx,
                         241
-                    ))) % PRIME), /*column3_row16*/
+                    ))) % K_MODULUS), /*column3_row16*/
                     *borrow(&ctx, 105)
                 ) + fmul(/*column8_row2*/
                     *borrow(&ctx, 196),
-                    ((/*column3_row16*/ *borrow(&ctx, 105) + (PRIME - ((/*column3_row0*/ *borrow(
+                    ((/*column3_row16*/ *borrow(&ctx, 105) + (K_MODULUS - ((/*column3_row0*/ *borrow(
                         &ctx,
                         91
-                    ) + /*column3_row13*/ *borrow(&ctx, 104)) % PRIME))) % PRIME)
-                )) % PRIME) + (PRIME - ((((fmul(/*cpu__decode__flag_pc_update_regular_0*/
+                    ) + /*column3_row13*/ *borrow(&ctx, 104)) % K_MODULUS))) % K_MODULUS)
+                )) % K_MODULUS) + (K_MODULUS - ((((fmul(/*cpu__decode__flag_pc_update_regular_0*/
                     *borrow(&ctx, 245), /*npc_reg_0*/
                     *borrow(&ctx, 250)
                 ) + fmul(/*cpu__decode__opcode_range_check__bit_7*/
                     *borrow(&ctx, 243), /*column8_row12*/
                     *borrow(&ctx, 203)
-                )) % PRIME) + fmul(/*cpu__decode__opcode_range_check__bit_8*/
+                )) % K_MODULUS) + fmul(/*cpu__decode__opcode_range_check__bit_8*/
                     *borrow(&ctx, 244),
-                    ((/*column3_row0*/ *borrow(&ctx, 91) + /*column8_row12*/ *borrow(&ctx, 203)) % PRIME)
-                )) % PRIME))) % PRIME);
+                    ((/*column3_row0*/ *borrow(&ctx, 91) + /*column8_row12*/ *borrow(&ctx, 203)) % K_MODULUS)
+                )) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 383));
@@ -1656,7 +1628,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1666,8 +1638,8 @@ module cpu_addr::cpu_constraint_poly {
                     ((/*column8_row10*/ *borrow(
                         &ctx,
                         202
-                    ) + (PRIME - /*cpu__decode__opcode_range_check__bit_9*/ *borrow(&ctx, 241))) % PRIME),
-                    ((/*column3_row16*/ *borrow(&ctx, 105) + (PRIME - /*npc_reg_0*/ *borrow(&ctx, 250))) % PRIME)
+                    ) + (K_MODULUS - /*cpu__decode__opcode_range_check__bit_9*/ *borrow(&ctx, 241))) % K_MODULUS),
+                    ((/*column3_row16*/ *borrow(&ctx, 105) + (K_MODULUS - /*npc_reg_0*/ *borrow(&ctx, 250))) % K_MODULUS)
                 );
                 // Numerator
                 // val *= numerator
@@ -1677,25 +1649,25 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for cpu/update_registers/update_ap/ap_update: column8_row16 - (column8_row0 + cpu__decode__opcode_range_check__bit_10 * column8_row12 + cpu__decode__opcode_range_check__bit_11 + cpu__decode__opcode_range_check__bit_12 * 2)
             {
-                let val = ((/*column8_row16*/ *borrow(&ctx, 206) + (PRIME - ((((((/*column8_row0*/ *borrow(
+                let val = ((/*column8_row16*/ *borrow(&ctx, 206) + (K_MODULUS - ((((((/*column8_row0*/ *borrow(
                     &ctx,
                     194
                 ) + fmul(/*cpu__decode__opcode_range_check__bit_10*/
                     *borrow(&ctx, 251), /*column8_row12*/
                     *borrow(&ctx, 203)
-                )) % PRIME) + /*cpu__decode__opcode_range_check__bit_11*/ *borrow(
+                )) % K_MODULUS) + /*cpu__decode__opcode_range_check__bit_11*/ *borrow(
                     &ctx,
                     252
-                )) % PRIME) + fmul(/*cpu__decode__opcode_range_check__bit_12*/
+                )) % K_MODULUS) + fmul(/*cpu__decode__opcode_range_check__bit_12*/
                     *borrow(&ctx, 246),
                     2
-                )) % PRIME))) % PRIME);
+                )) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 383));
@@ -1704,7 +1676,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1713,16 +1685,16 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column8_row24*/ *borrow(
                     &ctx,
                     209
-                ) + (PRIME - ((((fmul(/*cpu__decode__fp_update_regular_0*/
+                ) + (K_MODULUS - ((((fmul(/*cpu__decode__fp_update_regular_0*/
                     *borrow(&ctx, 248), /*column8_row8*/
                     *borrow(&ctx, 200)
                 ) + fmul(/*cpu__decode__opcode_range_check__bit_13*/
                     *borrow(&ctx, 247), /*column3_row9*/
                     *borrow(&ctx, 100)
-                )) % PRIME) + fmul(/*cpu__decode__opcode_range_check__bit_12*/
+                )) % K_MODULUS) + fmul(/*cpu__decode__opcode_range_check__bit_12*/
                     *borrow(&ctx, 246),
-                    ((/*column8_row0*/ *borrow(&ctx, 194) + 2) % PRIME)
-                )) % PRIME))) % PRIME);
+                    ((/*column8_row0*/ *borrow(&ctx, 194) + 2) % K_MODULUS)
+                )) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 383));
@@ -1731,7 +1703,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1739,14 +1711,14 @@ module cpu_addr::cpu_constraint_poly {
             {
                 let val = fmul(/*cpu__decode__opcode_range_check__bit_12*/
                     *borrow(&ctx, 246),
-                    ((/*column3_row9*/ *borrow(&ctx, 100) + (PRIME - /*column8_row8*/ *borrow(&ctx, 200))) % PRIME)
+                    ((/*column3_row9*/ *borrow(&ctx, 100) + (K_MODULUS - /*column8_row8*/ *borrow(&ctx, 200))) % K_MODULUS)
                 );
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1754,14 +1726,14 @@ module cpu_addr::cpu_constraint_poly {
             {
                 let val = fmul(/*cpu__decode__opcode_range_check__bit_12*/
                     *borrow(&ctx, 246),
-                    ((/*column3_row5*/ *borrow(&ctx, 96) + (PRIME - /*npc_reg_0*/ *borrow(&ctx, 250))) % PRIME)
+                    ((/*column3_row5*/ *borrow(&ctx, 96) + (K_MODULUS - /*npc_reg_0*/ *borrow(&ctx, 250))) % K_MODULUS)
                 );
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1769,14 +1741,14 @@ module cpu_addr::cpu_constraint_poly {
             {
                 let val = fmul(/*cpu__decode__opcode_range_check__bit_12*/
                     *borrow(&ctx, 246),
-                    ((/*column6_row0*/ *borrow(&ctx, 147) + (PRIME - /*half_offset_size*/ half_offset_size)) % PRIME)
+                    ((/*column6_row0*/ *borrow(&ctx, 147) + (K_MODULUS - /*half_offset_size*/ half_offset_size)) % K_MODULUS)
                 );
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1787,14 +1759,14 @@ module cpu_addr::cpu_constraint_poly {
                     ((/*column6_row8*/ *borrow(
                         &ctx,
                         155
-                    ) + (PRIME - ((/*half_offset_size*/ half_offset_size + 1) % PRIME))) % PRIME)
+                    ) + (K_MODULUS - ((/*half_offset_size*/ half_offset_size + 1) % K_MODULUS))) % K_MODULUS)
                 );
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1808,17 +1780,17 @@ module cpu_addr::cpu_constraint_poly {
                     ) + /*cpu__decode__opcode_range_check__bit_12*/ *borrow(
                         &ctx,
                         246
-                    )) % PRIME) + 1) % PRIME) + 1) % PRIME) + (PRIME - ((((/*cpu__decode__opcode_range_check__bit_0*/ *borrow(
+                    )) % K_MODULUS) + 1) % K_MODULUS) + 1) % K_MODULUS) + (K_MODULUS - ((((/*cpu__decode__opcode_range_check__bit_0*/ *borrow(
                         &ctx,
                         234
-                    ) + /*cpu__decode__opcode_range_check__bit_1*/ *borrow(&ctx, 249)) % PRIME) + 4) % PRIME))) % PRIME)
+                    ) + /*cpu__decode__opcode_range_check__bit_1*/ *borrow(&ctx, 249)) % K_MODULUS) + 4) % K_MODULUS))) % K_MODULUS)
                 );
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1829,14 +1801,14 @@ module cpu_addr::cpu_constraint_poly {
                     ((((/*column6_row0*/ *borrow(
                         &ctx,
                         147
-                    ) + 2) % PRIME) + (PRIME - /*half_offset_size*/ half_offset_size)) % PRIME)
+                    ) + 2) % K_MODULUS) + (K_MODULUS - /*half_offset_size*/ half_offset_size)) % K_MODULUS)
                 );
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1847,14 +1819,14 @@ module cpu_addr::cpu_constraint_poly {
                     ((((/*column6_row4*/ *borrow(
                         &ctx,
                         151
-                    ) + 1) % PRIME) + (PRIME - /*half_offset_size*/ half_offset_size)) % PRIME)
+                    ) + 1) % K_MODULUS) + (K_MODULUS - /*half_offset_size*/ half_offset_size)) % K_MODULUS)
                 );
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1868,17 +1840,17 @@ module cpu_addr::cpu_constraint_poly {
                     ) + /*cpu__decode__opcode_range_check__bit_0*/ *borrow(
                         &ctx,
                         234
-                    )) % PRIME) + /*cpu__decode__opcode_range_check__bit_3*/ *borrow(
+                    )) % K_MODULUS) + /*cpu__decode__opcode_range_check__bit_3*/ *borrow(
                         &ctx,
                         237
-                    )) % PRIME) + /*cpu__decode__flag_res_op1_0*/ *borrow(&ctx, 242)) % PRIME) + (PRIME - 4)) % PRIME)
+                    )) % K_MODULUS) + /*cpu__decode__flag_res_op1_0*/ *borrow(&ctx, 242)) % K_MODULUS) + (K_MODULUS - 4)) % K_MODULUS)
                 );
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -1886,137 +1858,137 @@ module cpu_addr::cpu_constraint_poly {
             {
                 let val = fmul(/*cpu__decode__opcode_range_check__bit_14*/
                     *borrow(&ctx, 253),
-                    ((/*column3_row9*/ *borrow(&ctx, 100) + (PRIME - /*column8_row12*/ *borrow(&ctx, 203))) % PRIME)
+                    ((/*column3_row9*/ *borrow(&ctx, 100) + (K_MODULUS - /*column8_row12*/ *borrow(&ctx, 203))) % K_MODULUS)
                 );
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for initial_ap: column8_row0 - initial_ap
             {
-                let val = ((/*column8_row0*/ *borrow(&ctx, 194) + (PRIME - /*initial_ap*/ initial_ap)) % PRIME);
+                let val = ((/*column8_row0*/ *borrow(&ctx, 194) + (K_MODULUS - /*initial_ap*/ initial_ap)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for initial_fp: column8_row8 - initial_ap
             {
-                let val = ((/*column8_row8*/ *borrow(&ctx, 200) + (PRIME - /*initial_ap*/ initial_ap)) % PRIME);
+                let val = ((/*column8_row8*/ *borrow(&ctx, 200) + (K_MODULUS - /*initial_ap*/ initial_ap)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for initial_pc: column3_row0 - initial_pc
             {
-                let val = ((/*column3_row0*/ *borrow(&ctx, 91) + (PRIME - /*initial_pc*/ initial_pc)) % PRIME);
+                let val = ((/*column3_row0*/ *borrow(&ctx, 91) + (K_MODULUS - /*initial_pc*/ initial_pc)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for final_ap: column8_row0 - final_ap
             {
-                let val = ((/*column8_row0*/ *borrow(&ctx, 194) + (PRIME - /*final_ap*/ final_ap)) % PRIME);
+                let val = ((/*column8_row0*/ *borrow(&ctx, 194) + (K_MODULUS - /*final_ap*/ final_ap)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 365));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for final_fp: column8_row8 - initial_ap
             {
-                let val = ((/*column8_row8*/ *borrow(&ctx, 200) + (PRIME - /*initial_ap*/ initial_ap)) % PRIME);
+                let val = ((/*column8_row8*/ *borrow(&ctx, 200) + (K_MODULUS - /*initial_ap*/ initial_ap)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 365));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for final_pc: column3_row0 - final_pc
             {
-                let val = ((/*column3_row0*/ *borrow(&ctx, 91) + (PRIME - /*final_pc*/ final_pc)) % PRIME);
+                let val = ((/*column3_row0*/ *borrow(&ctx, 91) + (K_MODULUS - /*final_pc*/ final_pc)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 365));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for memory/multi_column_perm/perm/init0: (memory__multi_column_perm__perm__interaction_elm - (column4_row0 + memory__multi_column_perm__hash_interaction_elm0 * column4_row1)) * column11_inter1_row0 + column3_row0 + memory__multi_column_perm__hash_interaction_elm0 * column3_row1 - memory__multi_column_perm__perm__interaction_elm
             {
                 let val = ((((((fmul(
-                    ((/*memory__multi_column_perm__perm__interaction_elm*/ memory__multi_column_perm__perm__interaction_elm + (PRIME - ((/*column4_row0*/ *borrow(
+                    ((/*memory__multi_column_perm__perm__interaction_elm*/ memory__multi_column_perm__perm__interaction_elm + (K_MODULUS - ((/*column4_row0*/ *borrow(
                         &ctx,
                         133
                     ) + fmul(/*memory__multi_column_perm__hash_interaction_elm0*/
                         memory__multi_column_perm__hash_interaction_elm0, /*column4_row1*/
                         *borrow(&ctx, 134)
-                    )) % PRIME))) % PRIME), /*column11_inter1_row0*/
+                    )) % K_MODULUS))) % K_MODULUS), /*column11_inter1_row0*/
                     *borrow(&ctx, 230)
                 ) + /*column3_row0*/ *borrow(
                     &ctx,
                     91
-                )) % PRIME) + fmul(/*memory__multi_column_perm__hash_interaction_elm0*/
+                )) % K_MODULUS) + fmul(/*memory__multi_column_perm__hash_interaction_elm0*/
                     memory__multi_column_perm__hash_interaction_elm0, /*column3_row1*/
                     *borrow(&ctx, 92)
-                )) % PRIME) + (PRIME - /*memory__multi_column_perm__perm__interaction_elm*/ memory__multi_column_perm__perm__interaction_elm)) % PRIME);
+                )) % K_MODULUS) + (K_MODULUS - /*memory__multi_column_perm__perm__interaction_elm*/ memory__multi_column_perm__perm__interaction_elm)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for memory/multi_column_perm/perm/step0: (memory__multi_column_perm__perm__interaction_elm - (column4_row2 + memory__multi_column_perm__hash_interaction_elm0 * column4_row3)) * column11_inter1_row2 - (memory__multi_column_perm__perm__interaction_elm - (column3_row2 + memory__multi_column_perm__hash_interaction_elm0 * column3_row3)) * column11_inter1_row0
             {
                 let val = ((fmul(
-                    ((/*memory__multi_column_perm__perm__interaction_elm*/ memory__multi_column_perm__perm__interaction_elm + (PRIME - ((/*column4_row2*/ *borrow(
+                    ((/*memory__multi_column_perm__perm__interaction_elm*/ memory__multi_column_perm__perm__interaction_elm + (K_MODULUS - ((/*column4_row2*/ *borrow(
                         &ctx,
                         135
                     ) + fmul(/*memory__multi_column_perm__hash_interaction_elm0*/
                         memory__multi_column_perm__hash_interaction_elm0, /*column4_row3*/
                         *borrow(&ctx, 136)
-                    )) % PRIME))) % PRIME), /*column11_inter1_row2*/
+                    )) % K_MODULUS))) % K_MODULUS), /*column11_inter1_row2*/
                     *borrow(&ctx, 232)
-                ) + (PRIME - fmul(
-                    ((/*memory__multi_column_perm__perm__interaction_elm*/ memory__multi_column_perm__perm__interaction_elm + (PRIME - ((/*column3_row2*/ *borrow(
+                ) + (K_MODULUS - fmul(
+                    ((/*memory__multi_column_perm__perm__interaction_elm*/ memory__multi_column_perm__perm__interaction_elm + (K_MODULUS - ((/*column3_row2*/ *borrow(
                         &ctx,
                         93
                     ) + fmul(/*memory__multi_column_perm__hash_interaction_elm0*/
                         memory__multi_column_perm__hash_interaction_elm0, /*column3_row3*/
                         *borrow(&ctx, 94)
-                    )) % PRIME))) % PRIME), /*column11_inter1_row0*/
+                    )) % K_MODULUS))) % K_MODULUS), /*column11_inter1_row0*/
                     *borrow(&ctx, 230)
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 386));
@@ -2025,7 +1997,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 367));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2034,13 +2006,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column11_inter1_row0*/ *borrow(
                     &ctx,
                     230
-                ) + (PRIME - /*memory__multi_column_perm__perm__public_memory_prod*/ memory__multi_column_perm__perm__public_memory_prod)) % PRIME);
+                ) + (K_MODULUS - /*memory__multi_column_perm__perm__public_memory_prod*/ memory__multi_column_perm__perm__public_memory_prod)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 368));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2049,7 +2021,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*memory__address_diff_0*/
                     *borrow(&ctx, 254), /*memory__address_diff_0*/
                     *borrow(&ctx, 254)
-                ) + (PRIME - /*memory__address_diff_0*/ *borrow(&ctx, 254))) % PRIME);
+                ) + (K_MODULUS - /*memory__address_diff_0*/ *borrow(&ctx, 254))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 386));
@@ -2058,15 +2030,15 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 367));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for memory/is_func: (memory__address_diff_0 - 1) * (column4_row1 - column4_row3)
             {
                 let val = fmul(
-                    ((/*memory__address_diff_0*/ *borrow(&ctx, 254) + (PRIME - 1)) % PRIME),
-                    ((/*column4_row1*/ *borrow(&ctx, 134) + (PRIME - /*column4_row3*/ *borrow(&ctx, 136))) % PRIME)
+                    ((/*memory__address_diff_0*/ *borrow(&ctx, 254) + (K_MODULUS - 1)) % K_MODULUS),
+                    ((/*column4_row1*/ *borrow(&ctx, 134) + (K_MODULUS - /*column4_row3*/ *borrow(&ctx, 136))) % K_MODULUS)
                 );
                 // Numerator
                 // val *= numerator
@@ -2076,19 +2048,19 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 367));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for memory/initial_addr: column4_row0 - 1
             {
-                let val = ((/*column4_row0*/ *borrow(&ctx, 133) + (PRIME - 1)) % PRIME);
+                let val = ((/*column4_row0*/ *borrow(&ctx, 133) + (K_MODULUS - 1)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2100,7 +2072,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2112,46 +2084,46 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for range_check16/perm/init0: (range_check16__perm__interaction_elm - column6_row2) * column11_inter1_row1 + column6_row0 - range_check16__perm__interaction_elm
             {
                 let val = ((((fmul(
-                    ((/*range_check16__perm__interaction_elm*/ range_check16__perm__interaction_elm + (PRIME - /*column6_row2*/ *borrow(
+                    ((/*range_check16__perm__interaction_elm*/ range_check16__perm__interaction_elm + (K_MODULUS - /*column6_row2*/ *borrow(
                         &ctx,
                         149
-                    ))) % PRIME), /*column11_inter1_row1*/
+                    ))) % K_MODULUS), /*column11_inter1_row1*/
                     *borrow(&ctx, 231)
                 ) + /*column6_row0*/ *borrow(
                     &ctx,
                     147
-                )) % PRIME) + (PRIME - /*range_check16__perm__interaction_elm*/ range_check16__perm__interaction_elm)) % PRIME);
+                )) % K_MODULUS) + (K_MODULUS - /*range_check16__perm__interaction_elm*/ range_check16__perm__interaction_elm)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for range_check16/perm/step0: (range_check16__perm__interaction_elm - column6_row6) * column11_inter1_row5 - (range_check16__perm__interaction_elm - column6_row4) * column11_inter1_row1
             {
                 let val = ((fmul(
-                    ((/*range_check16__perm__interaction_elm*/ range_check16__perm__interaction_elm + (PRIME - /*column6_row6*/ *borrow(
+                    ((/*range_check16__perm__interaction_elm*/ range_check16__perm__interaction_elm + (K_MODULUS - /*column6_row6*/ *borrow(
                         &ctx,
                         153
-                    ))) % PRIME), /*column11_inter1_row5*/
+                    ))) % K_MODULUS), /*column11_inter1_row5*/
                     *borrow(&ctx, 233)
-                ) + (PRIME - fmul(
-                    ((/*range_check16__perm__interaction_elm*/ range_check16__perm__interaction_elm + (PRIME - /*column6_row4*/ *borrow(
+                ) + (K_MODULUS - fmul(
+                    ((/*range_check16__perm__interaction_elm*/ range_check16__perm__interaction_elm + (K_MODULUS - /*column6_row4*/ *borrow(
                         &ctx,
                         151
-                    ))) % PRIME), /*column11_inter1_row1*/
+                    ))) % K_MODULUS), /*column11_inter1_row1*/
                     *borrow(&ctx, 231)
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 388));
@@ -2160,7 +2132,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 369));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2169,13 +2141,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column11_inter1_row1*/ *borrow(
                     &ctx,
                     231
-                ) + (PRIME - /*range_check16__perm__public_memory_prod*/ range_check16__perm__public_memory_prod)) % PRIME);
+                ) + (K_MODULUS - /*range_check16__perm__public_memory_prod*/ range_check16__perm__public_memory_prod)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 370));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2184,7 +2156,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*range_check16__diff_0*/
                     *borrow(&ctx, 255), /*range_check16__diff_0*/
                     *borrow(&ctx, 255)
-                ) + (PRIME - /*range_check16__diff_0*/ *borrow(&ctx, 255))) % PRIME);
+                ) + (K_MODULUS - /*range_check16__diff_0*/ *borrow(&ctx, 255))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 388));
@@ -2193,7 +2165,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 369));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2202,13 +2174,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column6_row2*/ *borrow(
                     &ctx,
                     149
-                ) + (PRIME - /*range_check_min*/ range_check_min)) % PRIME);
+                ) + (K_MODULUS - /*range_check_min*/ range_check_min)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2217,52 +2189,52 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column6_row2*/ *borrow(
                     &ctx,
                     149
-                ) + (PRIME - /*range_check_max*/ range_check_max)) % PRIME);
+                ) + (K_MODULUS - /*range_check_max*/ range_check_max)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 370));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for diluted_check/permutation/init0: (diluted_check__permutation__interaction_elm - column2_row0) * column10_inter1_row0 + column1_row0 - diluted_check__permutation__interaction_elm
             {
                 let val = ((((fmul(
-                    ((/*diluted_check__permutation__interaction_elm*/ diluted_check__permutation__interaction_elm + (PRIME - /*column2_row0*/ *borrow(
+                    ((/*diluted_check__permutation__interaction_elm*/ diluted_check__permutation__interaction_elm + (K_MODULUS - /*column2_row0*/ *borrow(
                         &ctx,
                         89
-                    ))) % PRIME), /*column10_inter1_row0*/
+                    ))) % K_MODULUS), /*column10_inter1_row0*/
                     *borrow(&ctx, 228)
                 ) + /*column1_row0*/ *borrow(
                     &ctx,
                     58
-                )) % PRIME) + (PRIME - /*diluted_check__permutation__interaction_elm*/ diluted_check__permutation__interaction_elm)) % PRIME);
+                )) % K_MODULUS) + (K_MODULUS - /*diluted_check__permutation__interaction_elm*/ diluted_check__permutation__interaction_elm)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for diluted_check/permutation/step0: (diluted_check__permutation__interaction_elm - column2_row1) * column10_inter1_row1 - (diluted_check__permutation__interaction_elm - column1_row1) * column10_inter1_row0
             {
                 let val = ((fmul(
-                    ((/*diluted_check__permutation__interaction_elm*/ diluted_check__permutation__interaction_elm + (PRIME - /*column2_row1*/ *borrow(
+                    ((/*diluted_check__permutation__interaction_elm*/ diluted_check__permutation__interaction_elm + (K_MODULUS - /*column2_row1*/ *borrow(
                         &ctx,
                         90
-                    ))) % PRIME), /*column10_inter1_row1*/
+                    ))) % K_MODULUS), /*column10_inter1_row1*/
                     *borrow(&ctx, 229)
-                ) + (PRIME - fmul(
-                    ((/*diluted_check__permutation__interaction_elm*/ diluted_check__permutation__interaction_elm + (PRIME - /*column1_row1*/ *borrow(
+                ) + (K_MODULUS - fmul(
+                    ((/*diluted_check__permutation__interaction_elm*/ diluted_check__permutation__interaction_elm + (K_MODULUS - /*column1_row1*/ *borrow(
                         &ctx,
                         59
-                    ))) % PRIME), /*column10_inter1_row0*/
+                    ))) % K_MODULUS), /*column10_inter1_row0*/
                     *borrow(&ctx, 228)
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 389));
@@ -2271,7 +2243,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 362));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2280,25 +2252,25 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column10_inter1_row0*/ *borrow(
                     &ctx,
                     228
-                ) + (PRIME - /*diluted_check__permutation__public_memory_prod*/ diluted_check__permutation__public_memory_prod)) % PRIME);
+                ) + (K_MODULUS - /*diluted_check__permutation__public_memory_prod*/ diluted_check__permutation__public_memory_prod)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 371));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for diluted_check/init: column9_inter1_row0 - 1
             {
-                let val = ((/*column9_inter1_row0*/ *borrow(&ctx, 226) + (PRIME - 1)) % PRIME);
+                let val = ((/*column9_inter1_row0*/ *borrow(&ctx, 226) + (K_MODULUS - 1)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2307,31 +2279,31 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column2_row0*/ *borrow(
                     &ctx,
                     89
-                ) + (PRIME - /*diluted_check__first_elm*/ diluted_check__first_elm)) % PRIME);
+                ) + (K_MODULUS - /*diluted_check__first_elm*/ diluted_check__first_elm)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for diluted_check/step: column9_inter1_row1 - (column9_inter1_row0 * (1 + diluted_check__interaction_z * (column2_row1 - column2_row0)) + diluted_check__interaction_alpha * (column2_row1 - column2_row0) * (column2_row1 - column2_row0))
             {
-                let val = ((/*column9_inter1_row1*/ *borrow(&ctx, 227) + (PRIME - ((fmul(/*column9_inter1_row0*/
+                let val = ((/*column9_inter1_row1*/ *borrow(&ctx, 227) + (K_MODULUS - ((fmul(/*column9_inter1_row0*/
                     *borrow(&ctx, 226),
                     ((1 + fmul(/*diluted_check__interaction_z*/
                         diluted_check__interaction_z,
-                        ((/*column2_row1*/ *borrow(&ctx, 90) + (PRIME - /*column2_row0*/ *borrow(&ctx, 89))) % PRIME)
-                    )) % PRIME)
+                        ((/*column2_row1*/ *borrow(&ctx, 90) + (K_MODULUS - /*column2_row0*/ *borrow(&ctx, 89))) % K_MODULUS)
+                    )) % K_MODULUS)
                 ) + fmul(
                     fmul(/*diluted_check__interaction_alpha*/
                         diluted_check__interaction_alpha,
-                        ((/*column2_row1*/ *borrow(&ctx, 90) + (PRIME - /*column2_row0*/ *borrow(&ctx, 89))) % PRIME)
+                        ((/*column2_row1*/ *borrow(&ctx, 90) + (K_MODULUS - /*column2_row0*/ *borrow(&ctx, 89))) % K_MODULUS)
                     ),
-                    ((/*column2_row1*/ *borrow(&ctx, 90) + (PRIME - /*column2_row0*/ *borrow(&ctx, 89))) % PRIME)
-                )) % PRIME))) % PRIME);
+                    ((/*column2_row1*/ *borrow(&ctx, 90) + (K_MODULUS - /*column2_row0*/ *borrow(&ctx, 89))) % K_MODULUS)
+                )) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 389));
@@ -2340,7 +2312,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 362));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2349,13 +2321,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column9_inter1_row0*/ *borrow(
                     &ctx,
                     226
-                ) + (PRIME - /*diluted_check__final_cum_val*/ diluted_check__final_cum_val)) % PRIME);
+                ) + (K_MODULUS - /*diluted_check__final_cum_val*/ diluted_check__final_cum_val)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 371));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2370,7 +2342,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 372));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2378,35 +2350,35 @@ module cpu_addr::cpu_constraint_poly {
             {
                 let val = fmul(/*column7_row89*/
                     *borrow(&ctx, 185),
-                    ((/*column7_row4*/ *borrow(&ctx, 173) + (PRIME - fmul(
+                    ((/*column7_row4*/ *borrow(&ctx, 173) + (K_MODULUS - fmul(
                         3138550867693340381917894711603833208051177722232017256448, /*column7_row768*/
                         *borrow(&ctx, 186)
-                    ))) % PRIME)
+                    ))) % K_MODULUS)
                 );
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 372));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for pedersen/hash0/ec_subset_sum/bit_unpacking/cumulative_bit192: column7_row89 - column7_row1022 * (column7_row768 - (column7_row772 + column7_row772))
             {
-                let val = ((/*column7_row89*/ *borrow(&ctx, 185) + (PRIME - fmul(/*column7_row1022*/
+                let val = ((/*column7_row89*/ *borrow(&ctx, 185) + (K_MODULUS - fmul(/*column7_row1022*/
                     *borrow(&ctx, 192),
-                    ((/*column7_row768*/ *borrow(&ctx, 186) + (PRIME - ((/*column7_row772*/ *borrow(
+                    ((/*column7_row768*/ *borrow(&ctx, 186) + (K_MODULUS - ((/*column7_row772*/ *borrow(
                         &ctx,
                         187
-                    ) + /*column7_row772*/ *borrow(&ctx, 187)) % PRIME))) % PRIME)
-                ))) % PRIME);
+                    ) + /*column7_row772*/ *borrow(&ctx, 187)) % K_MODULUS))) % K_MODULUS)
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 372));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2414,59 +2386,59 @@ module cpu_addr::cpu_constraint_poly {
             {
                 let val = fmul(/*column7_row1022*/
                     *borrow(&ctx, 192),
-                    ((/*column7_row772*/ *borrow(&ctx, 187) + (PRIME - fmul(
+                    ((/*column7_row772*/ *borrow(&ctx, 187) + (K_MODULUS - fmul(
                         8, /*column7_row784*/
                         *borrow(&ctx, 188)
-                    ))) % PRIME)
+                    ))) % K_MODULUS)
                 );
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 372));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for pedersen/hash0/ec_subset_sum/bit_unpacking/cumulative_bit196: column7_row1022 - (column7_row1004 - (column7_row1008 + column7_row1008)) * (column7_row784 - (column7_row788 + column7_row788))
             {
-                let val = ((/*column7_row1022*/ *borrow(&ctx, 192) + (PRIME - fmul(
-                    ((/*column7_row1004*/ *borrow(&ctx, 190) + (PRIME - ((/*column7_row1008*/ *borrow(
+                let val = ((/*column7_row1022*/ *borrow(&ctx, 192) + (K_MODULUS - fmul(
+                    ((/*column7_row1004*/ *borrow(&ctx, 190) + (K_MODULUS - ((/*column7_row1008*/ *borrow(
                         &ctx,
                         191
-                    ) + /*column7_row1008*/ *borrow(&ctx, 191)) % PRIME))) % PRIME),
-                    ((/*column7_row784*/ *borrow(&ctx, 188) + (PRIME - ((/*column7_row788*/ *borrow(
+                    ) + /*column7_row1008*/ *borrow(&ctx, 191)) % K_MODULUS))) % K_MODULUS),
+                    ((/*column7_row784*/ *borrow(&ctx, 188) + (K_MODULUS - ((/*column7_row788*/ *borrow(
                         &ctx,
                         189
-                    ) + /*column7_row788*/ *borrow(&ctx, 189)) % PRIME))) % PRIME)
-                ))) % PRIME);
+                    ) + /*column7_row788*/ *borrow(&ctx, 189)) % K_MODULUS))) % K_MODULUS)
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 372));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for pedersen/hash0/ec_subset_sum/bit_unpacking/zeroes_between_ones196: (column7_row1004 - (column7_row1008 + column7_row1008)) * (column7_row788 - 18014398509481984 * column7_row1004)
             {
                 let val = fmul(
-                    ((/*column7_row1004*/ *borrow(&ctx, 190) + (PRIME - ((/*column7_row1008*/ *borrow(
+                    ((/*column7_row1004*/ *borrow(&ctx, 190) + (K_MODULUS - ((/*column7_row1008*/ *borrow(
                         &ctx,
                         191
-                    ) + /*column7_row1008*/ *borrow(&ctx, 191)) % PRIME))) % PRIME),
-                    ((/*column7_row788*/ *borrow(&ctx, 189) + (PRIME - fmul(
+                    ) + /*column7_row1008*/ *borrow(&ctx, 191)) % K_MODULUS))) % K_MODULUS),
+                    ((/*column7_row788*/ *borrow(&ctx, 189) + (K_MODULUS - fmul(
                         18014398509481984, /*column7_row1004*/
                         *borrow(&ctx, 190)
-                    ))) % PRIME)
+                    ))) % K_MODULUS)
                 );
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 372));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2474,7 +2446,7 @@ module cpu_addr::cpu_constraint_poly {
             {
                 let val = fmul(/*pedersen__hash0__ec_subset_sum__bit_0*/
                     *borrow(&ctx, 256),
-                    ((/*pedersen__hash0__ec_subset_sum__bit_0*/ *borrow(&ctx, 256) + (PRIME - 1)) % PRIME)
+                    ((/*pedersen__hash0__ec_subset_sum__bit_0*/ *borrow(&ctx, 256) + (K_MODULUS - 1)) % K_MODULUS)
                 );
                 // Numerator
                 // val *= numerator
@@ -2484,7 +2456,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 369));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2496,7 +2468,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 374));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2508,7 +2480,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 373));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2519,14 +2491,14 @@ module cpu_addr::cpu_constraint_poly {
                     ((/*column6_row3*/ *borrow(
                         &ctx,
                         150
-                    ) + (PRIME - /*pedersen__points__y*/ pedersen__points__y)) % PRIME)
-                ) + (PRIME - fmul(/*column7_row2*/
+                    ) + (K_MODULUS - /*pedersen__points__y*/ pedersen__points__y)) % K_MODULUS)
+                ) + (K_MODULUS - fmul(/*column7_row2*/
                     *borrow(&ctx, 171),
                     ((/*column6_row1*/ *borrow(
                         &ctx,
                         148
-                    ) + (PRIME - /*pedersen__points__x*/ pedersen__points__x)) % PRIME)
-                ))) % PRIME);
+                    ) + (K_MODULUS - /*pedersen__points__x*/ pedersen__points__x)) % K_MODULUS)
+                ))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 391));
@@ -2535,7 +2507,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 369));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2544,16 +2516,16 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*column7_row2*/
                     *borrow(&ctx, 171), /*column7_row2*/
                     *borrow(&ctx, 171)
-                ) + (PRIME - fmul(/*pedersen__hash0__ec_subset_sum__bit_0*/
+                ) + (K_MODULUS - fmul(/*pedersen__hash0__ec_subset_sum__bit_0*/
                     *borrow(&ctx, 256),
                     ((((/*column6_row1*/ *borrow(
                         &ctx,
                         148
-                    ) + /*pedersen__points__x*/ pedersen__points__x) % PRIME) + /*column6_row5*/ *borrow(
+                    ) + /*pedersen__points__x*/ pedersen__points__x) % K_MODULUS) + /*column6_row5*/ *borrow(
                         &ctx,
                         152
-                    )) % PRIME)
-                ))) % PRIME);
+                    )) % K_MODULUS)
+                ))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 391));
@@ -2562,7 +2534,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 369));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2570,11 +2542,11 @@ module cpu_addr::cpu_constraint_poly {
             {
                 let val = ((fmul(/*pedersen__hash0__ec_subset_sum__bit_0*/
                     *borrow(&ctx, 256),
-                    ((/*column6_row3*/ *borrow(&ctx, 150) + /*column6_row7*/ *borrow(&ctx, 154)) % PRIME)
-                ) + (PRIME - fmul(/*column7_row2*/
+                    ((/*column6_row3*/ *borrow(&ctx, 150) + /*column6_row7*/ *borrow(&ctx, 154)) % K_MODULUS)
+                ) + (K_MODULUS - fmul(/*column7_row2*/
                     *borrow(&ctx, 171),
-                    ((/*column6_row1*/ *borrow(&ctx, 148) + (PRIME - /*column6_row5*/ *borrow(&ctx, 152))) % PRIME)
-                ))) % PRIME);
+                    ((/*column6_row1*/ *borrow(&ctx, 148) + (K_MODULUS - /*column6_row5*/ *borrow(&ctx, 152))) % K_MODULUS)
+                ))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 391));
@@ -2583,7 +2555,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 369));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2591,7 +2563,7 @@ module cpu_addr::cpu_constraint_poly {
             {
                 let val = fmul(/*pedersen__hash0__ec_subset_sum__bit_neg_0*/
                     *borrow(&ctx, 257),
-                    ((/*column6_row5*/ *borrow(&ctx, 152) + (PRIME - /*column6_row1*/ *borrow(&ctx, 148))) % PRIME)
+                    ((/*column6_row5*/ *borrow(&ctx, 152) + (K_MODULUS - /*column6_row1*/ *borrow(&ctx, 148))) % K_MODULUS)
                 );
                 // Numerator
                 // val *= numerator
@@ -2601,7 +2573,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 369));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2609,7 +2581,7 @@ module cpu_addr::cpu_constraint_poly {
             {
                 let val = fmul(/*pedersen__hash0__ec_subset_sum__bit_neg_0*/
                     *borrow(&ctx, 257),
-                    ((/*column6_row7*/ *borrow(&ctx, 154) + (PRIME - /*column6_row3*/ *borrow(&ctx, 150))) % PRIME)
+                    ((/*column6_row7*/ *borrow(&ctx, 154) + (K_MODULUS - /*column6_row3*/ *borrow(&ctx, 150))) % K_MODULUS)
                 );
                 // Numerator
                 // val *= numerator
@@ -2619,16 +2591,16 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 369));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for pedersen/hash0/copy_point/x: column6_row1025 - column6_row1021
             {
-                let val = ((/*column6_row1025*/ *borrow(&ctx, 166) + (PRIME - /*column6_row1021*/ *borrow(
+                let val = ((/*column6_row1025*/ *borrow(&ctx, 166) + (K_MODULUS - /*column6_row1021*/ *borrow(
                     &ctx,
                     164
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 352));
@@ -2637,16 +2609,16 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 372));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for pedersen/hash0/copy_point/y: column6_row1027 - column6_row1023
             {
-                let val = ((/*column6_row1027*/ *borrow(&ctx, 167) + (PRIME - /*column6_row1023*/ *borrow(
+                let val = ((/*column6_row1027*/ *borrow(&ctx, 167) + (K_MODULUS - /*column6_row1023*/ *borrow(
                     &ctx,
                     165
-                ))) % PRIME);
+                ))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 352));
@@ -2655,7 +2627,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 372));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2664,13 +2636,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column6_row1*/ *borrow(
                     &ctx,
                     148
-                ) + (PRIME - /*pedersen__shift_point__x*/ pedersen__shift_point__x)) % PRIME);
+                ) + (K_MODULUS - /*pedersen__shift_point__x*/ pedersen__shift_point__x)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 375));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2679,37 +2651,37 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column6_row3*/ *borrow(
                     &ctx,
                     150
-                ) + (PRIME - /*pedersen__shift_point__y*/ pedersen__shift_point__y)) % PRIME);
+                ) + (K_MODULUS - /*pedersen__shift_point__y*/ pedersen__shift_point__y)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 375));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for pedersen/input0_value0: column3_row11 - column7_row0
             {
-                let val = ((/*column3_row11*/ *borrow(&ctx, 102) + (PRIME - /*column7_row0*/ *borrow(
+                let val = ((/*column3_row11*/ *borrow(&ctx, 102) + (K_MODULUS - /*column7_row0*/ *borrow(
                     &ctx,
                     169
-                ))) % PRIME);
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 375));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for pedersen/input0_addr: column3_row2058 - (column3_row522 + 1)
             {
-                let val = ((/*column3_row2058*/ *borrow(&ctx, 132) + (PRIME - ((/*column3_row522*/ *borrow(
+                let val = ((/*column3_row2058*/ *borrow(&ctx, 132) + (K_MODULUS - ((/*column3_row522*/ *borrow(
                     &ctx,
                     128
-                ) + 1) % PRIME))) % PRIME);
+                ) + 1) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 359));
@@ -2718,7 +2690,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 375));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2727,97 +2699,97 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column3_row10*/ *borrow(
                     &ctx,
                     101
-                ) + (PRIME - /*initial_pedersen_addr*/ initial_pedersen_addr)) % PRIME);
+                ) + (K_MODULUS - /*initial_pedersen_addr*/ initial_pedersen_addr)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for pedersen/input1_value0: column3_row1035 - column7_row1024
             {
-                let val = ((/*column3_row1035*/ *borrow(&ctx, 131) + (PRIME - /*column7_row1024*/ *borrow(
+                let val = ((/*column3_row1035*/ *borrow(&ctx, 131) + (K_MODULUS - /*column7_row1024*/ *borrow(
                     &ctx,
                     193
-                ))) % PRIME);
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 375));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for pedersen/input1_addr: column3_row1034 - (column3_row10 + 1)
             {
-                let val = ((/*column3_row1034*/ *borrow(&ctx, 130) + (PRIME - ((/*column3_row10*/ *borrow(
+                let val = ((/*column3_row1034*/ *borrow(&ctx, 130) + (K_MODULUS - ((/*column3_row10*/ *borrow(
                     &ctx,
                     101
-                ) + 1) % PRIME))) % PRIME);
+                ) + 1) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 375));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for pedersen/output_value0: column3_row523 - column6_row2045
             {
-                let val = ((/*column3_row523*/ *borrow(&ctx, 129) + (PRIME - /*column6_row2045*/ *borrow(
+                let val = ((/*column3_row523*/ *borrow(&ctx, 129) + (K_MODULUS - /*column6_row2045*/ *borrow(
                     &ctx,
                     168
-                ))) % PRIME);
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 375));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for pedersen/output_addr: column3_row522 - (column3_row1034 + 1)
             {
-                let val = ((/*column3_row522*/ *borrow(&ctx, 128) + (PRIME - ((/*column3_row1034*/ *borrow(
+                let val = ((/*column3_row522*/ *borrow(&ctx, 128) + (K_MODULUS - ((/*column3_row1034*/ *borrow(
                     &ctx,
                     130
-                ) + 1) % PRIME))) % PRIME);
+                ) + 1) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 375));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for range_check_builtin/value: range_check_builtin__value7_0 - column3_row75
             {
-                let val = ((/*range_check_builtin__value7_0*/ *borrow(&ctx, 265) + (PRIME - /*column3_row75*/ *borrow(
+                let val = ((/*range_check_builtin__value7_0*/ *borrow(&ctx, 265) + (K_MODULUS - /*column3_row75*/ *borrow(
                     &ctx,
                     118
-                ))) % PRIME);
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for range_check_builtin/addr_step: column3_row202 - (column3_row74 + 1)
             {
-                let val = ((/*column3_row202*/ *borrow(&ctx, 127) + (PRIME - ((/*column3_row74*/ *borrow(
+                let val = ((/*column3_row202*/ *borrow(&ctx, 127) + (K_MODULUS - ((/*column3_row74*/ *borrow(
                     &ctx,
                     117
-                ) + 1) % PRIME))) % PRIME);
+                ) + 1) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 360));
@@ -2826,7 +2798,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2835,13 +2807,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column3_row74*/ *borrow(
                     &ctx,
                     117
-                ) + (PRIME - /*initial_range_check_addr*/ initial_range_check_addr)) % PRIME);
+                ) + (K_MODULUS - /*initial_range_check_addr*/ initial_range_check_addr)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2850,22 +2822,22 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column3_row26*/ *borrow(
                     &ctx,
                     108
-                ) + (PRIME - /*initial_bitwise_addr*/ initial_bitwise_addr)) % PRIME);
+                ) + (K_MODULUS - /*initial_bitwise_addr*/ initial_bitwise_addr)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for bitwise/step_var_pool_addr: column3_row58 - (column3_row26 + 1)
             {
-                let val = ((/*column3_row58*/ *borrow(&ctx, 114) + (PRIME - ((/*column3_row26*/ *borrow(
+                let val = ((/*column3_row58*/ *borrow(&ctx, 114) + (K_MODULUS - ((/*column3_row26*/ *borrow(
                     &ctx,
                     108
-                ) + 1) % PRIME))) % PRIME);
+                ) + 1) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 343));
@@ -2874,31 +2846,31 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 377));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for bitwise/x_or_y_addr: column3_row42 - (column3_row122 + 1)
             {
-                let val = ((/*column3_row42*/ *borrow(&ctx, 112) + (PRIME - ((/*column3_row122*/ *borrow(
+                let val = ((/*column3_row42*/ *borrow(&ctx, 112) + (K_MODULUS - ((/*column3_row122*/ *borrow(
                     &ctx,
                     124
-                ) + 1) % PRIME))) % PRIME);
+                ) + 1) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for bitwise/next_var_pool_addr: column3_row154 - (column3_row42 + 1)
             {
-                let val = ((/*column3_row154*/ *borrow(&ctx, 126) + (PRIME - ((/*column3_row42*/ *borrow(
+                let val = ((/*column3_row154*/ *borrow(&ctx, 126) + (K_MODULUS - ((/*column3_row42*/ *borrow(
                     &ctx,
                     112
-                ) + 1) % PRIME))) % PRIME);
+                ) + 1) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 360));
@@ -2907,7 +2879,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2916,28 +2888,28 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((((/*bitwise__sum_var_0_0*/ *borrow(&ctx, 266) + /*bitwise__sum_var_8_0*/ *borrow(
                     &ctx,
                     267
-                )) % PRIME) + (PRIME - /*column3_row27*/ *borrow(&ctx, 109))) % PRIME);
+                )) % K_MODULUS) + (K_MODULUS - /*column3_row27*/ *borrow(&ctx, 109))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 377));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for bitwise/or_is_and_plus_xor: column3_row43 - (column3_row91 + column3_row123)
             {
-                let val = ((/*column3_row43*/ *borrow(&ctx, 113) + (PRIME - ((/*column3_row91*/ *borrow(
+                let val = ((/*column3_row43*/ *borrow(&ctx, 113) + (K_MODULUS - ((/*column3_row91*/ *borrow(
                     &ctx,
                     121
-                ) + /*column3_row123*/ *borrow(&ctx, 125)) % PRIME))) % PRIME);
+                ) + /*column3_row123*/ *borrow(&ctx, 125)) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -2946,76 +2918,76 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((((/*column1_row0*/ *borrow(&ctx, 58) + /*column1_row32*/ *borrow(
                     &ctx,
                     75
-                )) % PRIME) + (PRIME - ((((/*column1_row96*/ *borrow(&ctx, 83) + /*column1_row64*/ *borrow(
+                )) % K_MODULUS) + (K_MODULUS - ((((/*column1_row96*/ *borrow(&ctx, 83) + /*column1_row64*/ *borrow(
                     &ctx,
                     77
-                )) % PRIME) + /*column1_row64*/ *borrow(&ctx, 77)) % PRIME))) % PRIME);
+                )) % K_MODULUS) + /*column1_row64*/ *borrow(&ctx, 77)) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 378));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for bitwise/unique_unpacking192: (column1_row88 + column1_row120) * 16 - column1_row1
             {
                 let val = ((fmul(
-                    ((/*column1_row88*/ *borrow(&ctx, 79) + /*column1_row120*/ *borrow(&ctx, 85)) % PRIME),
+                    ((/*column1_row88*/ *borrow(&ctx, 79) + /*column1_row120*/ *borrow(&ctx, 85)) % K_MODULUS),
                     16
-                ) + (PRIME - /*column1_row1*/ *borrow(&ctx, 59))) % PRIME);
+                ) + (K_MODULUS - /*column1_row1*/ *borrow(&ctx, 59))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for bitwise/unique_unpacking193: (column1_row90 + column1_row122) * 16 - column1_row65
             {
                 let val = ((fmul(
-                    ((/*column1_row90*/ *borrow(&ctx, 80) + /*column1_row122*/ *borrow(&ctx, 86)) % PRIME),
+                    ((/*column1_row90*/ *borrow(&ctx, 80) + /*column1_row122*/ *borrow(&ctx, 86)) % K_MODULUS),
                     16
-                ) + (PRIME - /*column1_row65*/ *borrow(&ctx, 78))) % PRIME);
+                ) + (K_MODULUS - /*column1_row65*/ *borrow(&ctx, 78))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for bitwise/unique_unpacking194: (column1_row92 + column1_row124) * 16 - column1_row33
             {
                 let val = ((fmul(
-                    ((/*column1_row92*/ *borrow(&ctx, 81) + /*column1_row124*/ *borrow(&ctx, 87)) % PRIME),
+                    ((/*column1_row92*/ *borrow(&ctx, 81) + /*column1_row124*/ *borrow(&ctx, 87)) % K_MODULUS),
                     16
-                ) + (PRIME - /*column1_row33*/ *borrow(&ctx, 76))) % PRIME);
+                ) + (K_MODULUS - /*column1_row33*/ *borrow(&ctx, 76))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for bitwise/unique_unpacking195: (column1_row94 + column1_row126) * 256 - column1_row97
             {
                 let val = ((fmul(
-                    ((/*column1_row94*/ *borrow(&ctx, 82) + /*column1_row126*/ *borrow(&ctx, 88)) % PRIME),
+                    ((/*column1_row94*/ *borrow(&ctx, 82) + /*column1_row126*/ *borrow(&ctx, 88)) % K_MODULUS),
                     256
-                ) + (PRIME - /*column1_row97*/ *borrow(&ctx, 84))) % PRIME);
+                ) + (K_MODULUS - /*column1_row97*/ *borrow(&ctx, 84))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3024,22 +2996,22 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column3_row6*/ *borrow(
                     &ctx,
                     97
-                ) + (PRIME - /*initial_poseidon_addr*/ initial_poseidon_addr)) % PRIME);
+                ) + (K_MODULUS - /*initial_poseidon_addr*/ initial_poseidon_addr)) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/param_0/addr_input_output_step: column3_row70 - (column3_row6 + 3)
             {
-                let val = ((/*column3_row70*/ *borrow(&ctx, 115) + (PRIME - ((/*column3_row6*/ *borrow(
+                let val = ((/*column3_row70*/ *borrow(&ctx, 115) + (K_MODULUS - ((/*column3_row6*/ *borrow(
                     &ctx,
                     97
-                ) + 3) % PRIME))) % PRIME);
+                ) + 3) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 361));
@@ -3048,7 +3020,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 379));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3057,22 +3029,22 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column3_row38*/ *borrow(
                     &ctx,
                     110
-                ) + (PRIME - ((/*initial_poseidon_addr*/ initial_poseidon_addr + 1) % PRIME))) % PRIME);
+                ) + (K_MODULUS - ((/*initial_poseidon_addr*/ initial_poseidon_addr + 1) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/param_1/addr_input_output_step: column3_row102 - (column3_row38 + 3)
             {
-                let val = ((/*column3_row102*/ *borrow(&ctx, 122) + (PRIME - ((/*column3_row38*/ *borrow(
+                let val = ((/*column3_row102*/ *borrow(&ctx, 122) + (K_MODULUS - ((/*column3_row38*/ *borrow(
                     &ctx,
                     110
-                ) + 3) % PRIME))) % PRIME);
+                ) + 3) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 361));
@@ -3081,7 +3053,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 379));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3090,22 +3062,22 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column3_row22*/ *borrow(
                     &ctx,
                     106
-                ) + (PRIME - ((/*initial_poseidon_addr*/ initial_poseidon_addr + 2) % PRIME))) % PRIME);
+                ) + (K_MODULUS - ((/*initial_poseidon_addr*/ initial_poseidon_addr + 2) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 366));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/param_2/addr_input_output_step: column3_row86 - (column3_row22 + 3)
             {
-                let val = ((/*column3_row86*/ *borrow(&ctx, 119) + (PRIME - ((/*column3_row22*/ *borrow(
+                let val = ((/*column3_row86*/ *borrow(&ctx, 119) + (K_MODULUS - ((/*column3_row22*/ *borrow(
                     &ctx,
                     106
-                ) + 3) % PRIME))) % PRIME);
+                ) + 3) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 361));
@@ -3114,7 +3086,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 379));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3123,13 +3095,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*column8_row6*/
                     *borrow(&ctx, 199), /*column8_row6*/
                     *borrow(&ctx, 199)
-                ) + (PRIME - /*column8_row9*/ *borrow(&ctx, 201))) % PRIME);
+                ) + (K_MODULUS - /*column8_row9*/ *borrow(&ctx, 201))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3138,13 +3110,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*column8_row14*/
                     *borrow(&ctx, 205), /*column8_row14*/
                     *borrow(&ctx, 205)
-                ) + (PRIME - /*column8_row5*/ *borrow(&ctx, 198))) % PRIME);
+                ) + (K_MODULUS - /*column8_row5*/ *borrow(&ctx, 198))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3153,13 +3125,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*column8_row1*/
                     *borrow(&ctx, 195), /*column8_row1*/
                     *borrow(&ctx, 195)
-                ) + (PRIME - /*column8_row13*/ *borrow(&ctx, 204))) % PRIME);
+                ) + (K_MODULUS - /*column8_row13*/ *borrow(&ctx, 204))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3168,13 +3140,13 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*column5_row0*/
                     *borrow(&ctx, 137), /*column5_row0*/
                     *borrow(&ctx, 137)
-                ) + (PRIME - /*column5_row1*/ *borrow(&ctx, 138))) % PRIME);
+                ) + (K_MODULUS - /*column5_row1*/ *borrow(&ctx, 138))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 367));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3183,7 +3155,7 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((fmul(/*column7_row1*/
                     *borrow(&ctx, 170), /*column7_row1*/
                     *borrow(&ctx, 170)
-                ) + (PRIME - /*column7_row3*/ *borrow(&ctx, 172))) % PRIME);
+                ) + (K_MODULUS - /*column7_row3*/ *borrow(&ctx, 172))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 346));
@@ -3193,7 +3165,7 @@ module cpu_addr::cpu_constraint_poly {
 
                 val = fmul(val, *borrow(&ctx, 369));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3202,16 +3174,16 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((((/*column3_row7*/ *borrow(
                     &ctx,
                     98
-                ) + 2950795762459345168613727575620414179244544320470208355568817838579231751791) % PRIME) + (PRIME - /*column8_row6*/ *borrow(
+                ) + 2950795762459345168613727575620414179244544320470208355568817838579231751791) % K_MODULUS) + (K_MODULUS - /*column8_row6*/ *borrow(
                     &ctx,
                     199
-                ))) % PRIME);
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3220,16 +3192,16 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((((/*column3_row39*/ *borrow(
                     &ctx,
                     111
-                ) + 1587446564224215276866294500450702039420286416111469274423465069420553242820) % PRIME) + (PRIME - /*column8_row14*/ *borrow(
+                ) + 1587446564224215276866294500450702039420286416111469274423465069420553242820) % K_MODULUS) + (K_MODULUS - /*column8_row14*/ *borrow(
                     &ctx,
                     205
-                ))) % PRIME);
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3238,16 +3210,16 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((((/*column3_row23*/ *borrow(
                     &ctx,
                     107
-                ) + 1645965921169490687904413452218868659025437693527479459426157555728339600137) % PRIME) + (PRIME - /*column8_row1*/ *borrow(
+                ) + 1645965921169490687904413452218868659025437693527479459426157555728339600137) % K_MODULUS) + (K_MODULUS - /*column8_row1*/ *borrow(
                     &ctx,
                     195
-                ))) % PRIME);
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3256,22 +3228,22 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column8_row22*/ *borrow(
                     &ctx,
                     208
-                ) + (PRIME - ((((((((((/*poseidon__poseidon__full_rounds_state0_cubed_0*/ *borrow(
+                ) + (K_MODULUS - ((((((((((/*poseidon__poseidon__full_rounds_state0_cubed_0*/ *borrow(
                     &ctx,
                     268
                 ) + /*poseidon__poseidon__full_rounds_state0_cubed_0*/ *borrow(
                     &ctx,
                     268
-                )) % PRIME) + /*poseidon__poseidon__full_rounds_state0_cubed_0*/ *borrow(
+                )) % K_MODULUS) + /*poseidon__poseidon__full_rounds_state0_cubed_0*/ *borrow(
                     &ctx,
                     268
-                )) % PRIME) + /*poseidon__poseidon__full_rounds_state1_cubed_0*/ *borrow(
+                )) % K_MODULUS) + /*poseidon__poseidon__full_rounds_state1_cubed_0*/ *borrow(
                     &ctx,
                     269
-                )) % PRIME) + /*poseidon__poseidon__full_rounds_state2_cubed_0*/ *borrow(
+                )) % K_MODULUS) + /*poseidon__poseidon__full_rounds_state2_cubed_0*/ *borrow(
                     &ctx,
                     270
-                )) % PRIME) + /*poseidon__poseidon__full_round_key0*/ poseidon__poseidon__full_round_key0) % PRIME))) % PRIME);
+                )) % K_MODULUS) + /*poseidon__poseidon__full_round_key0*/ poseidon__poseidon__full_round_key0) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 341));
@@ -3280,7 +3252,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3292,13 +3264,13 @@ module cpu_addr::cpu_constraint_poly {
                 ) + /*poseidon__poseidon__full_rounds_state1_cubed_0*/ *borrow(
                     &ctx,
                     269
-                )) % PRIME) + (PRIME - ((((/*poseidon__poseidon__full_rounds_state0_cubed_0*/ *borrow(
+                )) % K_MODULUS) + (K_MODULUS - ((((/*poseidon__poseidon__full_rounds_state0_cubed_0*/ *borrow(
                     &ctx,
                     268
                 ) + /*poseidon__poseidon__full_rounds_state2_cubed_0*/ *borrow(
                     &ctx,
                     270
-                )) % PRIME) + /*poseidon__poseidon__full_round_key1*/ poseidon__poseidon__full_round_key1) % PRIME))) % PRIME);
+                )) % K_MODULUS) + /*poseidon__poseidon__full_round_key1*/ poseidon__poseidon__full_round_key1) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 341));
@@ -3307,7 +3279,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3319,16 +3291,16 @@ module cpu_addr::cpu_constraint_poly {
                 ) + /*poseidon__poseidon__full_rounds_state2_cubed_0*/ *borrow(
                     &ctx,
                     270
-                )) % PRIME) + /*poseidon__poseidon__full_rounds_state2_cubed_0*/ *borrow(
+                )) % K_MODULUS) + /*poseidon__poseidon__full_rounds_state2_cubed_0*/ *borrow(
                     &ctx,
                     270
-                )) % PRIME) + (PRIME - ((((/*poseidon__poseidon__full_rounds_state0_cubed_0*/ *borrow(
+                )) % K_MODULUS) + (K_MODULUS - ((((/*poseidon__poseidon__full_rounds_state0_cubed_0*/ *borrow(
                     &ctx,
                     268
                 ) + /*poseidon__poseidon__full_rounds_state1_cubed_0*/ *borrow(
                     &ctx,
                     269
-                )) % PRIME) + /*poseidon__poseidon__full_round_key2*/ poseidon__poseidon__full_round_key2) % PRIME))) % PRIME);
+                )) % K_MODULUS) + /*poseidon__poseidon__full_round_key2*/ poseidon__poseidon__full_round_key2) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 341));
@@ -3337,7 +3309,7 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 364));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3346,28 +3318,28 @@ module cpu_addr::cpu_constraint_poly {
                 let val = ((/*column3_row71*/ *borrow(
                     &ctx,
                     116
-                ) + (PRIME - ((((((((/*poseidon__poseidon__full_rounds_state0_cubed_7*/ *borrow(
+                ) + (K_MODULUS - ((((((((/*poseidon__poseidon__full_rounds_state0_cubed_7*/ *borrow(
                     &ctx,
                     271
                 ) + /*poseidon__poseidon__full_rounds_state0_cubed_7*/ *borrow(
                     &ctx,
                     271
-                )) % PRIME) + /*poseidon__poseidon__full_rounds_state0_cubed_7*/ *borrow(
+                )) % K_MODULUS) + /*poseidon__poseidon__full_rounds_state0_cubed_7*/ *borrow(
                     &ctx,
                     271
-                )) % PRIME) + /*poseidon__poseidon__full_rounds_state1_cubed_7*/ *borrow(
+                )) % K_MODULUS) + /*poseidon__poseidon__full_rounds_state1_cubed_7*/ *borrow(
                     &ctx,
                     272
-                )) % PRIME) + /*poseidon__poseidon__full_rounds_state2_cubed_7*/ *borrow(
+                )) % K_MODULUS) + /*poseidon__poseidon__full_rounds_state2_cubed_7*/ *borrow(
                     &ctx,
                     273
-                )) % PRIME))) % PRIME);
+                )) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3379,16 +3351,16 @@ module cpu_addr::cpu_constraint_poly {
                 ) + /*poseidon__poseidon__full_rounds_state1_cubed_7*/ *borrow(
                     &ctx,
                     272
-                )) % PRIME) + (PRIME - ((/*poseidon__poseidon__full_rounds_state0_cubed_7*/ *borrow(
+                )) % K_MODULUS) + (K_MODULUS - ((/*poseidon__poseidon__full_rounds_state0_cubed_7*/ *borrow(
                     &ctx,
                     271
-                ) + /*poseidon__poseidon__full_rounds_state2_cubed_7*/ *borrow(&ctx, 273)) % PRIME))) % PRIME);
+                ) + /*poseidon__poseidon__full_rounds_state2_cubed_7*/ *borrow(&ctx, 273)) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3400,64 +3372,64 @@ module cpu_addr::cpu_constraint_poly {
                 ) + /*poseidon__poseidon__full_rounds_state2_cubed_7*/ *borrow(
                     &ctx,
                     273
-                )) % PRIME) + /*poseidon__poseidon__full_rounds_state2_cubed_7*/ *borrow(
+                )) % K_MODULUS) + /*poseidon__poseidon__full_rounds_state2_cubed_7*/ *borrow(
                     &ctx,
                     273
-                )) % PRIME) + (PRIME - ((/*poseidon__poseidon__full_rounds_state0_cubed_7*/ *borrow(
+                )) % K_MODULUS) + (K_MODULUS - ((/*poseidon__poseidon__full_rounds_state0_cubed_7*/ *borrow(
                     &ctx,
                     271
-                ) + /*poseidon__poseidon__full_rounds_state1_cubed_7*/ *borrow(&ctx, 272)) % PRIME))) % PRIME);
+                ) + /*poseidon__poseidon__full_rounds_state1_cubed_7*/ *borrow(&ctx, 272)) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/poseidon/copy_partial_rounds0_i0: column5_row122 - column7_row1
             {
-                let val = ((/*column5_row122*/ *borrow(&ctx, 144) + (PRIME - /*column7_row1*/ *borrow(
+                let val = ((/*column5_row122*/ *borrow(&ctx, 144) + (K_MODULUS - /*column7_row1*/ *borrow(
                     &ctx,
                     170
-                ))) % PRIME);
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/poseidon/copy_partial_rounds0_i1: column5_row124 - column7_row5
             {
-                let val = ((/*column5_row124*/ *borrow(&ctx, 145) + (PRIME - /*column7_row5*/ *borrow(
+                let val = ((/*column5_row124*/ *borrow(&ctx, 145) + (K_MODULUS - /*column7_row5*/ *borrow(
                     &ctx,
                     174
-                ))) % PRIME);
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/poseidon/copy_partial_rounds0_i2: column5_row126 - column7_row9
             {
-                let val = ((/*column5_row126*/ *borrow(&ctx, 146) + (PRIME - /*column7_row9*/ *borrow(
+                let val = ((/*column5_row126*/ *borrow(&ctx, 146) + (K_MODULUS - /*column7_row9*/ *borrow(
                     &ctx,
                     176
-                ))) % PRIME);
+                ))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
@@ -3469,85 +3441,85 @@ module cpu_addr::cpu_constraint_poly {
                 ) + /*poseidon__poseidon__full_rounds_state2_cubed_3*/ *borrow(
                     &ctx,
                     276
-                )) % PRIME) + /*poseidon__poseidon__full_rounds_state2_cubed_3*/ *borrow(
+                )) % K_MODULUS) + /*poseidon__poseidon__full_rounds_state2_cubed_3*/ *borrow(
                     &ctx,
                     276
-                )) % PRIME) + (PRIME - ((((/*poseidon__poseidon__full_rounds_state0_cubed_3*/ *borrow(
+                )) % K_MODULUS) + (K_MODULUS - ((((/*poseidon__poseidon__full_rounds_state0_cubed_3*/ *borrow(
                     &ctx,
                     274
                 ) + /*poseidon__poseidon__full_rounds_state1_cubed_3*/ *borrow(
                     &ctx,
                     275
-                )) % PRIME) + 2121140748740143694053732746913428481442990369183417228688865837805149503386) % PRIME))) % PRIME);
+                )) % K_MODULUS) + 2121140748740143694053732746913428481442990369183417228688865837805149503386) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/poseidon/margin_full_to_partial1: column5_row2 - (3618502788666131213697322783095070105623107215331596699973092056135872020477 * poseidon__poseidon__full_rounds_state1_cubed_3 + 10 * poseidon__poseidon__full_rounds_state2_cubed_3 + 4 * column5_row0 + 3618502788666131213697322783095070105623107215331596699973092056135872020479 * poseidon__poseidon__partial_rounds_state0_cubed_0 + 2006642341318481906727563724340978325665491359415674592697055778067937914672)
             {
-                let val = ((/*column5_row2*/ *borrow(&ctx, 139) + (PRIME - ((((((((fmul(
+                let val = ((/*column5_row2*/ *borrow(&ctx, 139) + (K_MODULUS - ((((((((fmul(
                     3618502788666131213697322783095070105623107215331596699973092056135872020477, /*poseidon__poseidon__full_rounds_state1_cubed_3*/
                     *borrow(&ctx, 275)
-                ) + fmul(10, /*poseidon__poseidon__full_rounds_state2_cubed_3*/ *borrow(&ctx, 276))) % PRIME) + fmul(
+                ) + fmul(10, /*poseidon__poseidon__full_rounds_state2_cubed_3*/ *borrow(&ctx, 276))) % K_MODULUS) + fmul(
                     4, /*column5_row0*/
                     *borrow(&ctx, 137)
-                )) % PRIME) + fmul(
+                )) % K_MODULUS) + fmul(
                     3618502788666131213697322783095070105623107215331596699973092056135872020479, /*poseidon__poseidon__partial_rounds_state0_cubed_0*/
                     *borrow(&ctx, 277)
-                )) % PRIME) + 2006642341318481906727563724340978325665491359415674592697055778067937914672) % PRIME))) % PRIME);
+                )) % K_MODULUS) + 2006642341318481906727563724340978325665491359415674592697055778067937914672) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/poseidon/margin_full_to_partial2: column5_row4 - (8 * poseidon__poseidon__full_rounds_state2_cubed_3 + 4 * column5_row0 + 6 * poseidon__poseidon__partial_rounds_state0_cubed_0 + column5_row2 + column5_row2 + 3618502788666131213697322783095070105623107215331596699973092056135872020479 * poseidon__poseidon__partial_rounds_state0_cubed_1 + 427751140904099001132521606468025610873158555767197326325930641757709538586)
             {
-                let val = ((/*column5_row4*/ *borrow(&ctx, 141) + (PRIME - ((((((((((((fmul(
+                let val = ((/*column5_row4*/ *borrow(&ctx, 141) + (K_MODULUS - ((((((((((((fmul(
                     8, /*poseidon__poseidon__full_rounds_state2_cubed_3*/
                     *borrow(&ctx, 276)
-                ) + fmul(4, /*column5_row0*/ *borrow(&ctx, 137))) % PRIME) + fmul(
+                ) + fmul(4, /*column5_row0*/ *borrow(&ctx, 137))) % K_MODULUS) + fmul(
                     6, /*poseidon__poseidon__partial_rounds_state0_cubed_0*/
                     *borrow(&ctx, 277)
-                )) % PRIME) + /*column5_row2*/ *borrow(&ctx, 139)) % PRIME) + /*column5_row2*/ *borrow(
+                )) % K_MODULUS) + /*column5_row2*/ *borrow(&ctx, 139)) % K_MODULUS) + /*column5_row2*/ *borrow(
                     &ctx,
                     139
-                )) % PRIME) + fmul(
+                )) % K_MODULUS) + fmul(
                     3618502788666131213697322783095070105623107215331596699973092056135872020479, /*poseidon__poseidon__partial_rounds_state0_cubed_1*/
                     *borrow(&ctx, 278)
-                )) % PRIME) + 427751140904099001132521606468025610873158555767197326325930641757709538586) % PRIME))) % PRIME);
+                )) % K_MODULUS) + 427751140904099001132521606468025610873158555767197326325930641757709538586) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/poseidon/partial_round0: column5_row6 - (8 * poseidon__poseidon__partial_rounds_state0_cubed_0 + 4 * column5_row2 + 6 * poseidon__poseidon__partial_rounds_state0_cubed_1 + column5_row4 + column5_row4 + 3618502788666131213697322783095070105623107215331596699973092056135872020479 * poseidon__poseidon__partial_rounds_state0_cubed_2 + poseidon__poseidon__partial_round_key0)
             {
-                let val = ((/*column5_row6*/ *borrow(&ctx, 143) + (PRIME - ((((((((((((fmul(
+                let val = ((/*column5_row6*/ *borrow(&ctx, 143) + (K_MODULUS - ((((((((((((fmul(
                     8, /*poseidon__poseidon__partial_rounds_state0_cubed_0*/
                     *borrow(&ctx, 277)
-                ) + fmul(4, /*column5_row2*/ *borrow(&ctx, 139))) % PRIME) + fmul(
+                ) + fmul(4, /*column5_row2*/ *borrow(&ctx, 139))) % K_MODULUS) + fmul(
                     6, /*poseidon__poseidon__partial_rounds_state0_cubed_1*/
                     *borrow(&ctx, 278)
-                )) % PRIME) + /*column5_row4*/ *borrow(&ctx, 141)) % PRIME) + /*column5_row4*/ *borrow(
+                )) % K_MODULUS) + /*column5_row4*/ *borrow(&ctx, 141)) % K_MODULUS) + /*column5_row4*/ *borrow(
                     &ctx,
                     141
-                )) % PRIME) + fmul(
+                )) % K_MODULUS) + fmul(
                     3618502788666131213697322783095070105623107215331596699973092056135872020479, /*poseidon__poseidon__partial_rounds_state0_cubed_2*/
                     *borrow(&ctx, 279)
-                )) % PRIME) + /*poseidon__poseidon__partial_round_key0*/ poseidon__poseidon__partial_round_key0) % PRIME))) % PRIME);
+                )) % K_MODULUS) + /*poseidon__poseidon__partial_round_key0*/ poseidon__poseidon__partial_round_key0) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 347));
@@ -3556,25 +3528,25 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 367));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/poseidon/partial_round1: column7_row13 - (8 * poseidon__poseidon__partial_rounds_state1_cubed_0 + 4 * column7_row5 + 6 * poseidon__poseidon__partial_rounds_state1_cubed_1 + column7_row9 + column7_row9 + 3618502788666131213697322783095070105623107215331596699973092056135872020479 * poseidon__poseidon__partial_rounds_state1_cubed_2 + poseidon__poseidon__partial_round_key1)
             {
-                let val = ((/*column7_row13*/ *borrow(&ctx, 178) + (PRIME - ((((((((((((fmul(
+                let val = ((/*column7_row13*/ *borrow(&ctx, 178) + (K_MODULUS - ((((((((((((fmul(
                     8, /*poseidon__poseidon__partial_rounds_state1_cubed_0*/
                     *borrow(&ctx, 280)
-                ) + fmul(4, /*column7_row5*/ *borrow(&ctx, 174))) % PRIME) + fmul(
+                ) + fmul(4, /*column7_row5*/ *borrow(&ctx, 174))) % K_MODULUS) + fmul(
                     6, /*poseidon__poseidon__partial_rounds_state1_cubed_1*/
                     *borrow(&ctx, 281)
-                )) % PRIME) + /*column7_row9*/ *borrow(&ctx, 176)) % PRIME) + /*column7_row9*/ *borrow(
+                )) % K_MODULUS) + /*column7_row9*/ *borrow(&ctx, 176)) % K_MODULUS) + /*column7_row9*/ *borrow(
                     &ctx,
                     176
-                )) % PRIME) + fmul(
+                )) % K_MODULUS) + fmul(
                     3618502788666131213697322783095070105623107215331596699973092056135872020479, /*poseidon__poseidon__partial_rounds_state1_cubed_2*/
                     *borrow(&ctx, 282)
-                )) % PRIME) + /*poseidon__poseidon__partial_round_key1*/ poseidon__poseidon__partial_round_key1) % PRIME))) % PRIME);
+                )) % K_MODULUS) + /*poseidon__poseidon__partial_round_key1*/ poseidon__poseidon__partial_round_key1) % K_MODULUS))) % K_MODULUS);
                 // Numerator
                 // val *= numerator
                 val = fmul(val, *borrow(&ctx, 348));
@@ -3583,76 +3555,76 @@ module cpu_addr::cpu_constraint_poly {
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 369));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/poseidon/margin_partial_to_full0: column8_row70 - (16 * poseidon__poseidon__partial_rounds_state1_cubed_19 + 8 * column7_row81 + 16 * poseidon__poseidon__partial_rounds_state1_cubed_20 + 6 * column7_row85 + poseidon__poseidon__partial_rounds_state1_cubed_21 + 560279373700919169769089400651532183647886248799764942664266404650165812023)
             {
-                let val = ((/*column8_row70*/ *borrow(&ctx, 218) + (PRIME - ((((((((((fmul(
+                let val = ((/*column8_row70*/ *borrow(&ctx, 218) + (K_MODULUS - ((((((((((fmul(
                     16, /*poseidon__poseidon__partial_rounds_state1_cubed_19*/
                     *borrow(&ctx, 283)
-                ) + fmul(8, /*column7_row81*/ *borrow(&ctx, 181))) % PRIME) + fmul(
+                ) + fmul(8, /*column7_row81*/ *borrow(&ctx, 181))) % K_MODULUS) + fmul(
                     16, /*poseidon__poseidon__partial_rounds_state1_cubed_20*/
                     *borrow(&ctx, 284)
-                )) % PRIME) + fmul(
+                )) % K_MODULUS) + fmul(
                     6, /*column7_row85*/
                     *borrow(&ctx, 183)
-                )) % PRIME) + /*poseidon__poseidon__partial_rounds_state1_cubed_21*/ *borrow(
+                )) % K_MODULUS) + /*poseidon__poseidon__partial_rounds_state1_cubed_21*/ *borrow(
                     &ctx,
                     285
-                )) % PRIME) + 560279373700919169769089400651532183647886248799764942664266404650165812023) % PRIME))) % PRIME);
+                )) % K_MODULUS) + 560279373700919169769089400651532183647886248799764942664266404650165812023) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/poseidon/margin_partial_to_full1: column8_row78 - (4 * poseidon__poseidon__partial_rounds_state1_cubed_20 + column7_row85 + column7_row85 + poseidon__poseidon__partial_rounds_state1_cubed_21 + 1401754474293352309994371631695783042590401941592571735921592823982231996415)
             {
-                let val = ((/*column8_row78*/ *borrow(&ctx, 219) + (PRIME - ((((((((fmul(
+                let val = ((/*column8_row78*/ *borrow(&ctx, 219) + (K_MODULUS - ((((((((fmul(
                     4, /*poseidon__poseidon__partial_rounds_state1_cubed_20*/
                     *borrow(&ctx, 284)
-                ) + /*column7_row85*/ *borrow(&ctx, 183)) % PRIME) + /*column7_row85*/ *borrow(
+                ) + /*column7_row85*/ *borrow(&ctx, 183)) % K_MODULUS) + /*column7_row85*/ *borrow(
                     &ctx,
                     183
-                )) % PRIME) + /*poseidon__poseidon__partial_rounds_state1_cubed_21*/ *borrow(
+                )) % K_MODULUS) + /*poseidon__poseidon__partial_rounds_state1_cubed_21*/ *borrow(
                     &ctx,
                     285
-                )) % PRIME) + 1401754474293352309994371631695783042590401941592571735921592823982231996415) % PRIME))) % PRIME);
+                )) % K_MODULUS) + 1401754474293352309994371631695783042590401941592571735921592823982231996415) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
 
             //Constraint expression for poseidon/poseidon/margin_partial_to_full2: column8_row65 - (8 * poseidon__poseidon__partial_rounds_state1_cubed_19 + 4 * column7_row81 + 6 * poseidon__poseidon__partial_rounds_state1_cubed_20 + column7_row85 + column7_row85 + 3618502788666131213697322783095070105623107215331596699973092056135872020479 * poseidon__poseidon__partial_rounds_state1_cubed_21 + 1246177936547655338400308396717835700699368047388302793172818304164989556526)
             {
-                let val = ((/*column8_row65*/ *borrow(&ctx, 217) + (PRIME - ((((((((((((fmul(
+                let val = ((/*column8_row65*/ *borrow(&ctx, 217) + (K_MODULUS - ((((((((((((fmul(
                     8, /*poseidon__poseidon__partial_rounds_state1_cubed_19*/
                     *borrow(&ctx, 283)
-                ) + fmul(4, /*column7_row81*/ *borrow(&ctx, 181))) % PRIME) + fmul(
+                ) + fmul(4, /*column7_row81*/ *borrow(&ctx, 181))) % K_MODULUS) + fmul(
                     6, /*poseidon__poseidon__partial_rounds_state1_cubed_20*/
                     *borrow(&ctx, 284)
-                )) % PRIME) + /*column7_row85*/ *borrow(&ctx, 183)) % PRIME) + /*column7_row85*/ *borrow(
+                )) % K_MODULUS) + /*column7_row85*/ *borrow(&ctx, 183)) % K_MODULUS) + /*column7_row85*/ *borrow(
                     &ctx,
                     183
-                )) % PRIME) + fmul(
+                )) % K_MODULUS) + fmul(
                     3618502788666131213697322783095070105623107215331596699973092056135872020479, /*poseidon__poseidon__partial_rounds_state1_cubed_21*/
                     *borrow(&ctx, 285)
-                )) % PRIME) + 1246177936547655338400308396717835700699368047388302793172818304164989556526) % PRIME))) % PRIME);
+                )) % K_MODULUS) + 1246177936547655338400308396717835700699368047388302793172818304164989556526) % K_MODULUS))) % K_MODULUS);
 
                 // Denominator
                 // val *= denominator inverse
                 val = fmul(val, *borrow(&ctx, 376));
 
-                res = (res + fmul(val, composition_alpha_pow)) % PRIME;
+                res = (res + fmul(val, composition_alpha_pow)) % K_MODULUS;
                 composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
             };
         };
@@ -3899,7 +3871,7 @@ module cpu_addr::cpu_constraint_poly {
             1326389350710615116391365680256163199973980758823363951013032037682388997786,
         ];
 
-        let res = fallback(&ctx);
+        let res = fallback(ctx);
         debug::print(&res);
         assert!(res == 1861765186995523400739091979056923075644454173790381257989102268988259212958, 1);
     }
