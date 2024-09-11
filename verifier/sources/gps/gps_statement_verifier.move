@@ -305,7 +305,7 @@ module verifier_addr::gps_statement_verifier {
         let public_memory = vector[];
         // Write public memory, which is a list of pairs (address, value).
         {
-            let bootloader_program = get_compiled_program(signer);
+            let bootloader_program = get_compiled_program(address_of(signer));
             let n = length(&bootloader_program);
             for (i in 0..n) {
                 push_back(&mut public_memory, (i + INITIAL_PC as u256));

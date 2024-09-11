@@ -14,7 +14,7 @@ module cpu_addr::cairo_bootloader_program {
     }
 
     #[view]
-    public fun get_compiled_program(signer: &signer): vector<u256> acquires CompiledProgram {
-        borrow_global<CompiledProgram>(address_of(signer)).inner
+    public fun get_compiled_program(signer_addr: address): vector<u256> acquires CompiledProgram {
+        borrow_global<CompiledProgram>(signer_addr).inner
     }
 }
