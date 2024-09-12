@@ -45,16 +45,13 @@ module verifier_addr::fri_transform {
         }
     }
 
-    /*
-      Applies 2 + 1 FRI transformations to a coset of size 2^2.
-
-      evaluations on coset:                    f0 f1  f2 f3
-      ----------------------------------------  \ / -- \ / -----------
-                                                 f0    f2
-      ------------------------------------------- \ -- / -------------
-      nextLayerValue:                               f0
-
-    */
+    // Applies 2 + 1 FRI transformations to a coset of size 2^2.
+    //
+    // evaluations on coset:                    f0 f1  f2 f3
+    // ----------------------------------------  \ / -- \ / -----------
+    //                                            f0    f2
+    // ------------------------------------------- \ -- / -------------
+    // nextLayerValue:                               f0
     fun transform_coset_of_size_4(
         fri: &mut vector<u256>,
         fri_half_inv_group_ptr: u64,
@@ -95,11 +92,9 @@ module verifier_addr::fri_transform {
     }
 
 
-    /*
-      Applies 4 + 2 + 1 FRI transformations to a coset of size 2^3.
-
-      For more detail, see description of the FRI transformations at the top of this file.
-    */
+    // Applies 4 + 2 + 1 FRI transformations to a coset of size 2^3.
+    //
+    // For more detail, see description of the FRI transformations at the top of this file.
     fun transform_coset_of_size_8(
         fri: &mut vector<u256>,
         fri_half_inv_group_prt: u64,

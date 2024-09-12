@@ -47,3 +47,6 @@ aptos move create-object-and-publish-package --address-name <your_account_name> 
 ```bash
 aptos move upgrade-object-package --object-address <object_address> --named-addresses <your_account_name>=<object_address>
 ```
+
+The reference source for the verifier part https://etherscan.io/address/0xd51A3D50d4D2f99a345a66971E650EEA064DD8dF#code
+CPU layout 7 contracts: https://vscode.blockscan.com/ethereum/0x28e3ad4201ba416b23d9950503db28a9232be32a
