@@ -1,4 +1,4 @@
-module verifier_addr::fri_layer {
+module verifier_addr::fri_layer { klkjklj;lkj;l
     use aptos_std::aptos_hash::keccak256;
     use aptos_std::from_bcs::to_u256;
     use aptos_std::math128::pow;
