@@ -7,11 +7,13 @@ authors = []
 verifier_addr = "_"
 lib_addr = "_"
 cpu_addr = "_"
+cpu_constraint_poly_addr = "_"
 
 [dev-addresses]
 verifier_addr = "9ebb301117915b4ebf94bb511441b7770cab7d98b83c41f78d8e2e489cdd45c1"
 lib_addr = "54ba5979fbdf5fa56c4f4b5147fa33068148d08f6f191c23bca865c21192dcaa"
 cpu_addr = "1725fb72ba62d830193fe57a932b5071c9718a44e40891e4067a2fe0e78f4d0f"
+cpu_constraint_poly_addr = "1725fb72ba62d830193fe57a932b5071c9718a44e40891e4067a2fe0e78f4d0e"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
@@ -21,5 +23,6 @@ subdir = "aptos-move/framework/aptos-framework"
 [dependencies]
 libs = { local = "../libs" }
 cpu = { local = "../cpu" }
+cpu_constraint_poly = { local = "../cpu-constraint-poly" }
 
 [dev-dependencies]

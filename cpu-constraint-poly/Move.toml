@@ -1,0 +1,19 @@
+[package]
+name = "cpu_constraint_poly"
+version = "1.0.0"
+authors = []
+
+[addresses]
+cpu_constraint_poly_addr = "_"
+
+[dev-addresses]
+cpu_constraint_poly_addr = "1725fb72ba62d830193fe57a932b5071c9718a44e40891e4067a2fe0e78f4d0f"
+lib_addr = "54ba5979fbdf5fa56c4f4b5147fa33068148d08f6f191c23bca865c21192dcaa"
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "aptos-release-v1.17"
+subdir = "aptos-move/framework/aptos-framework"
+
+[dependencies]
+libs = { local = "../libs" }
