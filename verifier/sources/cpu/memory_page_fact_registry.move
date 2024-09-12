@@ -112,7 +112,6 @@ module verifier_addr::memory_page_fact_registry {
         (fact_hash, memory_hash, prod)
     }
 
-    // TODO: mark as entry func
     //   Registers a fact based on the given values, assuming continuous addresses.
     //   values should be [value at startAddr, value at (startAddr + 1), ...].
     public entry fun register_continuous_memorypage(

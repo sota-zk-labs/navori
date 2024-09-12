@@ -2,6 +2,7 @@ module verifier_addr::stark_verifier_7 {
     use std::signer::address_of;
     use std::vector::{append, borrow, length, slice, borrow_mut};
     use aptos_std::aptos_hash::keccak256;
+    use cpu_constraint_poly_addr::cpu_constraint_poly;
 
     use cpu_addr::cpu_oods_7;
     use cpu_addr::layout_specific_7::{layout_specific_init, prepare_for_oods_check, safe_div};
@@ -23,10 +24,14 @@ module verifier_addr::stark_verifier_7 {
     // This line is used for generating constants DO NOT REMOVE!
     // 1
     const CHECKPOINT1_CFFL: u8 = 0x1;
+    // 100
+    const CHECKPOINT1_OCC: u8 = 0x64;
     // 6
     const CHECKPOINT1_VP: u8 = 0x6;
     // 2
     const CHECKPOINT2_CFFL: u8 = 0x2;
+    // 101
+    const CHECKPOINT2_OCC: u8 = 0x65;
     // 7
     const CHECKPOINT2_VP: u8 = 0x7;
     // 3
@@ -41,6 +46,8 @@ module verifier_addr::stark_verifier_7 {
     const CONSTRAINTS_DEGREE_BOUND: u64 = 0x2;
     // 1
     const CONTINUOUS_PAGE: u256 = 0x1;
+    // 30
+    const ECLAIMED_COMPOSITION_DOES_NOT_MATCH_TRACE: u64 = 0x1e;
     // 14
     const EFRI_PARAMS_DO_NOT_MATCH_TRACE_LENGTH: u64 = 0xe;
     // 32
@@ -137,6 +144,8 @@ module verifier_addr::stark_verifier_7 {
     const MM_COMPOSITION_OODS_VALUES: u64 = 0x227;
     // 1178
     const MM_COMPOSITION_QUERY_RESPONSES: u64 = 0x49a;
+    // 551
+    const MM_CONSTRAINT_POLY_ARGS_END: u64 = 0x227;
     // 317
     const MM_CONSTRAINT_POLY_ARGS_START: u64 = 0x13d;
     // 1277
@@ -295,6 +304,9 @@ module verifier_addr::stark_verifier_7 {
         });
         move_to(signer, CfflCheckpoint {
             inner: CHECKPOINT1_CFFL
+        });
+        move_to(signer, OccCheckpoint {
+            inner: CHECKPOINT1_OCC
         });
         cpu_oods_7::init_data_type(signer);
     }
@@ -548,7 +560,7 @@ module verifier_addr::stark_verifier_7 {
         proof_params: &vector<u256>,
         proof: &mut vector<u256>,
         public_input: &vector<u256>
-    ): bool acquires ConstructorConfig, VpCheckpoint, CtxCache, CfflCheckpoint {
+    ): bool acquires ConstructorConfig, VpCheckpoint, CtxCache, CfflCheckpoint, OccCheckpoint {
         let signer_addr = address_of(signer);
         let VpCheckpoint {
             inner: checkpoint
@@ -652,7 +664,6 @@ module verifier_addr::stark_verifier_7 {
 
                 *checkpoint = CHECKPOINT4_VP;
             };
-            return false
         };
         // emit LogGas("Send queries", gasleft());
 
@@ -972,48 +983,43 @@ module verifier_addr::stark_verifier_7 {
         signer: &signer,
         ctx: &mut vector<u256>,
         public_input: &vector<u256>
-    ): bool {
-        verify_memory_page_facts(signer, ctx, public_input);
-        let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS);
-        set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM, temp);
-        let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 1);
-        set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0, temp);
-        let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 2);
-        set_el(ctx, MM_RANGE_CHECK16__PERM__INTERACTION_ELM, temp);
+    ): bool acquires OccCheckpoint {
+        let OccCheckpoint {
+            inner: checkpoint
+        } = borrow_global_mut<OccCheckpoint>(address_of(signer));
 
-        let public_memory_prod = compute_public_memory_quotient(ctx, public_input);
-        set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__PUBLIC_MEMORY_PROD, public_memory_prod);
-        prepare_for_oods_check(ctx);
+        if (*checkpoint == CHECKPOINT1_OCC) {
+            verify_memory_page_facts(signer, ctx, public_input);
+            let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS);
+            set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM, temp);
+            let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 1);
+            set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0, temp);
+            let temp = *borrow(ctx, MM_INTERACTION_ELEMENTS + 2);
+            set_el(ctx, MM_RANGE_CHECK16__PERM__INTERACTION_ELM, temp);
 
-        // Todo
-        // let composition_from_trace_value;
-        // address
-        // lconstraintPoly = address(constraintPoly);
-        // let offset = 1 + MM_CONSTRAINT_POLY_ARGS_START;
-        // let size = MM_CONSTRAINT_POLY_ARGS_END - MM_CONSTRAINT_POLY_ARGS_START;
-        // assembly {
-        //   // Call CpuConstraintPoly contract.
-        //     let p = mload(0x40)
-        //     if iszero(staticcall(not(0), lconstraintPoly, add(ctx, offset), size, p, 0x20)) {
-        //     returndatacopy(0, 0, returndatasize())
-        //     revert(0, returndatasize())
-        //     }
-        //     compositionFromTraceValue = mload(p)
-        // }
+            let public_memory_prod = compute_public_memory_quotient(ctx, public_input);
+            set_el(ctx, MM_MEMORY__MULTI_COLUMN_PERM__PERM__PUBLIC_MEMORY_PROD, public_memory_prod);
+            prepare_for_oods_check(ctx);
+            *checkpoint = CHECKPOINT2_OCC;
+            return false
+        };
 
-        // let claimed_composition = fadd(
-        //     *borrow(ctx, MM_COMPOSITION_OODS_VALUES),
-        //     fmul(*borrow(ctx, MM_OODS_POINT), *borrow(ctx, MM_COMPOSITION_OODS_VALUES + 1))
-        // );
-
-        // assert!(
-        //     composition_from_trace_value == claimed_composition,
-        //     CLAIMED_COMPOSITION_DOES_NOT_MATCH_TRACE
-        // );
+        let composition_from_trace_value = cpu_constraint_poly::fallback(
+            slice(ctx, MM_CONSTRAINT_POLY_ARGS_START, MM_CONSTRAINT_POLY_ARGS_END)
+        );
+        let claimed_composition = fadd(
+            *borrow(ctx, MM_COMPOSITION_OODS_VALUES),
+            fmul(*borrow(ctx, MM_OODS_POINT), *borrow(ctx, MM_COMPOSITION_OODS_VALUES + 1))
+        );
+        assert!(
+            composition_from_trace_value == claimed_composition,
+            ECLAIMED_COMPOSITION_DOES_NOT_MATCH_TRACE
+        );
+        *checkpoint = CHECKPOINT1_OCC;
         true
     }
 
-    fun has_interaction(): bool {
+    inline fun has_interaction(): bool {
         N_COLUMNS_IN_TRACE1 > 0
     }
 
@@ -1059,6 +1065,11 @@ module verifier_addr::stark_verifier_7 {
     }
 
     #[test_only]
+    public fun get_occ_checkpoint(signer: &signer): u8 acquires OccCheckpoint {
+        borrow_global<OccCheckpoint>(address_of(signer)).inner
+    }
+
+    #[test_only]
     public fun test_init_stark_verifier(signer: &signer, num_security_bits: u256, min_proof_of_work_bits: u256) {
         move_to(signer, ConstructorConfig {
             num_security_bits,
@@ -1076,7 +1087,12 @@ module verifier_addr::stark_verifier_7 {
     }
 
     // Data of the function `compute_first_fri_layer`
-    struct CfflCheckpoint has key {
+    struct CfflCheckpoint has key, drop {
+        inner: u8
+    }
+
+    // Data of the function `oods_consistency_check`
+    struct OccCheckpoint has key, drop {
         inner: u8
     }
 }
