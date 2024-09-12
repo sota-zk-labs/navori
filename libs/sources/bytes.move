@@ -8,9 +8,9 @@ module lib_addr::bytes {
         let bytes = to_bytes(v);
 
         // count (length) bytes to trim
-        let count = if (length(v) < 256) 1 else 2;
-
         let len = length(&bytes);
+
+        let count = len % 32 ;
         len = len - count;
         let i = 0;
         if (count == 1) {
