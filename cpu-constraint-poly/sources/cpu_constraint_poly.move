@@ -11,6 +11,8 @@ module cpu_constraint_poly_addr::cpu_constraint_poly {
     const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
     // End of generating constants!
 
+    const CTX_LEN: u256 = 404;
+
     // The Memory map during the execution of this contract is as follows:
     // [0x0, 0x20) - pedersen__points__x
     // [0x20, 0x40) - pedersen__points__y
@@ -112,7 +114,7 @@ module cpu_constraint_poly_addr::cpu_constraint_poly {
     public fun fallback(ctx: vector<u256>): u256 {
         let res = 0;
 
-        let remain = 404 - vector::length(&ctx);
+        let remain = CTX_LEN - vector::length(&ctx);
 
         for (i in 0..remain) {
             push_back(&mut ctx, 0);
