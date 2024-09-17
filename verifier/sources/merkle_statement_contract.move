@@ -10,6 +10,8 @@ module verifier_addr::merkle_statement_contract {
     use lib_addr::convert_memory::copy_vec_to_memory;
     use verifier_addr::fact_registry::register_fact;
     use verifier_addr::fri::{get_fri, new_fri, update_fri};
+    #[test_only]
+    use verifier_addr::merkle_verifier;
 
     // This line is used for generating constants DO NOT REMOVE!
     // 1
@@ -166,5 +168,15 @@ module verifier_addr::merkle_statement_contract {
         };
         // register fact
         register_fact(s, bytes32_to_u256(keccak256(input_hash)));
+    }
+
+    #[test_only]
+    public fun merkle_verifier_test(signer: &signer, data: VerifyMerkle) {
+        merkle_verifier::verify_merkle(signer, data.channel_ptr, data.merkle_queue_ptr, data.expected_root, data.n_queries);
+    }
+
+    #[test_only]
+    public fun register_fact_verify_merkle_test(signer: &signer, data: RegisterFactVerifyMerkle) {
+        register_fact_verify_merkle(signer, data.channel_ptr, data.data_to_hash_ptr, data.n_queries, data.res_root);
     }
 }

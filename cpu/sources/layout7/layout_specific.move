@@ -77,28 +77,28 @@ module cpu_addr::layout_specific_7 {
     const MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__PARTIAL_ROUND_KEY1: u64 = 0x143;
     // 335
     const MM_RANGE_CHECK16__PERM__PUBLIC_MEMORY_PROD: u64 = 0x14f;
-    // 14
-    const OFFSET_BITWISE_BEGIN_ADDR: u64 = 0xe;
     // 15
-    const OFFSET_BITWISE_STOP_ADDR: u64 = 0xf;
-    // 20
-    const OFFSET_N_PUBLIC_MEMORY_PAGES: u64 = 0x14;
-    // 8
-    const OFFSET_OUTPUT_BEGIN_ADDR: u64 = 0x8;
-    // 9
-    const OFFSET_OUTPUT_STOP_PTR: u64 = 0x9;
-    // 10
-    const OFFSET_PEDERSEN_BEGIN_ADDR: u64 = 0xa;
-    // 11
-    const OFFSET_PEDERSEN_STOP_PTR: u64 = 0xb;
+    const OFFSET_BITWISE_BEGIN_ADDR: u64 = 0xf;
     // 16
-    const OFFSET_POSEIDON_BEGIN_ADDR: u64 = 0x10;
-    // 17
-    const OFFSET_POSEIDON_STOP_PTR: u64 = 0x11;
+    const OFFSET_BITWISE_STOP_PTR: u64 = 0x10;
+    // 21
+    const OFFSET_N_PUBLIC_MEMORY_PAGES: u64 = 0x15;
+    // 9
+    const OFFSET_OUTPUT_BEGIN_ADDR: u64 = 0x9;
+    // 10
+    const OFFSET_OUTPUT_STOP_PTR: u64 = 0xa;
+    // 11
+    const OFFSET_PEDERSEN_BEGIN_ADDR: u64 = 0xb;
     // 12
-    const OFFSET_RANGE_CHECK_BEGIN_ADDR: u64 = 0xc;
+    const OFFSET_PEDERSEN_STOP_PTR: u64 = 0xc;
+    // 17
+    const OFFSET_POSEIDON_BEGIN_ADDR: u64 = 0x11;
+    // 18
+    const OFFSET_POSEIDON_STOP_PTR: u64 = 0x12;
     // 13
-    const OFFSET_RANGE_CHECK_STOP_PTR: u64 = 0xd;
+    const OFFSET_RANGE_CHECK_BEGIN_ADDR: u64 = 0xd;
+    // 14
+    const OFFSET_RANGE_CHECK_STOP_PTR: u64 = 0xe;
     // 0
     const OUTPUT_BUILTIN_BIT: u256 = 0x0;
     // 1
@@ -182,7 +182,7 @@ module cpu_addr::layout_specific_7 {
         // "bitwise" memory segment.
         set_el(ctx, MM_INITIAL_BITWISE_ADDR, *borrow(public_input, OFFSET_BITWISE_BEGIN_ADDR));
         validate_builtin_pointers(
-            *borrow(ctx, MM_INITIAL_BITWISE_ADDR), *borrow(public_input, OFFSET_BITWISE_STOP_ADDR),
+            *borrow(ctx, MM_INITIAL_BITWISE_ADDR), *borrow(public_input, OFFSET_BITWISE_STOP_PTR),
             BITWISE__RATIO, 5, n_steps);
 
         set_el(ctx, MM_DILUTED_CHECK__PERMUTATION__PUBLIC_MEMORY_PROD, 1);

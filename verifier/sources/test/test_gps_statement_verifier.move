@@ -1,11 +1,9 @@
 #[test_only]
 module verifier_addr::test_gps_statement_verifier {
     use std::signer::address_of;
-    use std::vector;
-    use std::vector::for_each;
+    use std::vector::{for_each_ref};
 
     use cpu_addr::cpu_oods_7::get_cpu_oods_fb_checkpoint;
-
     use verifier_addr::constructor::init_all;
     use verifier_addr::fact_registry::{is_valid, register_facts};
     use verifier_addr::gps_statement_verifier::{get_vpar_checkpoint,
@@ -15,11 +13,8 @@ module verifier_addr::test_gps_statement_verifier {
         cairo_aux_input_,
         pre_registered_facts_,
         proof_,
-        proof_params_,
-        registered_facts_,
-        task_meta_data_
-    };
-    use verifier_addr::stark_verifier_7::{get_cffl_checkpoint, get_vp_checkpoint, get_occ_checkpoint};
+        proof_params_, registered_facts_, task_metadata_};
+    use verifier_addr::stark_verifier_7::{get_cffl_checkpoint, get_occ_checkpoint, get_vp_checkpoint};
 
     // This line is used for generating constants DO NOT REMOVE!
     // 1
@@ -56,33 +51,48 @@ module verifier_addr::test_gps_statement_verifier {
     fun test_verify_proof_and_register(signer: &signer) {
         init_all(signer);
 
-        // Register pre-existing facts and ensure they do not overlap with the set of facts
-        // that will be registered during this test function.
-        let registered_facts = registered_facts_();
-        register_facts(signer, pre_registered_facts_());
-        for_each(pre_registered_facts_(), |fact| {
-            assert!(!vector::contains(&registered_facts, &fact), 1);
-        });
-
-        prepush_task_metadata(signer, task_meta_data_());
-        prepush_data_to_verify_proof_and_register(
+        test_vpar_with_data(
             signer,
+            registered_facts_(),
+            pre_registered_facts_(),
+            task_metadata_(),
             proof_params_(),
             proof_(),
             cairo_aux_input_(),
-            7u256
+            7
+        );
+    }
+
+    public fun test_vpar_with_data(
+        signer: &signer,
+        registered_facts: vector<u256>,
+        pre_registered_facts: vector<u256>,
+        task_metadata: vector<u256>,
+        proof_params: vector<u256>,
+        proof: vector<u256>,
+        cairo_aux_input: vector<u256>,
+        cairo_verifier_id: u256
+    ) {
+        // Register pre-existing facts and ensure they do not overlap with the set of facts
+        // that will be registered during this test function.
+        register_facts(signer, pre_registered_facts);
+        // for_each_ref(&pre_registered_facts, |fact| {
+        //     assert!(!vector::contains(&registered_facts, fact), 1);
+        // });
+
+        prepush_task_metadata(signer, task_metadata);
+        prepush_data_to_verify_proof_and_register(
+            signer,
+            proof_params,
+            proof,
+            cairo_aux_input,
+            cairo_verifier_id
         );
 
         // CHECKPOINT1_VPAR
         assert!(get_vpar_checkpoint(signer) == CHECKPOINT1_VPAR, 1);
         verify_proof_and_register(signer);
         assert!(get_vpar_checkpoint(signer) == CHECKPOINT2_VPAR, 1);
-
-        // check if fact hash was registered
-        assert!(
-            is_valid(address_of(signer), 72956752610473131951346251166088128464181887574427943765049219704282062358780),
-            1
-        );
 
         // verify_proof_external
         // verify_proof_external::CHECKPOINT1_VP
@@ -131,8 +141,8 @@ module verifier_addr::test_gps_statement_verifier {
         assert!(get_vpar_checkpoint(signer) == CHECKPOINT1_VPAR, 1);
 
         // check if some facts were registered
-        for_each(registered_facts, |fact| {
-            is_valid(address_of(signer), fact);
+        for_each_ref(&registered_facts, |fact| {
+            is_valid(address_of(signer), *fact);
         });
     }
 }

@@ -75,7 +75,6 @@ module verifier_addr::fri_7 {
         );
         // Todo
         // initFriGroups(fri_ctx);
-        // emit LogGas("FRI offset precomputation", gasleft());
         let channel_ptr = MM_CHANNEL;
         let merkle_queue_ptr = MM_MERKLE_QUEUE;
 
@@ -115,9 +114,6 @@ module verifier_addr::fri_7 {
             //     fri_coset_size
             // );
 
-            // emit LogGas(
-            //     string(abi.encodePacked("FRI layer ", bytes1(uint8(48 + fri_step)))), gasleft());
-
             // Layer is done, verify the current layer and move to next layer.
             // ctx[mmMerkleQueue: merkleQueueIdx) holds the indices
             // and values of the merkle leaves that need verification.
@@ -129,13 +125,9 @@ module verifier_addr::fri_7 {
             //     n_live_queries
             // );
 
-            // emit LogGas(
-            //     string(abi.encodePacked("Merkle of FRI layer ", bytes1(uint8(48 + fri_step)))),
-            //     gasleft());
             fri_step = fri_step + 1;
         };
 
         verify_last_layer(ctx, proof, n_live_queries);
-        // emit LogGas("last FRI layer", gasleft());
     }
 }

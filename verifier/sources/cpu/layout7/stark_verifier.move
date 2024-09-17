@@ -11,7 +11,7 @@ module verifier_addr::stark_verifier_7 {
         get_offset_page_size, get_public_input_length
     };
 
-    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le, vec_to_bytes_le};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le, vec_to_bytes_le, merge_num_offset_8};
     use lib_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
     use lib_addr::vector::{append_vector, assign, set_el, trim_only};
     use verifier_addr::fact_registry::is_valid;
@@ -234,28 +234,28 @@ module verifier_addr::stark_verifier_7 {
     const N_INTERACTION_ELEMENTS: u64 = 0x6;
     // MASK_SIZE + CONSTRAINTS_DEGREE_BOUND
     const N_OODS_VALUES: u64 = 0xc2;
-    // 6
-    const OFFSET_EXECUTION_BEGIN_ADDR: u64 = 0x6;
     // 7
-    const OFFSET_EXECUTION_STOP_PTR: u64 = 0x7;
-    // 3
-    const OFFSET_LAYOUT_CODE: u64 = 0x3;
-    // 0
-    const OFFSET_LOG_N_STEPS: u64 = 0x0;
-    // 20
-    const OFFSET_N_PUBLIC_MEMORY_PAGES: u64 = 0x14;
+    const OFFSET_EXECUTION_BEGIN_ADDR: u64 = 0x7;
+    // 8
+    const OFFSET_EXECUTION_STOP_PTR: u64 = 0x8;
     // 4
-    const OFFSET_PROGRAM_BEGIN_ADDR: u64 = 0x4;
-    // 5
-    const OFFSET_PROGRAM_STOP_PTR: u64 = 0x5;
-    // 21
-    const OFFSET_PUBLIC_MEMORY: u64 = 0x15;
-    // 18
-    const OFFSET_PUBLIC_MEMORY_PADDING_ADDR: u64 = 0x12;
-    // 2
-    const OFFSET_RC_MAX: u64 = 0x2;
+    const OFFSET_LAYOUT_CODE: u64 = 0x4;
     // 1
-    const OFFSET_RC_MIN: u64 = 0x1;
+    const OFFSET_LOG_N_STEPS: u64 = 0x1;
+    // 21
+    const OFFSET_N_PUBLIC_MEMORY_PAGES: u64 = 0x15;
+    // 5
+    const OFFSET_PROGRAM_BEGIN_ADDR: u64 = 0x5;
+    // 6
+    const OFFSET_PROGRAM_STOP_PTR: u64 = 0x6;
+    // 22
+    const OFFSET_PUBLIC_MEMORY: u64 = 0x16;
+    // 19
+    const OFFSET_PUBLIC_MEMORY_PADDING_ADDR: u64 = 0x13;
+    // 3
+    const OFFSET_RC_MAX: u64 = 0x3;
+    // 2
+    const OFFSET_RC_MIN: u64 = 0x2;
     // 3
     const PROOF_PARAMS_FRI_LAST_LAYER_LOG_DEG_BOUND_OFFSET: u64 = 0x3;
     // 5
@@ -417,7 +417,7 @@ module verifier_addr::stark_verifier_7 {
             // This array will be sent to the OODS contract.
             let proof_data_chunk_end = proof_ptr + row_size;
             while (proof_ptr < proof_data_chunk_end) {
-                set_el(ctx, proof_data_ptr, proof_ptr_offset_val);
+                set_el(ctx, proof_data_ptr, merge_num_offset_8(*borrow(proof, proof_ptr), *borrow(proof, proof_ptr + 1)));
                 proof_data_ptr = proof_data_ptr + 1;
                 proof_ptr = proof_ptr + 1;
             };
@@ -454,7 +454,6 @@ module verifier_addr::stark_verifier_7 {
         } = borrow_global_mut<CfflCheckpoint>(address_of(signer));
         if (*checkpoint == CHECKPOINT1_CFFL) {
             adjust_query_indices_and_prepare_eval_points(ctx);
-            // emit LogGas("Prepare evaluation points", gasleft());
             let tmp = *borrow(ctx, MM_TRACE_COMMITMENT);
             read_query_responses_and_decommit(
                 signer,
@@ -465,7 +464,6 @@ module verifier_addr::stark_verifier_7 {
                 MM_TRACE_QUERY_RESPONSES,
                 tmp
             );
-            // emit LogGas("Read and decommit trace", gasleft());
 
             tmp = *borrow(ctx, MM_TRACE_COMMITMENT + 1);
             if (has_interaction()) {
@@ -478,7 +476,6 @@ module verifier_addr::stark_verifier_7 {
                     MM_TRACE_QUERY_RESPONSES + N_COLUMNS_IN_TRACE0,
                     tmp
                 );
-                // emit LogGas("Read and decommit second trace", gasleft());
             };
             *checkpoint = CHECKPOINT2_CFFL;
             return false
@@ -498,15 +495,12 @@ module verifier_addr::stark_verifier_7 {
             *checkpoint = CHECKPOINT3_CFFL;
         };
 
-        // emit LogGas("Read and decommit composition", gasleft());
-
         if (cpu_oods_7::fallback(signer, ctx)) {
             *checkpoint = CHECKPOINT1_CFFL;
             true
         } else {
             false
         }
-        // emit LogGas("OODS virtual oracle", gasleft());
     }
 
     // Reads the last FRI layer (i.e. the polynomial's coefficients) from the channel.
@@ -599,7 +593,6 @@ module verifier_addr::stark_verifier_7 {
             };
             // Send constraint polynomial random element.
             send_field_elements(ctx, channel_ptr, 1, MM_COMPOSITION_ALPHA);
-            // emit LogGas("Generate coefficients", gasleft());
 
             hash = read_hash(ctx, proof, channel_ptr, true);
             set_el(ctx, MM_OODS_COMMITMENT, hash);
@@ -617,12 +610,9 @@ module verifier_addr::stark_verifier_7 {
             return false
         };
 
-        // emit LogGas("Read OODS commitments", gasleft());
         if (*checkpoint == CHECKPOINT3_VP) {
             if (oods_consistency_check(signer, ctx, public_input)) {
-                // emit LogGas("OODS consistency check", gasleft());
                 send_field_elements(ctx, channel_ptr, 1, MM_OODS_ALPHA);
-                // emit LogGas("Generate OODS coefficients", gasleft());
                 let hash = read_hash(ctx, proof, channel_ptr, true);
                 set_el(ctx, MM_FRI_COMMITMENTS, hash);
 
@@ -646,7 +636,6 @@ module verifier_addr::stark_verifier_7 {
                 read_last_fri_layer(ctx, proof);
 
                 // Generate queries.
-                // emit LogGas("Read FRI commitments", gasleft());
                 let tmp = (*borrow(ctx, MM_PROOF_OF_WORK_BITS) as u8);
                 verify_proof_of_work(ctx, proof, channel_ptr, tmp);
 
@@ -665,7 +654,6 @@ module verifier_addr::stark_verifier_7 {
                 *checkpoint = CHECKPOINT4_VP;
             };
         };
-        // emit LogGas("Send queries", gasleft());
 
         if (*checkpoint == CHECKPOINT4_VP) {
             if (compute_first_fri_layer(signer, ctx, proof)) {

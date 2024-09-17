@@ -62,41 +62,46 @@ module verifier_addr::gps_statement_verifier {
     const METADATA_TASKS_OFFSET: u64 = 0x1;
     // 3
     const METADATA_TASK_HEADER_SIZE: u64 = 0x3;
-    // 6
-    const OFFSET_EXECUTION_BEGIN_ADDR: u64 = 0x6;
+    // 11
+    const N_BUILTINS: u256 = 0xb;
+    // N_BUILTINS
+    const N_MAIN_ARGS: u256 = 0xb;
+    // N_BUILTINS
+    const N_MAIN_RETURN_VALUES: u256 = 0xb;
     // 7
-    const OFFSET_EXECUTION_STOP_PTR: u64 = 0x7;
+    const OFFSET_EXECUTION_BEGIN_ADDR: u64 = 0x7;
     // 8
-    const OFFSET_OUTPUT_BEGIN_ADDR: u64 = 0x8;
+    const OFFSET_EXECUTION_STOP_PTR: u64 = 0x8;
     // 9
-    const OFFSET_OUTPUT_STOP_PTR: u64 = 0x9;
+    const OFFSET_OUTPUT_BEGIN_ADDR: u64 = 0x9;
+    // 10
+    const OFFSET_OUTPUT_STOP_PTR: u64 = 0xa;
     // 2
     const PAGE_INFO_HASH_OFFSET: u64 = 0x2;
     // 3
     const PAGE_INFO_SIZE: u64 = 0x3;
     // 1
     const PAGE_INFO_SIZE_OFFSET: u64 = 0x1;
-    // 728
-    const PROGRAM_SIZE: u256 = 0x2d8;
+    // 794
+    const PROGRAM_SIZE: u256 = 0x31a;
     // End of generating constants!
-
-    const N_BUILTINS: u256 = 9;
-    const N_MAIN_ARGS: u256 = 9;
-    const N_MAIN_RETURN_VALUES: u256 = 9;
 
     struct ConstructorConfig has key {
         hashed_supported_cairo_verifiers: u256,
-        simple_bootloader_program_hash: u256
+        simple_bootloader_program_hash: u256,
+        applicative_bootloader_program_hash: u256
     }
 
     public entry fun init_gps_statement_verifier(
         signer: &signer,
         hashed_supported_cairo_verifiers: u256,
-        simple_bootloader_program_hash: u256
+        simple_bootloader_program_hash: u256,
+        applicative_bootloader_program_hash: u256
     ) {
         move_to(signer, ConstructorConfig {
             hashed_supported_cairo_verifiers,
             simple_bootloader_program_hash,
+            applicative_bootloader_program_hash
         });
     }
 
@@ -296,7 +301,7 @@ module verifier_addr::gps_statement_verifier {
             N_MAIN_ARGS +
             N_MAIN_RETURN_VALUES +
             // Bootloader config size =
-            2 +
+            3 +
             // Number of tasks cell =
             1 +
             2 *
@@ -361,18 +366,22 @@ module verifier_addr::gps_statement_verifier {
         {
             let ConstructorConfig {
                 hashed_supported_cairo_verifiers,
-                simple_bootloader_program_hash
+                simple_bootloader_program_hash,
+                applicative_bootloader_program_hash
             } = borrow_global<ConstructorConfig>(address_of(signer));
             let output_address = *borrow(cairo_aux_input, OFFSET_OUTPUT_BEGIN_ADDR);
-            // Force that memory[outputAddress] and memory[outputAddress + 1] contain the
-            // bootloader config (which is 2 words size).
+            // Force that memory[outputAddress: outputAddress + 3] contain the bootloader config
+            // (which is 3 words size).
             push_back(&mut public_memory, output_address);
             push_back(&mut public_memory, *simple_bootloader_program_hash);
             push_back(&mut public_memory, output_address + 1);
-            push_back(&mut public_memory, *hashed_supported_cairo_verifiers);
+            push_back(&mut public_memory, *applicative_bootloader_program_hash);
             push_back(&mut public_memory, output_address + 2);
+            push_back(&mut public_memory, *hashed_supported_cairo_verifiers);
+            // Force that memory[outputAddress + 3] = nTasks.
+            push_back(&mut public_memory, output_address + 3);
             push_back(&mut public_memory, n_tasks);
-            output_address = output_address + 3;
+            output_address = output_address + 4;
 
             let current_metadata_offset = METADATA_TASKS_OFFSET;
 
@@ -403,6 +412,7 @@ module verifier_addr::gps_statement_verifier {
                 // Force that memory[outputAddress] = outputSize.
                 push_back(&mut public_memory, output_address);
                 push_back(&mut public_memory, output_size);
+                // Force that memory[outputAddress + 1] = programHash.
                 push_back(&mut public_memory, output_address + 1);
                 push_back(&mut public_memory, program_hash);
 
