@@ -2,8 +2,8 @@ module cpu_addr::public_memory_offsets_7 {
     // This line is used for generating constants DO NOT REMOVE!
     // 1
     const EADDRESS_OF_PAGE_0_IS_NOT_PART_OF_THE_PUBLIC_INPUT: u64 = 0x1;
-    // 21
-    const OFFSET_PUBLIC_MEMORY: u64 = 0x15;
+    // 22
+    const OFFSET_PUBLIC_MEMORY: u64 = 0x16;
     // 0
     const PAGE_INFO_ADDRESS_OFFSET: u64 = 0x0;
     // 2

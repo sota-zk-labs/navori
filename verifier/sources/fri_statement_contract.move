@@ -9,6 +9,11 @@ module verifier_addr::fri_statement_contract {
     use verifier_addr::fact_registry::register_fact;
     use verifier_addr::fri::{get_fri, new_fri, update_fri};
 
+    #[test_only]
+    use verifier_addr::fri_layer;
+    #[test_only]
+    use verifier_addr::merkle_verifier;
+
     // This line is used for generating constants DO NOT REMOVE!
     // 3
     const EFRI_QUEUE_MUST_BE_COMPOSED_OF_TRIPLETS_PLUS_ONE_DELIMITER_CELL: u64 = 0x3;
@@ -40,7 +45,7 @@ module verifier_addr::fri_statement_contract {
     }
 
     #[event]
-    struct ComputeNextLayer has store, drop {
+    struct ComputeNextLayer has store, drop, copy {
         channel_ptr: u64,
         fri_queue_ptr: u64,
         merkle_queue_ptr: u64,
@@ -180,6 +185,43 @@ module verifier_addr::fri_statement_contract {
                 0
             ),
             EINVALID_QUERIES_RANGE
+        );
+    }
+
+    #[test_only]
+    public fun init_fri_group_test(signer: &signer, data: FriCtx) {
+        fri_layer::init_fri_group(signer, data.fri_ctx);
+    }
+
+    #[test_only]
+    public fun compute_next_layer_test(signer: &signer, data: ComputeNextLayer) {
+        fri_layer::compute_next_layer(signer,
+            data.channel_ptr,
+            data.fri_queue_ptr,
+            data.merkle_queue_ptr,
+            data.n_queries,
+            data.fri_ctx,
+            data.evaluation_point,
+            data.fri_coset_size
+        );
+    }
+
+    #[test_only]
+    public fun merkle_verifier_verify_merkle_test(signer: &signer, data: ComputeNextLayer, expected_root: u256) {
+        merkle_verifier::verify_merkle(signer,
+            data.channel_ptr,
+            data.merkle_queue_ptr,
+            expected_root,
+            data.n_queries,
+        );
+    }
+
+    #[test_only]
+    public fun register_fact_verify_fri_test(signer: &signer, data: RegisterFactVerifyFri, data2: ComputeNextLayer) {
+        register_fact_verify_fri(signer,
+            data.data_to_hash,
+            data.fri_queue_ptr,
+            data2.n_queries
         );
     }
 }
