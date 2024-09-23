@@ -71,6 +71,12 @@ module lib_addr::bytes {
         vector::reverse(&mut bytes);
         to_u256(bytes)
     }
+
+    public fun merge_num_offset_8(a: u256, b: u256): u256 {
+        a = a & ((1 << 192) - 1);
+        b = b >> 192;
+        (a << 64) | b
+    }
 }
 
 #[test_only]

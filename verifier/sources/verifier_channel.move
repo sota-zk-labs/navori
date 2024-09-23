@@ -2,7 +2,7 @@ module verifier_addr::verifier_channel {
     use std::vector::{append, borrow, borrow_mut, enumerate_ref, slice};
     use aptos_std::aptos_hash::keccak256;
 
-    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le, vec_to_bytes_le};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le, vec_to_bytes_le, merge_num_offset_8};
     use lib_addr::prime_field_element_0::{fmul, from_montgomery};
     use lib_addr::vector::set_el;
     use verifier_addr::prng::{get_random_bytes, init_prng};
@@ -183,10 +183,7 @@ module verifier_addr::verifier_channel {
         let proof_ptr = (*borrow(ctx, channel_ptr) as u64);
 
         let val = if (should_add_8_bytes) {
-            let x = *borrow(proof, proof_ptr) % (1 << 192);
-            let y = *borrow(proof, proof_ptr + 1) / (1 << 192);
-
-            (x * (1 << 64)) + y
+            merge_num_offset_8(*borrow(proof, proof_ptr), *borrow(proof, proof_ptr + 1))
         } else {
             *borrow(proof, proof_ptr)
         };

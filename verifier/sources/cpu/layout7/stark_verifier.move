@@ -11,7 +11,7 @@ module verifier_addr::stark_verifier_7 {
         get_offset_page_size, get_public_input_length
     };
 
-    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le, vec_to_bytes_le};
+    use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le, vec_to_bytes_le, merge_num_offset_8};
     use lib_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
     use lib_addr::vector::{append_vector, assign, set_el, trim_only};
     use verifier_addr::fact_registry::is_valid;
@@ -417,7 +417,7 @@ module verifier_addr::stark_verifier_7 {
             // This array will be sent to the OODS contract.
             let proof_data_chunk_end = proof_ptr + row_size;
             while (proof_ptr < proof_data_chunk_end) {
-                set_el(ctx, proof_data_ptr, proof_ptr_offset_val);
+                set_el(ctx, proof_data_ptr, merge_num_offset_8(*borrow(proof, proof_ptr), *borrow(proof, proof_ptr + 1)));
                 proof_data_ptr = proof_data_ptr + 1;
                 proof_ptr = proof_ptr + 1;
             };
