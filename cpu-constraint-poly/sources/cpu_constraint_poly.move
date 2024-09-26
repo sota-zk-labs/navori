@@ -104,7 +104,7 @@ module cpu_addr::cpu_constraint_poly {
         let ctx = *ctx;
         let res = 0;
 
-        let remain = 404 - vector::length(&ctx);
+        let remain = 598 - vector::length(&ctx);
 
         for (i in 0..remain) {
             push_back(&mut ctx, 0);
