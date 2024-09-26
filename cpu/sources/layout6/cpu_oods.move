@@ -1,7 +1,6 @@
 module cpu_addr::cpu_oods_6 {
-    // Todo: convert to layout6
     use std::signer::address_of;
-    use std::vector::{borrow, for_each_ref, push_back, borrow_mut};
+    use std::vector::{borrow, borrow_mut, for_each_ref, length, push_back};
 
     use lib_addr::prime_field_element_0::{fadd, fmul, inverse};
     use lib_addr::vector::{assign, set_el};
@@ -42,22 +41,20 @@ module cpu_addr::cpu_oods_6 {
     // 0x2b2
     const MM_TRACE_QUERY_RESPONSES: u64 = 0x2b2;
     // 193
-    const N_ROWS_IN_MASK: u256 = 0xc1;
+    const N_ROWS_IN_MASK: u64 = 0xc1;
     // End of generating constants!
 
     const DENOMINATORS_PTR_OFFSET: vector<vector<u64>> = vector[
-        vector[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-        vector[0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 19, 20, 22, 23, 25, 26, 27, 28, 42, 43, 57, 59, 61, 62, 63, 64, 71, 73, 75, 77],
-        vector[0, 1],
-        vector[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 20, 21, 23, 24, 29, 30, 31, 32, 38, 44, 45, 46, 47, 55, 56, 60, 65, 66, 73, 74, 78, 79, 80, 81, 94, 95, 97],
-        vector[0, 1, 2, 3],
-        vector[0, 1, 2, 3, 4, 5, 6, 73, 75, 77],
-        vector[0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 25, 33, 39, 48, 61, 67, 75, 88, 90, 92, 93, 96],
-        vector[0, 1, 2, 3, 4, 5, 7, 9, 11, 13, 49, 51, 52, 53, 54, 56, 58, 82, 83, 84, 85, 86, 87, 89, 91],
-        vector[0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 17, 20, 22, 26, 34, 35, 36, 37, 40, 41, 43, 44, 50, 68, 69, 70, 72, 76, 77],
-        vector[0, 1],
-        vector[0, 1],
-        vector[0, 1, 2, 5]
+        vector[0, 0x20, 0x40, 0x60, 0x80, 0xa0, 0xc0, 0xe0, 0x100, 0x120, 0x140, 0x160, 0x180, 0x1a0, 0x1c0, 0x1e0],
+        vector[0, 0x20, 0xc20, 0xc40, 0x1040],
+        vector[0, 0x20, 0xc20, 0xc40],
+        vector[0, 0x20, 0x9a0, 0x9c0, 0xa00, 0xa20, 0xbc0, 0xbe0, 0xc40],
+        vector[0, 0xc20],
+        vector[0, 0x20, 0x40, 0x60, 0x80, 0xa0, 0xc0, 0xe0, 0x100, 0x120, 0x180, 0x1a0, 0x200, 0x3c0, 0x3e0, 0x5c0, 0x5e0, 0x720, 0x740, 0x840, 0x860, 0x900, 0x920, 0xa40, 0xa60, 0xc80, 0xca0, 0xd00, 0xd20, 0xdc0, 0xe40, 0xe60, 0xe80, 0xea0, 0xec0, 0xee0, 0xf20, 0x1080, 0x10e0, 0x11a0, 0x11c0, 0x1200, 0x1220, 0x12a0, 0x12c0, 0x12e0, 0x1300, 0x1320, 0x1340, 0x1360, 0x1380, 0x13a0, 0x13c0, 0x13e0, 0x1480, 0x14a0, 0x14c0, 0x14e0, 0x16a0, 0x16c0, 0x16e0, 0x1800],
+        vector[0, 0x20, 0x40, 0x60],
+        vector[0, 0x20, 0x40, 0x60, 0x80, 0xa0, 0xc0, 0xe0, 0x100, 0x120, 0x160, 0x180, 0x1a0, 0x1e0, 0x220, 0x240, 0x2a0, 0x300, 0x360, 0x440, 0x4a0, 0x580, 0x620, 0x660, 0x6e0, 0x780, 0x7c0, 0x820, 0x880, 0x8a0, 0x8e0, 0x940, 0x960, 0x9c0, 0xa80, 0xac0, 0xb20, 0xb40, 0xb80, 0xc60, 0xcc0, 0xf80, 0xfc0, 0x1000, 0x1060, 0x10a0, 0x10c0, 0x1100, 0x1120, 0x1140, 0x1160, 0x1180, 0x11e0, 0x1240, 0x1260, 0x1280],
+        vector[0, 0x20, 0x40, 0x60, 0x80, 0xa0, 0xc0, 0xe0, 0x100, 0x120, 0x140, 0x160, 0x180, 0x1a0, 0x1c0, 0x200, 0x220, 0x240, 0x260, 0x280, 0x2c0, 0x2e0, 0x300, 0x320, 0x340, 0x360, 0x380, 0x3a0, 0x3c0, 0x400, 0x420, 0x460, 0x480, 0x4a0, 0x4c0, 0x4e0, 0x500, 0x520, 0x540, 0x560, 0x580, 0x5a0, 0x5e0, 0x600, 0x640, 0x660, 0x680, 0x6a0, 0x6c0, 0x6e0, 0x700, 0x760, 0x7a0, 0x7c0, 0x7e0, 0x800, 0x8c0, 0x980, 0x9e0, 0xaa0, 0xae0, 0xb00, 0xb60, 0xba0, 0xc00, 0xce0, 0xd40, 0xd60, 0xd80, 0xda0, 0xdc0, 0xde0, 0xe00, 0xe20, 0xf00, 0xf40, 0xf60, 0xfa0, 0xfe0, 0x1020, 0x1400, 0x1420, 0x1440, 0x1460, 0x1500, 0x1520, 0x1540, 0x1560, 0x1580, 0x15a0, 0x15c0, 0x15e0, 0x1600, 0x1620, 0x1640, 0x1660, 0x1680, 0x1700, 0x1720, 0x1740, 0x1760, 0x1780, 0x17a0, 0x17c0, 0x17e0],
+        vector[0, 0x20, 0x40, 0x60, 0xa0, 0xe0, 0x160, 0x1e0]
     ];
     // For each query point we want to invert (2 + N_ROWS_IN_MASK) items:
     //  The query point itself (x).
@@ -103,10 +100,7 @@ module cpu_addr::cpu_oods_6 {
     //   k is the offset in the mask.
     //   d is the degree of the composition polynomial.
     //   c is the evaluation sent by the prover.
-    public fun fallback(
-        signer: &signer,
-        ctx: &mut vector<u256>
-    ): bool acquires FbCheckpoint, FbCache, FbCheckpoint2Cache {
+    public fun fallback(signer: &signer, ctx: &mut vector<u256>): bool acquires FbCheckpoint, FbCache, FbCheckpoint2Cache {
         let signer_addr = address_of(signer);
         let FbCheckpoint {
             inner: checkpoint
@@ -140,13 +134,12 @@ module cpu_addr::cpu_oods_6 {
             // The content of batchInverseOut is described in oodsPrepareInverses.
             *denominators_ptr = 0u64;
         };
+        let n_trace_columns = length(&DENOMINATORS_PTR_OFFSET);
         let cnt = 0;
-        let prime = K_MODULUS;
-
         while (*fri_queue < *fri_queue_end && cnt < CPU_OODS_CP2_ITERATION_LENGTH) {
             cnt = cnt + 1;
-            // res accumulates numbers modulo prime. Since 31*prime < 2**256, we may add up to
-            // 31 numbers without fear of overflow, and use mod_add modulo prime only every
+            // res accumulates numbers modulo K_MODULUS. Since 31*K_MODULUS < 2**256, we may add up to
+            // 31 numbers without fear of overflow, and use mod_add modulo K_MODULUS only every
             // 31 iterations, and once more at the very end.
             let res = 0u256;
 
@@ -155,7 +148,7 @@ module cpu_addr::cpu_oods_6 {
             let oods_alpha = /*oods_alpha*/ *borrow(ctx, MM_OODS_ALPHA);
 
             let odds_values_offset = 0;
-            for (trace_query_responses_offset in 0..12) {
+            for (trace_query_responses_offset in 0..n_trace_columns) {
                 // Read the next element.
                 let column_value = fmul(
                     *borrow(ctx, *trace_query_responses + trace_query_responses_offset),
@@ -167,10 +160,10 @@ module cpu_addr::cpu_oods_6 {
                         res,
                         fmul(
                             fmul(
-                                *borrow(batch_inverse_array, *denominators_ptr + *i),
+                                *borrow(batch_inverse_array, *denominators_ptr + *i / 32),
                                 oods_alpha_pow
                             ),
-                            column_value + prime - /*oods_values[0]*/ *borrow(ctx, 359 + odds_values_offset)
+                            column_value + K_MODULUS - /*oods_values[0]*/ *borrow(ctx, 368 + odds_values_offset)
                         )
                     );
                     oods_alpha_pow = fmul(oods_alpha_pow, oods_alpha);
@@ -179,19 +172,18 @@ module cpu_addr::cpu_oods_6 {
             };
 
             // Advance trace_query_responses by amount read (0x20 * nTraceColumns).
-            *trace_query_responses = *trace_query_responses + 12;
+            *trace_query_responses = *trace_query_responses + n_trace_columns;
 
             // Composition constraints.
-
             {
                 // Read the next element.
                 let column_value = fmul(*borrow(ctx, *composition_query_responses), K_MONTGOMERY_R_INV);
-                // res += c_192*(h_0(x) - C_0(z^2)) / (x - z^2).
+                // res += c_271*(h_0(x) - C_0(z^2)) / (x - z^2).
                 res =
                     res +
-                        fmul(fmul(/*(x - z^2)^(-1)*/ *borrow(batch_inverse_array, *denominators_ptr + 98),
+                        fmul(fmul(/*(x - z^2)^(-1)*/ *borrow(batch_inverse_array, *denominators_ptr + 193),
                             oods_alpha_pow),
-                            column_value + (prime - /*composition_oods_values[0]*/ *borrow(ctx, 359 + 192)))
+                            column_value + (K_MODULUS - /*composition_oods_values[0]*/ *borrow(ctx, 639)))
                 ;
                 oods_alpha_pow = fmul(oods_alpha_pow, oods_alpha);
             };
@@ -202,9 +194,9 @@ module cpu_addr::cpu_oods_6 {
                 // res += c_193*(h_1(x) - C_1(z^2)) / (x - z^2).
                 res =
                     res +
-                        fmul(fmul(/*(x - z^2)^(-1)*/ *borrow(batch_inverse_array, *denominators_ptr + 98),
+                        fmul(fmul(/*(x - z^2)^(-1)*/ *borrow(batch_inverse_array, *denominators_ptr + 193),
                             oods_alpha_pow),
-                            column_value + (prime - /*composition_oods_values[1]*/ *borrow(ctx, 359 + 193)))
+                            column_value + (K_MODULUS - /*composition_oods_values[1]*/ *borrow(ctx, 640)))
                 ;
                 oods_alpha_pow = fmul(oods_alpha_pow, oods_alpha);
             };
@@ -214,15 +206,13 @@ module cpu_addr::cpu_oods_6 {
 
             // Append the friValue, which is the sum of the out-of-domain-sampling boundary
             // constraints for the trace and composition polynomials, to the fri_queue array.
-            set_el(ctx, *fri_queue + 1, res % prime);
-
-            // print(&(res % prime));
+            set_el(ctx, *fri_queue + 1, res % K_MODULUS);
 
             // Append the friInvPoint of the current query to the fri_queue array.
-            set_el(ctx, *fri_queue + 2, *borrow(batch_inverse_array, *denominators_ptr + 99));
+            set_el(ctx, *fri_queue + 2, *borrow(batch_inverse_array, *denominators_ptr + N_ROWS_IN_MASK + 1));
 
             // Advance denominators_ptr by chunk size (0x20 * (2+N_ROWS_IN_MASK)).
-            *denominators_ptr = *denominators_ptr + 100;
+            *denominators_ptr = *denominators_ptr + 2 + N_ROWS_IN_MASK;
 
             *fri_queue = *fri_queue + 3;
         };
@@ -250,530 +240,64 @@ module cpu_addr::cpu_oods_6 {
     fun oods_prepare_inverses(ctx: &vector<u256>, n_queries: u64): vector<u256> {
         let batch_inverse_array = assign(0u256, 2 * n_queries * BATCH_INVERSE_CHUNK);
         let eval_coset_offset = GENERATOR_VAL;
-        // The array expmods_and_points stores subexpressions that are needed
+        // The array expmodsAndPoints stores subexpressions that are needed
         // for the denominators computation.
         // The array is segmented as follows:
-        //    expmods_and_points[0:13] (.expmods) expmods used during calculations of the points below.
-        //    expmods_and_points[13:111] (.points) points used during the denominators calculation.
+        //    expmodsAndPoints[0:33] (.expmods) expmods used during calculations of the points below.
+        //    expmodsAndPoints[33:226] (.points) points used during the denominators calculation.
         let expmods_and_points = &mut vector[];
         {
-            let trace_generator = /*trace_generator*/ *borrow(ctx, MM_TRACE_GENERATOR);
-            let prime = K_MODULUS;
+            let g = /*trace_generator*/ *borrow(ctx, MM_TRACE_GENERATOR);
 
             // Prepare expmods for computations of trace generator powers.
-            let tg2 = fmul(trace_generator, trace_generator);
-            let tg3 = fmul(tg2, trace_generator);
-            let tg4 = fmul(tg3, trace_generator);
-            let tg5 = fmul(tg4, trace_generator);
-            let tg7 = fmul(tg4, tg3);
-            let tg12 = fmul(tg7, tg5);
-            let tg13 = fmul(tg12, trace_generator);
-            let tg24 = fmul(tg12, tg12);
-            let tg28 = fmul(tg24, tg4);
-            let tg48 = fmul(tg24, tg24);
-            let tg96 = fmul(tg48, tg48);
-            let tg192 = fmul(tg96, tg96);
-            let tg216 = fmul(tg24, tg192);
-            let tg245 = fmul(trace_generator, fmul(tg216, tg28));
-            let tg320 = fmul(tg216, fmul(tg48, fmul(tg28, tg28)));
-            let tg1010 = fmul(tg2, fmul(tg48, fmul(tg320, fmul(tg320, tg320))));
+            let tg2 = fmul(g, g);
+            let tg3 = fmul(tg2, g);
+            let tg4 = fmul(tg3, g);
+            let tg5 = fmul(tg4, g);
+            let tg6 = fmul(tg5, g);
+            let tg7 = fmul(tg6, g);
+            let tg8 = fmul(tg7, g);
+            let tg10 = fmul(tg5, tg5);
+            let tg11 = fmul(tg10, g);
+            let tg14 = fmul(tg7, tg7);
+            let tg16 = fmul(tg8, tg8);
+            let tg20 = fmul(tg16, tg4);
+            let tg25 = fmul(tg20, tg5);
+            let tg28 = fmul(tg25, tg3);
+            let tg31 = fmul(tg28, tg3);
+            let tg32 = fmul(tg31, g);
+            let tg48 = fmul(tg32, tg16);
+            let tg49 = fmul(tg48, g);
+            let tg58 = fmul(tg48, tg10);
+            let tg64 = fmul(tg58, tg6);
+            let tg125 = fmul(tg64, fmul(tg58, tg3));
+            let tg176 = fmul(tg125, fmul(tg31, tg20));
+            let tg184 = fmul(tg176, tg8);
+            let tg192 = fmul(tg184, tg8);
+            let tg213 = fmul(tg192, fmul(tg20, g));
+            let tg357 = fmul(tg176, fmul(tg176, tg5));
+            let tg395 = fmul(tg357, fmul(tg32, tg6));
+            let tg1216 = fmul(tg395, fmul(tg395, fmul(tg395, tg31)));
+            let tg1358 = fmul(tg1216, fmul(tg125, fmul(tg16, g)));
+            let tg1678 = fmul(tg1216, fmul(tg395, fmul(tg64, tg3)));
+            let tg2047 = fmul(tg1678, fmul(tg357, fmul(tg11, g)));
+            let tg7681 = fmul(tg2047, fmul(tg2047, fmul(tg2047, fmul(tg1358, fmul(tg176, tg6)))));
+            let tg8191 = fmul(tg7681, fmul(tg357, fmul(tg125, tg28)));
 
             let oods_point = /*oods_point*/ *borrow(ctx, MM_OODS_POINT);
             {
                 // point = -z.
-                let point = prime - oods_point;
+                let point = K_MODULUS - oods_point;
                 // Compute denominators for rows with nonconst mask expression.
                 // We compute those first because for the const rows we modify the point variable.
 
                 // Compute denominators for rows with const mask expression.
-
-                // expmods_and_points.points[0] = -z.
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[1] = -(g * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[2] = -(g^2 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[3] = -(g^3 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[4] = -(g^4 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[5] = -(g^5 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[6] = -(g^6 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[7] = -(g^7 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[8] = -(g^8 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[9] = -(g^9 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[10] = -(g^10 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[11] = -(g^11 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[12] = -(g^12 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[13] = -(g^13 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[14] = -(g^14 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[15] = -(g^15 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[16] = -(g^16 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[17] = -(g^17 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[18] = -(g^18 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[19] = -(g^20 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[20] = -(g^22 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[21] = -(g^23 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[22] = -(g^24 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[23] = -(g^26 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[24] = -(g^27 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[25] = -(g^28 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[26] = -(g^30 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[27] = -(g^32 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[28] = -(g^33 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^5.
-                point = fmul(point, tg5);
-                // expmods_and_points.points[29] = -(g^38 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[30] = -(g^39 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^3.
-                point = fmul(point, tg3);
-                // expmods_and_points.points[31] = -(g^42 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[32] = -(g^43 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[33] = -(g^44 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^5.
-                point = fmul(point, tg5);
-                // expmods_and_points.points[34] = -(g^49 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^4.
-                point = fmul(point, tg4);
-                // expmods_and_points.points[35] = -(g^53 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[36] = -(g^54 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^3.
-                point = fmul(point, tg3);
-                // expmods_and_points.points[37] = -(g^57 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[38] = -(g^58 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                push_back(expmods_and_points, point);
-                // expmods_and_points.points[39] = -(g^60 * z).
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[40] = -(g^61 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[41] = -(g^62 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[42] = -(g^64 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[43] = -(g^65 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^5.
-                point = fmul(point, tg5);
-                // expmods_and_points.points[44] = -(g^70 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[45] = -(g^71 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^3.
-                point = fmul(point, tg3);
-                // expmods_and_points.points[46] = -(g^74 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[47] = -(g^75 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[48] = -(g^76 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[49] = -(g^77 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[50] = -(g^78 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[51] = -(g^79 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[52] = -(g^81 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[53] = -(g^83 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[54] = -(g^85 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[55] = -(g^86 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[56] = -(g^87 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[57] = -(g^88 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[58] = -(g^89 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[59] = -(g^90 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[60] = -(g^91 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[61] = -(g^92 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[62] = -(g^94 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[63] = -(g^96 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[64] = -(g^97 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^5.
-                point = fmul(point, tg5);
-                // expmods_and_points.points[65] = -(g^102 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[66] = -(g^103 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^5.
-                point = fmul(point, tg5);
-                // expmods_and_points.points[67] = -(g^108 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^5.
-                point = fmul(point, tg5);
-                // expmods_and_points.points[68] = -(g^113 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^4.
-                point = fmul(point, tg4);
-                // expmods_and_points.points[69] = -(g^117 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[70] = -(g^118 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[71] = -(g^120 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[72] = -(g^121 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[73] = -(g^122 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[74] = -(g^123 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[75] = -(g^124 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[76] = -(g^125 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[77] = -(g^126 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^28.
-                point = fmul(point, tg28);
-                // expmods_and_points.points[78] = -(g^154 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^48.
-                point = fmul(point, tg48);
-                // expmods_and_points.points[79] = -(g^202 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^320.
-                point = fmul(point, tg320);
-                // expmods_and_points.points[80] = -(g^522 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[81] = -(g^523 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^245.
-                point = fmul(point, tg245);
-                // expmods_and_points.points[82] = -(g^768 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^4.
-                point = fmul(point, tg4);
-                // expmods_and_points.points[83] = -(g^772 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^12.
-                point = fmul(point, tg12);
-                // expmods_and_points.points[84] = -(g^784 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^4.
-                point = fmul(point, tg4);
-                // expmods_and_points.points[85] = -(g^788 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^216.
-                point = fmul(point, tg216);
-                // expmods_and_points.points[86] = -(g^1004 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^4.
-                point = fmul(point, tg4);
-                // expmods_and_points.points[87] = -(g^1008 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^13.
-                point = fmul(point, tg13);
-                // expmods_and_points.points[88] = -(g^1021 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[89] = -(g^1022 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[90] = -(g^1023 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[91] = -(g^1024 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[92] = -(g^1025 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^2.
-                point = fmul(point, tg2);
-                // expmods_and_points.points[93] = -(g^1027 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^7.
-                point = fmul(point, tg7);
-                // expmods_and_points.points[94] = -(g^1034 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g.
-                point = fmul(point, trace_generator);
-                // expmods_and_points.points[95] = -(g^1035 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^1010.
-                point = fmul(point, tg1010);
-                // expmods_and_points.points[96] = -(g^2045 * z).
-                push_back(expmods_and_points, point);
-
-                // point *= g^13.
-                point = fmul(point, tg13);
-                // expmods_and_points.points[97] = -(g^2058 * z).
-                push_back(expmods_and_points, point);
+                let tg_pow = vector[g, g, g, g, g, g, g, g, g, g, g, g, g, g, g, g, g, tg2, tg2, g, g, g, g, tg2, tg2, g, tg3, tg2, tg2, g, g, tg2, tg2, g, g, g, tg3, tg2, tg2, g, tg3, tg2, tg2, tg4, tg4, g, g, tg2, tg3, g, tg4, tg4, tg4, tg2, tg6, tg4, g, g, tg2, tg3, g, tg4, tg4, tg6, tg6, tg5, g, tg5, tg5, tg10, tg6, tg5, g, tg5, tg5, tg10, tg5, g, tg2, g, g, g, g, tg5, g, tg4, tg10, tg2, tg4, tg11, g, tg4, tg4, tg6, g, g, tg2, g, g, tg5, g, tg2, tg4, tg25, g, tg6, tg8, g, tg8, tg8, tg8, tg8, tg8, tg8, g, tg31, g, tg31, g, tg28, tg3, tg7, tg16, tg14, tg2, tg6, tg2, tg6, tg2, tg2, tg2, tg5, tg3, tg184, tg6, tg10, tg16, tg16, tg16, tg8, tg125, g, tg58, tg5, g, tg10, tg16, tg16, tg213, tg1216, g, tg2047, g, tg2047, g, tg2047, g, tg2047, g, tg1678, tg64, tg192, tg64, tg49, g, tg2047, g, tg1358, tg64, tg176, tg6, tg6, tg2, tg16, tg2, tg6, tg6, tg2, tg14, tg32, tg357, g, tg8191, tg7681, tg20, tg48, tg6, tg10, tg16, tg6, tg10, tg395];
+                push_back(expmods_and_points, point);
+                for_each_ref(&tg_pow, |x| {
+                    point = fmul(point, *x);
+                    push_back(expmods_and_points, point);
+                });
             };
 
             let eval_points_ptr = /*oodseval_points*/ MM_OODS_EVAL_POINTS;
@@ -787,14 +311,14 @@ module cpu_addr::cpu_oods_6 {
             let products_to_values_offset = n_queries * BATCH_INVERSE_CHUNK;
             let values_ptr = products_to_values_offset;
             let partial_product = 1;
-            let minus_point_pow = prime - fmul(oods_point, oods_point);
+            let minus_point_pow = K_MODULUS - fmul(oods_point, oods_point);
             while (eval_points_ptr < eval_points_end_ptr) {
                 let eval_point = *borrow(ctx, eval_points_ptr);
 
                 // Shift eval_point to evaluation domain coset.
                 let shifted_eval_point = fmul(eval_point, eval_coset_offset);
 
-                for (offset in 0..98) {
+                for (offset in 0..193) {
                     let denominator = shifted_eval_point + *borrow(expmods_and_points, offset);
                     set_el(&mut batch_inverse_array, products_ptr + offset, partial_product);
                     set_el(&mut batch_inverse_array, values_ptr + offset, denominator);
@@ -804,20 +328,20 @@ module cpu_addr::cpu_oods_6 {
                 {
                     // Calculate the denominator for the composition polynomial columns: x - z^2.
                     let denominator = shifted_eval_point + minus_point_pow;
-                    set_el(&mut batch_inverse_array, products_ptr + 98, partial_product);
-                    set_el(&mut batch_inverse_array, values_ptr + 98, denominator);
+                    set_el(&mut batch_inverse_array, products_ptr + 193, partial_product);
+                    set_el(&mut batch_inverse_array, values_ptr + 193, denominator);
                     partial_product = fmul(partial_product, denominator);
                 };
 
                 // Add eval_point to batch inverse inputs.
                 // inverse(eval_point) is going to be used by FRI.
-                set_el(&mut batch_inverse_array, products_ptr + 99, partial_product);
-                set_el(&mut batch_inverse_array, values_ptr + 99, eval_point);
+                set_el(&mut batch_inverse_array, products_ptr + 194, partial_product);
+                set_el(&mut batch_inverse_array, values_ptr + 194, eval_point);
                 partial_product = fmul(partial_product, eval_point);
 
                 // Advance pointers.
-                products_ptr = products_ptr + 100;
-                values_ptr = values_ptr + 100;
+                products_ptr = products_ptr + 195;
+                values_ptr = values_ptr + 195;
                 eval_points_ptr = eval_points_ptr + 1;
             };
 
@@ -879,16 +403,17 @@ module cpu_addr::cpu_oods_6 {
 
 #[test_only]
 module cpu_addr::test_cpu_oods_6 {
-    use cpu_addr::cpu_oods_6::{fallback, init_data_type};
-    use cpu_addr::cpu_oods_7_test_data::{ctx_input, ctx_output};
+    use cpu_addr::cpu_oods_6::{fallback, init_data_type, get_cpu_oods_fb_checkpoint};
+    use cpu_addr::cpu_oods_6_test_data::{ctx_input, ctx_output};
 
     #[test(signer = @cpu_addr)]
     fun test_fallback(signer: &signer) {
         let ctx = ctx_input();
         init_data_type(signer);
-        fallback(signer, &mut ctx);
-        fallback(signer, &mut ctx);
-        fallback(signer, &mut ctx);
+        while (!fallback(signer, &mut ctx)) {
+
+        };
+        assert!(get_cpu_oods_fb_checkpoint(signer) == 4, 1);
         assert!(ctx == ctx_output(), 1);
     }
 }
