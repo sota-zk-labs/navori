@@ -115,10 +115,10 @@ module verifier_addr::gps_output_parser {
 
         let task_metadata_offset = METADATA_TASKS_OFFSET;
 
-        // Skip the first 6 output cells, which contain the bootloader config (3 cells), the number
-        // of tasks and the size and program hash of the first task. curAddr points to the output of
-        // the first task.
-        let cur_addr = output_start_address + 6;
+        // Skip the 5 first output cells which contain the bootloader config, the number of tasks
+        // and the size and program hash of the first task. curAddr points to the output of the
+        // first task.
+        let cur_addr = output_start_address + 5;
 
         // Skip the main page.
         let cur_page = FIRST_CONTINUOUS_PAGE_INDEX;

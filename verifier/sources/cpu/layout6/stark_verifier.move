@@ -1,13 +1,13 @@
-module verifier_addr::stark_verifier_7 {
+module verifier_addr::stark_verifier_6 {
     use std::signer::address_of;
     use std::vector::{append, borrow, length, slice, borrow_mut};
     use aptos_std::aptos_hash::keccak256;
     use cpu_constraint_poly_addr::cpu_constraint_poly;
 
-    use cpu_addr::cpu_oods_7;
-    use cpu_addr::layout_specific_7::{layout_specific_init, prepare_for_oods_check, safe_div};
-    use cpu_addr::memory_access_utils_7::get_fri_step_sizes;
-    use cpu_addr::public_memory_offsets_7::{get_offset_page_addr, get_offset_page_hash, get_offset_page_prod,
+    use cpu_addr::cpu_oods_6;
+    use cpu_addr::layout_specific_6::{layout_specific_init, prepare_for_oods_check, safe_div};
+    use cpu_addr::memory_access_utils_6::get_fri_step_sizes;
+    use cpu_addr::public_memory_offsets_6::{get_offset_page_addr, get_offset_page_hash, get_offset_page_prod,
         get_offset_page_size, get_public_input_length
     };
 
@@ -15,7 +15,7 @@ module verifier_addr::stark_verifier_7 {
     use lib_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
     use lib_addr::vector::{append_vector, assign, set_el, trim_only};
     use verifier_addr::fact_registry::is_valid;
-    use verifier_addr::fri_statement_verifier_7;
+    use verifier_addr::fri_statement_verifier_6;
     use verifier_addr::merkle_statement_verifier;
     use verifier_addr::verifier_channel::{init_channel, read_field_element, read_hash, send_field_elements,
         send_random_queries, verify_proof_of_work
@@ -126,8 +126,8 @@ module verifier_addr::stark_verifier_7 {
     const INITIAL_PC: u64 = 0x1;
     // 3618502788666131213697322783095070105623107215331596699973092056135872020481
     const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
-    // 42800643258479064999893963318903811951182475189843316
-    const LAYOUT_CODE: u256 = 42800643258479064999893963318903811951182475189843316;
+    // 8319381555716711796
+    const LAYOUT_CODE: u256 = 0x737461726b6e6574;
     // 4
     const LOG_CPU_COMPONENT_HEIGHT: u256 = 0x4;
     // 10
@@ -138,26 +138,26 @@ module verifier_addr::stark_verifier_7 {
     const MM_BLOW_UP_FACTOR: u64 = 0x1;
     // 10
     const MM_CHANNEL: u64 = 0xa;
-    // 358
-    const MM_COMPOSITION_ALPHA: u64 = 0x166;
-    // 551
-    const MM_COMPOSITION_OODS_VALUES: u64 = 0x227;
-    // 1178
-    const MM_COMPOSITION_QUERY_RESPONSES: u64 = 0x49a;
-    // 551
-    const MM_CONSTRAINT_POLY_ARGS_END: u64 = 0x227;
+    // 0x16f
+    const MM_COMPOSITION_ALPHA: u64 = 0x16f;
+    // 0x27f
+    const MM_COMPOSITION_OODS_VALUES: u64 = 0x27f;
+    // 0x492
+    const MM_COMPOSITION_QUERY_RESPONSES: u64 = 0x492;
+    // 0x27f
+    const MM_CONSTRAINT_POLY_ARGS_END: u64 = 0x27f;
     // 317
     const MM_CONSTRAINT_POLY_ARGS_START: u64 = 0x13d;
-    // 1277
-    const MM_CONTEXT_SIZE: u64 = 0x4fd;
+    // 0x4f5
+    const MM_CONTEXT_SIZE: u64 = 0x4f5;
     // 4
     const MM_EVAL_DOMAIN_GENERATOR: u64 = 0x4;
     // 0
     const MM_EVAL_DOMAIN_SIZE: u64 = 0x0;
-    // 329
-    const MM_FINAL_AP: u64 = 0x149;
-    // 330
-    const MM_FINAL_PC: u64 = 0x14a;
+    // 0x14b
+    const MM_FINAL_AP: u64 = 0x14b;
+    // 0x14c
+    const MM_FINAL_PC: u64 = 0x14c;
     // 305
     const MM_FRI_COMMITMENTS: u64 = 0x131;
     // 295
@@ -168,94 +168,94 @@ module verifier_addr::stark_verifier_7 {
     const MM_FRI_LAST_LAYER_PTR: u64 = 0x13c;
     // 109
     const MM_FRI_QUEUE: u64 = 0x6d;
-    // 326
-    const MM_HALF_OFFSET_SIZE: u64 = 0x146;
-    // 327
-    const MM_INITIAL_AP: u64 = 0x147;
-    // 328
-    const MM_INITIAL_PC: u64 = 0x148;
-    // 352
-    const MM_INTERACTION_ELEMENTS: u64 = 0x160;
+    // 0x148
+    const MM_HALF_OFFSET_SIZE: u64 = 0x148;
+    // 0x149
+    const MM_INITIAL_AP: u64 = 0x149;
+    // 0x14a
+    const MM_INITIAL_PC: u64 = 0x14a;
+    // 0x169
+    const MM_INTERACTION_ELEMENTS: u64 = 0x169;
     // 2
     const MM_LOG_EVAL_DOMAIN_SIZE: u64 = 0x2;
-    // 1274
-    const MM_LOG_N_STEPS: u64 = 0x4fa;
-    // 332
-    const MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0: u64 = 0x14c;
-    // 331
-    const MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM: u64 = 0x14b;
-    // 333
-    const MM_MEMORY__MULTI_COLUMN_PERM__PERM__PUBLIC_MEMORY_PROD: u64 = 0x14d;
+    // 0x4f2
+    const MM_LOG_N_STEPS: u64 = 0x4f2;
+    // 0x14e
+    const MM_MEMORY__MULTI_COLUMN_PERM__HASH_INTERACTION_ELM0: u64 = 0x14e;
+    // 0x14d
+    const MM_MEMORY__MULTI_COLUMN_PERM__PERM__INTERACTION_ELM: u64 = 0x14d;
+    // 0x14f
+    const MM_MEMORY__MULTI_COLUMN_PERM__PERM__PUBLIC_MEMORY_PROD: u64 = 0x14f;
     // 13
     const MM_MERKLE_QUEUE: u64 = 0xd;
-    // 1275
-    const MM_N_PUBLIC_MEM_ENTRIES: u64 = 0x4fb;
-    // 1276
-    const MM_N_PUBLIC_MEM_PAGES: u64 = 0x4fc;
+    // 0x4f3
+    const MM_N_PUBLIC_MEM_ENTRIES: u64 = 0x4f3;
+    // 0x4f4
+    const MM_N_PUBLIC_MEM_PAGES: u64 = 0x4f4;
     // 9
     const MM_N_UNIQUE_QUERIES: u64 = 0x9;
-    // 325
-    const MM_OFFSET_SIZE: u64 = 0x145;
-    // 601
-    const MM_OODS_ALPHA: u64 = 0x259;
+    // 0x147
+    const MM_OFFSET_SIZE: u64 = 0x147;
+    // 0x2b1
+    const MM_OODS_ALPHA: u64 = 0x2b1;
     // 8
     const MM_OODS_COMMITMENT: u64 = 0x8;
-    // 553
-    const MM_OODS_EVAL_POINTS: u64 = 0x229;
-    // 351
-    const MM_OODS_POINT: u64 = 0x15f;
-    // 359
-    const MM_OODS_VALUES: u64 = 0x167;
+    // 0x281
+    const MM_OODS_EVAL_POINTS: u64 = 0x281;
+    // 0x168
+    const MM_OODS_POINT: u64 = 0x168;
+    // 0x170
+    const MM_OODS_VALUES: u64 = 0x170;
     // 3
     const MM_PROOF_OF_WORK_BITS: u64 = 0x3;
     // 5
     const MM_PUBLIC_INPUT_PTR: u64 = 0x5;
-    // 334
-    const MM_RANGE_CHECK16__PERM__INTERACTION_ELM: u64 = 0x14e;
-    // 337
-    const MM_RANGE_CHECK_MAX: u64 = 0x151;
-    // 336
-    const MM_RANGE_CHECK_MIN: u64 = 0x150;
+    // 0x150
+    const MM_RANGE_CHECK16__PERM__INTERACTION_ELM: u64 = 0x150;
+    // 0x153
+    const MM_RANGE_CHECK_MAX: u64 = 0x153;
+    // 0x152
+    const MM_RANGE_CHECK_MIN: u64 = 0x152;
     // 6
     const MM_TRACE_COMMITMENT: u64 = 0x6;
-    // 350
-    const MM_TRACE_GENERATOR: u64 = 0x15e;
-    // 324
-    const MM_TRACE_LENGTH: u64 = 0x144;
-    // 602
-    const MM_TRACE_QUERY_RESPONSES: u64 = 0x25a;
-    // 12
-    const N_COLUMNS_IN_MASK: u64 = 0xc;
+    // 0x167
+    const MM_TRACE_GENERATOR: u64 = 0x167;
+    // 0x146
+    const MM_TRACE_LENGTH: u64 = 0x146;
+    // 0x2b2
+    const MM_TRACE_QUERY_RESPONSES: u64 = 0x2b2;
+    // 10
+    const N_COLUMNS_IN_MASK: u64 = 0xa;
     // 9
     const N_COLUMNS_IN_TRACE0: u64 = 0x9;
-    // 3
-    const N_COLUMNS_IN_TRACE1: u64 = 0x3;
+    // 1
+    const N_COLUMNS_IN_TRACE1: u64 = 0x1;
     // 6
     const N_INTERACTION_ELEMENTS: u64 = 0x6;
     // MASK_SIZE + CONSTRAINTS_DEGREE_BOUND
-    const N_OODS_VALUES: u64 = 0xc2;
-    // 7
-    const OFFSET_EXECUTION_BEGIN_ADDR: u64 = 0x7;
-    // 8
-    const OFFSET_EXECUTION_STOP_PTR: u64 = 0x8;
-    // 4
-    const OFFSET_LAYOUT_CODE: u64 = 0x4;
-    // 1
-    const OFFSET_LOG_N_STEPS: u64 = 0x1;
-    // 21
-    const OFFSET_N_PUBLIC_MEMORY_PAGES: u64 = 0x15;
-    // 5
-    const OFFSET_PROGRAM_BEGIN_ADDR: u64 = 0x5;
+    const N_OODS_VALUES: u64 = 0x111;
     // 6
-    const OFFSET_PROGRAM_STOP_PTR: u64 = 0x6;
-    // 22
-    const OFFSET_PUBLIC_MEMORY: u64 = 0x16;
-    // 19
-    const OFFSET_PUBLIC_MEMORY_PADDING_ADDR: u64 = 0x13;
+    const OFFSET_EXECUTION_BEGIN_ADDR: u64 = 0x6;
+    // 7
+    const OFFSET_EXECUTION_STOP_PTR: u64 = 0x7;
     // 3
-    const OFFSET_RC_MAX: u64 = 0x3;
+    const OFFSET_LAYOUT_CODE: u64 = 0x3;
+    // 0
+    const OFFSET_LOG_N_STEPS: u64 = 0x0;
+    // 24
+    const OFFSET_N_PUBLIC_MEMORY_PAGES: u64 = 0x18;
+    // 4
+    const OFFSET_PROGRAM_BEGIN_ADDR: u64 = 0x4;
+    // 5
+    const OFFSET_PROGRAM_STOP_PTR: u64 = 0x5;
+    // 25
+    const OFFSET_PUBLIC_MEMORY: u64 = 0x19;
+    // 22
+    const OFFSET_PUBLIC_MEMORY_PADDING_ADDR: u64 = 0x16;
     // 2
-    const OFFSET_RC_MIN: u64 = 0x2;
+    const OFFSET_RC_MAX: u64 = 0x2;
+    // 1
+    const OFFSET_RC_MIN: u64 = 0x1;
     // 3
     const PROOF_PARAMS_FRI_LAST_LAYER_LOG_DEG_BOUND_OFFSET: u64 = 0x3;
     // 5
@@ -268,14 +268,14 @@ module verifier_addr::stark_verifier_7 {
     const PROOF_PARAMS_N_QUERIES_OFFSET: u64 = 0x0;
     // 2
     const PROOF_PARAMS_PROOF_OF_WORK_BITS_OFFSET: u64 = 0x2;
-    // 16
-    const PUBLIC_MEMORY_STEP: u256 = 0x10;
+    // 8
+    const PUBLIC_MEMORY_STEP: u256 = 0x8;
     // 0
     const REGULAR_PAGE: u256 = 0x0;
     // End of generating constants!
 
     friend verifier_addr::gps_statement_verifier;
-    friend verifier_addr::cpu_verifier_7;
+    friend verifier_addr::cpu_verifier_6;
 
     struct ConstructorConfig has key, copy {
         // The work required to generate an invalid proof is 2^numSecurityBits.
@@ -308,7 +308,7 @@ module verifier_addr::stark_verifier_7 {
         move_to(signer, OccCheckpoint {
             inner: CHECKPOINT1_OCC
         });
-        cpu_oods_7::init_data_type(signer);
+        cpu_oods_6::init_data_type(signer);
     }
 
     // Adjusts the query indices and generates evaluation points for each query index.
@@ -495,7 +495,7 @@ module verifier_addr::stark_verifier_7 {
             *checkpoint = CHECKPOINT3_CFFL;
         };
 
-        if (cpu_oods_7::fallback(signer, ctx)) {
+        if (cpu_oods_6::fallback(signer, ctx)) {
             *checkpoint = CHECKPOINT1_CFFL;
             true
         } else {
@@ -657,7 +657,7 @@ module verifier_addr::stark_verifier_7 {
 
         if (*checkpoint == CHECKPOINT4_VP) {
             if (compute_first_fri_layer(signer, ctx, proof)) {
-                fri_statement_verifier_7::fri_verify_layers(signer, ctx, proof, proof_params);
+                fri_statement_verifier_6::fri_verify_layers(signer, ctx, proof, proof_params);
                 *checkpoint = CHECKPOINT1_VP;
                 return true
             } else {

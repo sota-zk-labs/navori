@@ -14,11 +14,9 @@ module verifier_addr::memory_page_fact_registry {
     use lib_addr::prime_field_element_0::{fadd, fmul};
     use verifier_addr::fact_registry::register_fact;
     #[test_only]
-    use std::signer::address_of;
-    #[test_only]
     use aptos_framework::event::emitted_events;
     #[test_only]
-    use verifier_addr::fact_registry::{init_fact_registry, is_valid};
+    use verifier_addr::fact_registry::{init_fact_registry};
 
     friend verifier_addr::gps_statement_verifier;
 
@@ -180,21 +178,6 @@ module verifier_addr::memory_page_fact_registry {
         register_fact(s, fact_hash);
     }
 
-    // TODO: assert admin
-    // Receives a list of MemoryPageEntry. Each element in the list holds arguments for a seperate
-    // call to registerContinuousMemoryPage.
-    public entry fun register_continuous_page_batch(
-        s: &signer,
-        start_addr: vector<u256>,
-        values: vector<vector<u256>>,
-        z: u256,
-        alpha: u256
-    ) {
-        for (i in 0..length(&start_addr) ) {
-            register_continuous_memorypage(s, *borrow(&start_addr, i), *borrow(&values, i), z, alpha);
-        }
-    }
-
     #[test(signer = @0xC0FFEE)]
     fun test_register_continuous_memorypage(signer: &signer) {
         init_fact_registry(signer);
@@ -217,27 +200,5 @@ module verifier_addr::memory_page_fact_registry {
         assert!(log.fact_hash == 0xeb243f0981ec93a0090da83d2351b8d4b2e5cd9cc44be8d4b1119450eac54a6du256, 1);
         assert!(log.memory_hash == 48239457587525216759117913177237902366978204066031868156075383439591598548182, 1);
         assert!(log.prod == 3254870901738389658383135104000411656134098647702871823979226499371705469217, 1);
-    }
-
-    #[test(s = @0xC0FFEE)]
-    // Transaction hash on ETH mainnet for this test: 0x6f59bed6f3df4b87c03c49f11e627e842ae5708a3670f428ddfb83c5b98d3754.
-    fun test_register_continuous_page_batch(s: &signer) {
-        init_fact_registry(s);
-        register_continuous_page_batch(
-            s,
-            vector[1771799, 1771808],
-            vector[vector[1007, 1006, 1005, 1004, 1003, 1002, 1001],
-                vector[1008, 1007, 1006, 1005, 1004, 1003, 1002, 1001]],
-            3199940278565943790978406278706496237292797978280982699986488410844249594708,
-            195072032121178106591923000375621188629735561133807175660265096969353999946
-        );
-        is_valid(
-            address_of(s),
-            49238381412124717490517111631696093427076824100526472039743966257691104387218
-        );
-        is_valid(
-            address_of(s),
-            54205816271920378481316162362155116341907231556132238625024261418992095639341
-        );
     }
 }

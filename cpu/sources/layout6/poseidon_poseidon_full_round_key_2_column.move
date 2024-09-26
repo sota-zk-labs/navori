@@ -1,4 +1,4 @@
-module cpu_addr::poseidon_poseidon_full_round_key_2_column_7 {
+module cpu_addr::poseidon_poseidon_full_round_key_2_column_6 {
     use lib_addr::prime_field_element_0::fmul;
 
     // This line is used for generating constants DO NOT REMOVE!

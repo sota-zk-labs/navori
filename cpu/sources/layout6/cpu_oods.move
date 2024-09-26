@@ -1,4 +1,5 @@
-module cpu_addr::cpu_oods_7 {
+module cpu_addr::cpu_oods_6 {
+    // Todo: convert to layout6
     use std::signer::address_of;
     use std::vector::{borrow, for_each_ref, push_back, borrow_mut};
 
@@ -7,7 +8,7 @@ module cpu_addr::cpu_oods_7 {
 
     // This line is used for generating constants DO NOT REMOVE!
     // 2 + N_ROWS_IN_MASK
-    const BATCH_INVERSE_CHUNK: u64 = 0x64;
+    const BATCH_INVERSE_CHUNK: u64 = 0xc3;
     // 4
     const CHECKPOINT1_FB: u8 = 0x4;
     // 5
@@ -24,24 +25,24 @@ module cpu_addr::cpu_oods_7 {
     const K_MODULUS: u256 = 0x800000000000011000000000000000000000000000000000000000000000001;
     // 113078212145816603762751633895895194930089271709401121343797004406777446400
     const K_MONTGOMERY_R_INV: u256 = 0x40000000000001100000000000012100000000000000000000000000000000;
-    // 1178
-    const MM_COMPOSITION_QUERY_RESPONSES: u64 = 0x49a;
+    // 0x492
+    const MM_COMPOSITION_QUERY_RESPONSES: u64 = 0x492;
     // 109
     const MM_FRI_QUEUE: u64 = 0x6d;
     // 9
     const MM_N_UNIQUE_QUERIES: u64 = 0x9;
-    // 601
-    const MM_OODS_ALPHA: u64 = 0x259;
-    // 553
-    const MM_OODS_EVAL_POINTS: u64 = 0x229;
-    // 351
-    const MM_OODS_POINT: u64 = 0x15f;
-    // 350
-    const MM_TRACE_GENERATOR: u64 = 0x15e;
-    // 602
-    const MM_TRACE_QUERY_RESPONSES: u64 = 0x25a;
-    // 98
-    const N_ROWS_IN_MASK: u256 = 0x62;
+    // 0x2b1
+    const MM_OODS_ALPHA: u64 = 0x2b1;
+    // 0x281
+    const MM_OODS_EVAL_POINTS: u64 = 0x281;
+    // 0x168
+    const MM_OODS_POINT: u64 = 0x168;
+    // 0x167
+    const MM_TRACE_GENERATOR: u64 = 0x167;
+    // 0x2b2
+    const MM_TRACE_QUERY_RESPONSES: u64 = 0x2b2;
+    // 193
+    const N_ROWS_IN_MASK: u256 = 0xc1;
     // End of generating constants!
 
     const DENOMINATORS_PTR_OFFSET: vector<vector<u64>> = vector[
@@ -877,8 +878,8 @@ module cpu_addr::cpu_oods_7 {
 }
 
 #[test_only]
-module cpu_addr::test_cpu_oods_7 {
-    use cpu_addr::cpu_oods_7::{fallback, init_data_type};
+module cpu_addr::test_cpu_oods_6 {
+    use cpu_addr::cpu_oods_6::{fallback, init_data_type};
     use cpu_addr::cpu_oods_7_test_data::{ctx_input, ctx_output};
 
     #[test(signer = @cpu_addr)]

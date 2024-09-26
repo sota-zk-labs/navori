@@ -3,7 +3,7 @@ module verifier_addr::test_gps_statement_verifier {
     use std::signer::address_of;
     use std::vector::{for_each_ref};
 
-    use cpu_addr::cpu_oods_7::get_cpu_oods_fb_checkpoint;
+    use cpu_addr::cpu_oods_6::get_cpu_oods_fb_checkpoint;
     use verifier_addr::constructor::init_all;
     use verifier_addr::fact_registry::{is_valid, register_facts};
     use verifier_addr::gps_statement_verifier::{get_vpar_checkpoint,
@@ -14,7 +14,7 @@ module verifier_addr::test_gps_statement_verifier {
         pre_registered_facts_,
         proof_,
         proof_params_, registered_facts_, task_metadata_};
-    use verifier_addr::stark_verifier_7::{get_cffl_checkpoint, get_occ_checkpoint, get_vp_checkpoint};
+    use verifier_addr::stark_verifier_6::{get_cffl_checkpoint, get_occ_checkpoint, get_vp_checkpoint};
 
     // This line is used for generating constants DO NOT REMOVE!
     // 1
@@ -114,19 +114,19 @@ module verifier_addr::test_gps_statement_verifier {
         assert!(get_occ_checkpoint(signer) == CHECKPOINT2_OCC, 1);
         verify_proof_and_register(signer);
         assert!(get_occ_checkpoint(signer) == CHECKPOINT1_OCC, 1);
-        // verify_proof_external::CHECKPOINT4_VP::compute_first_fri_layer::CHECKPOINT2_CFFL + cpu_oods_7::fallback::CHECKPOINT1_FB
+        // verify_proof_external::CHECKPOINT4_VP::compute_first_fri_layer::CHECKPOINT2_CFFL + cpu_oods_6::fallback::CHECKPOINT1_FB
         assert!(get_vpar_checkpoint(signer) == CHECKPOINT2_VPAR, 1);
         assert!(get_vp_checkpoint(signer) == CHECKPOINT4_VP, 1);
         assert!(get_cffl_checkpoint(signer) == CHECKPOINT2_CFFL, 1);
         assert!(get_cpu_oods_fb_checkpoint(signer) == CHECKPOINT1_FB, 1);
         verify_proof_and_register(signer);
-        // verify_proof_external::CHECKPOINT4_VP::compute_first_fri_layer::cpu_oods_7::fallback::CHECKPOINT2_FB, loop 1
+        // verify_proof_external::CHECKPOINT4_VP::compute_first_fri_layer::cpu_oods_6::fallback::CHECKPOINT2_FB, loop 1
         assert!(get_vpar_checkpoint(signer) == CHECKPOINT2_VPAR, 1);
         assert!(get_vp_checkpoint(signer) == CHECKPOINT4_VP, 1);
         assert!(get_cffl_checkpoint(signer) == CHECKPOINT3_CFFL, 1);
         assert!(get_cpu_oods_fb_checkpoint(signer) == CHECKPOINT2_FB, 1);
         verify_proof_and_register(signer);
-        // verify_proof_external::CHECKPOINT4_VP::compute_first_fri_layer::cpu_oods_7::fallback::CHECKPOINT2_FB, loop 2, finish compute_first_fri_layer + verify_proof_external
+        // verify_proof_external::CHECKPOINT4_VP::compute_first_fri_layer::cpu_oods_6::fallback::CHECKPOINT2_FB, loop 2, finish compute_first_fri_layer + verify_proof_external
         assert!(get_vpar_checkpoint(signer) == CHECKPOINT2_VPAR, 1);
         assert!(get_vp_checkpoint(signer) == CHECKPOINT4_VP, 1);
         assert!(get_cffl_checkpoint(signer) == CHECKPOINT3_CFFL, 1);

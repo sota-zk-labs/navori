@@ -1,13 +1,13 @@
-module verifier_addr::fri_7 {
+module verifier_addr::fri_6 {
     use std::vector::{borrow, borrow_mut, length};
 
-    use cpu_addr::memory_access_utils_7::get_fri_step_sizes;
+    use cpu_addr::memory_access_utils_6::get_fri_step_sizes;
 
     use lib_addr::prime_field_element_0::{fmul, fpow};
     use lib_addr::vector::set_el;
     use verifier_addr::horner_evaluator::horner_eval;
 
-    friend verifier_addr::stark_verifier_7;
+    friend verifier_addr::stark_verifier_6;
 
     // This line is used for generating constants DO NOT REMOVE!
     // 2

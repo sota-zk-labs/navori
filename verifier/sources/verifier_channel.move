@@ -18,8 +18,8 @@ module verifier_addr::verifier_channel {
     const K_MONTGOMERY_R_INV: u256 = 0x40000000000001100000000000012100000000000000000000000000000000;
     // End of generating constants!
 
-    friend verifier_addr::stark_verifier_7;
-    friend verifier_addr::fri_statement_verifier_7;
+    friend verifier_addr::stark_verifier_6;
+    friend verifier_addr::fri_statement_verifier_6;
 
     public(friend) fun init_channel(ctx: &mut vector<u256>, channel_ptr: u64, public_input_hash: u256) {
         // set `ctx[channel_ptr]` as index 0 in `proof`

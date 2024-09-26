@@ -1,4 +1,4 @@
-module cpu_addr::memory_access_utils_7 {
+module cpu_addr::memory_access_utils_6 {
     use std::vector::{borrow, slice};
 
     // This line is used for generating constants DO NOT REMOVE!

@@ -1,11 +1,11 @@
-module verifier_addr::fri_statement_verifier_7 {
+module verifier_addr::fri_statement_verifier_6 {
     #[test_only]
     use std::vector::push_back;
     use std::signer::address_of;
     use std::vector::{borrow, borrow_mut, length, slice};
     use aptos_std::aptos_hash::keccak256;
 
-    use cpu_addr::memory_access_utils_7::get_fri_step_sizes;
+    use cpu_addr::memory_access_utils_6::get_fri_step_sizes;
 
     use lib_addr::bytes::{bytes32_to_u256, vec_to_bytes_le};
     use lib_addr::prime_field_element_0::{fmul, fpow};
@@ -14,7 +14,7 @@ module verifier_addr::fri_statement_verifier_7 {
     use verifier_addr::horner_evaluator::horner_eval;
     use verifier_addr::verifier_channel::read_bytes;
 
-    friend verifier_addr::stark_verifier_7;
+    friend verifier_addr::stark_verifier_6;
 
     // This line is used for generating constants DO NOT REMOVE!
     // 1
@@ -207,9 +207,9 @@ module verifier_addr::fri_statement_verifier_7 {
 }
 
 #[test_only]
-module verifier_addr::test_fri_statement_verifier_7 {
+module verifier_addr::test_fri_statement_verifier_6 {
     use verifier_addr::fact_registry::init_fact_registry;
-    use verifier_addr::fri_statement_verifier_7::fri_verify_layers_for_testing;
+    use verifier_addr::fri_statement_verifier_6::fri_verify_layers_for_testing;
     use verifier_addr::fri_statement_verifier_7_test_data::{ctx_, proof_, proof_params_};
 
     #[test(signer = @0xC0FFEE)]

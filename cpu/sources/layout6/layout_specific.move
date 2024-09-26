@@ -1,26 +1,38 @@
-module cpu_addr::layout_specific_7 {
+module cpu_addr::layout_specific_6 {
     use std::vector::borrow;
+    use cpu_addr::ecdsa_points_y_column;
+    use cpu_addr::ecdsa_points_x_column;
 
     use lib_addr::prime_field_element_0::{fadd, fmul, fpow};
     use lib_addr::vector::set_el;
 
     use cpu_addr::pedersen_hash_points_x_column;
     use cpu_addr::pedersen_hash_points_y_column;
-    use cpu_addr::poseidon_poseidon_full_round_key_0_column_7;
-    use cpu_addr::poseidon_poseidon_full_round_key_1_column_7;
-    use cpu_addr::poseidon_poseidon_full_round_key_2_column_7;
-    use cpu_addr::poseidon_poseidon_partial_round_key_0_column_7;
-    use cpu_addr::poseidon_poseidon_partial_round_key_1_column_7;
+    use cpu_addr::poseidon_poseidon_full_round_key_0_column_6;
+    use cpu_addr::poseidon_poseidon_full_round_key_1_column_6;
+    use cpu_addr::poseidon_poseidon_full_round_key_2_column_6;
+    use cpu_addr::poseidon_poseidon_partial_round_key_0_column_6;
+    use cpu_addr::poseidon_poseidon_partial_round_key_1_column_6;
 
     // This line is used for generating constants DO NOT REMOVE!
     // 4
-    const BITWISE_BUILTIN_BIT: u256 = 0x4;
-    // 8
-    const BITWISE__RATIO: u256 = 0x8;
+    const BITWISE_BUILTIN_BIT: u8 = 0x4;
+    // 64
+    const BITWISE__RATIO: u256 = 0x40;
     // 16
     const DILUTED_N_BITS: u256 = 0x10;
     // 4
     const DILUTED_SPACING: u8 = 0x4;
+    // 3
+    const ECDSA_BUILTIN_BIT: u8 = 0x3;
+    // 2048
+    const ECDSA_BUILTIN_RATIO: u256 = 0x800;
+    // 1
+    const ECDSA_BUILTIN_REPETITIONS: u256 = 0x1;
+    // 5
+    const EC_OP_BUILTIN_BIT: u8 = 0x5;
+    // 1024
+    const EC_OP_BUILTIN_RATIO: u256 = 0x400;
     // 4
     const EINVALID_STOP_PTR: u64 = 0x4;
     // 6
@@ -31,100 +43,128 @@ module cpu_addr::layout_specific_7 {
     const EOUT_OF_RANGE_BEGIN_ADDR: u64 = 0x3;
     // 2
     const EOUT_OF_RANGE_OUTPUT_STOP_PTR: u64 = 0x2;
-    // 343
-    const MM_DILUTED_CHECK__FINAL_CUM_VAL: u64 = 0x157;
-    // 340
-    const MM_DILUTED_CHECK__FIRST_ELM: u64 = 0x154;
-    // 342
-    const MM_DILUTED_CHECK__INTERACTION_ALPHA: u64 = 0x156;
-    // 341
-    const MM_DILUTED_CHECK__INTERACTION_Z: u64 = 0x155;
-    // 338
-    const MM_DILUTED_CHECK__PERMUTATION__INTERACTION_ELM: u64 = 0x152;
-    // 339
-    const MM_DILUTED_CHECK__PERMUTATION__PUBLIC_MEMORY_PROD: u64 = 0x153;
-    // 348
-    const MM_INITIAL_BITWISE_ADDR: u64 = 0x15c;
-    // 346
-    const MM_INITIAL_PEDERSEN_ADDR: u64 = 0x15a;
-    // 349
-    const MM_INITIAL_POSEIDON_ADDR: u64 = 0x15d;
-    // 347
-    const MM_INITIAL_RANGE_CHECK_ADDR: u64 = 0x15b;
-    // 352
-    const MM_INTERACTION_ELEMENTS: u64 = 0x160;
-    // 1274
-    const MM_LOG_N_STEPS: u64 = 0x4fa;
-    // 351
-    const MM_OODS_POINT: u64 = 0x15f;
-    // 344
-    const MM_PEDERSEN__SHIFT_POINT_X: u64 = 0x158;
-    // 345
-    const MM_PEDERSEN__SHIFT_POINT_Y: u64 = 0x159;
+    // 0x159
+    const MM_DILUTED_CHECK__FINAL_CUM_VAL: u64 = 0x159;
+    // 0x156
+    const MM_DILUTED_CHECK__FIRST_ELM: u64 = 0x156;
+    // 0x158
+    const MM_DILUTED_CHECK__INTERACTION_ALPHA: u64 = 0x158;
+    // 0x157
+    const MM_DILUTED_CHECK__INTERACTION_Z: u64 = 0x157;
+    // 0x154
+    const MM_DILUTED_CHECK__PERMUTATION__INTERACTION_ELM: u64 = 0x154;
+    // 0x155
+    const MM_DILUTED_CHECK__PERMUTATION__PUBLIC_MEMORY_PROD: u64 = 0x155;
+    // 0x15e
+    const MM_ECDSA__SIG_CONFIG_ALPHA: u64 = 0x15e;
+    // 0x161
+    const MM_ECDSA__SIG_CONFIG_BETA: u64 = 0x161;
+    // 0x15f
+    const MM_ECDSA__SIG_CONFIG_SHIFT_POINT_X: u64 = 0x15f;
+    // 0x160
+    const MM_ECDSA__SIG_CONFIG_SHIFT_POINT_Y: u64 = 0x160;
+    // 0x165
+    const MM_EC_OP__CURVE_CONFIG_ALPHA: u64 = 0x165;
+    // 0x163
+    const MM_INITIAL_BITWISE_ADDR: u64 = 0x163;
+    // 0x162
+    const MM_INITIAL_ECDSA_ADDR: u64 = 0x162;
+    // 0x164
+    const MM_INITIAL_EC_OP_ADDR: u64 = 0x164;
+    // 0x15c
+    const MM_INITIAL_PEDERSEN_ADDR: u64 = 0x15c;
+    // 0x166
+    const MM_INITIAL_POSEIDON_ADDR: u64 = 0x166;
+    // 0x15d
+    const MM_INITIAL_RANGE_CHECK_ADDR: u64 = 0x15d;
+    // 0x169
+    const MM_INTERACTION_ELEMENTS: u64 = 0x169;
+    // 0x4f2
+    const MM_LOG_N_STEPS: u64 = 0x4f2;
+    // 0x168
+    const MM_OODS_POINT: u64 = 0x168;
+    // 0x15a
+    const MM_PEDERSEN__SHIFT_POINT_X: u64 = 0x15a;
+    // 0x15b
+    const MM_PEDERSEN__SHIFT_POINT_Y: u64 = 0x15b;
+    // 0x13f
+    const MM_PERIODIC_COLUMN__ECDSA__GENERATOR_POINTS__X: u64 = 0x13f;
+    // 0x140
+    const MM_PERIODIC_COLUMN__ECDSA__GENERATOR_POINTS__Y: u64 = 0x140;
     // 317
     const MM_PERIODIC_COLUMN__PEDERSEN__POINTS__X: u64 = 0x13d;
     // 318
     const MM_PERIODIC_COLUMN__PEDERSEN__POINTS__Y: u64 = 0x13e;
-    // 319
-    const MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__FULL_ROUND_KEY0: u64 = 0x13f;
-    // 320
-    const MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__FULL_ROUND_KEY1: u64 = 0x140;
-    // 321
-    const MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__FULL_ROUND_KEY2: u64 = 0x141;
-    // 322
-    const MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__PARTIAL_ROUND_KEY0: u64 = 0x142;
-    // 323
-    const MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__PARTIAL_ROUND_KEY1: u64 = 0x143;
-    // 335
-    const MM_RANGE_CHECK16__PERM__PUBLIC_MEMORY_PROD: u64 = 0x14f;
-    // 15
-    const OFFSET_BITWISE_BEGIN_ADDR: u64 = 0xf;
+    // 0x141
+    const MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__FULL_ROUND_KEY0: u64 = 0x141;
+    // 0x142
+    const MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__FULL_ROUND_KEY1: u64 = 0x142;
+    // 0x143
+    const MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__FULL_ROUND_KEY2: u64 = 0x143;
+    // 0x144
+    const MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__PARTIAL_ROUND_KEY0: u64 = 0x144;
+    // 0x145
+    const MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__PARTIAL_ROUND_KEY1: u64 = 0x145;
+    // 0x151
+    const MM_RANGE_CHECK16__PERM__PUBLIC_MEMORY_PROD: u64 = 0x151;
     // 16
-    const OFFSET_BITWISE_STOP_PTR: u64 = 0x10;
-    // 21
-    const OFFSET_N_PUBLIC_MEMORY_PAGES: u64 = 0x15;
-    // 9
-    const OFFSET_OUTPUT_BEGIN_ADDR: u64 = 0x9;
-    // 10
-    const OFFSET_OUTPUT_STOP_PTR: u64 = 0xa;
-    // 11
-    const OFFSET_PEDERSEN_BEGIN_ADDR: u64 = 0xb;
-    // 12
-    const OFFSET_PEDERSEN_STOP_PTR: u64 = 0xc;
+    const OFFSET_BITWISE_BEGIN_ADDR: u64 = 0x10;
     // 17
-    const OFFSET_POSEIDON_BEGIN_ADDR: u64 = 0x11;
-    // 18
-    const OFFSET_POSEIDON_STOP_PTR: u64 = 0x12;
-    // 13
-    const OFFSET_RANGE_CHECK_BEGIN_ADDR: u64 = 0xd;
+    const OFFSET_BITWISE_STOP_ADDR: u64 = 0x11;
     // 14
-    const OFFSET_RANGE_CHECK_STOP_PTR: u64 = 0xe;
+    const OFFSET_ECDSA_BEGIN_ADDR: u64 = 0xe;
+    // 15
+    const OFFSET_ECDSA_STOP_PTR: u64 = 0xf;
+    // 18
+    const OFFSET_EC_OP_BEGIN_ADDR: u64 = 0x12;
+    // 19
+    const OFFSET_EC_OP_STOP_ADDR: u64 = 0x13;
+    // 24
+    const OFFSET_N_PUBLIC_MEMORY_PAGES: u64 = 0x18;
+    // 8
+    const OFFSET_OUTPUT_BEGIN_ADDR: u64 = 0x8;
+    // 9
+    const OFFSET_OUTPUT_STOP_PTR: u64 = 0x9;
+    // 10
+    const OFFSET_PEDERSEN_BEGIN_ADDR: u64 = 0xa;
+    // 11
+    const OFFSET_PEDERSEN_STOP_PTR: u64 = 0xb;
+    // 20
+    const OFFSET_POSEIDON_BEGIN_ADDR: u64 = 0x14;
+    // 21
+    const OFFSET_POSEIDON_STOP_PTR: u64 = 0x15;
+    // 12
+    const OFFSET_RANGE_CHECK_BEGIN_ADDR: u64 = 0xc;
+    // 13
+    const OFFSET_RANGE_CHECK_STOP_PTR: u64 = 0xd;
     // 0
-    const OUTPUT_BUILTIN_BIT: u256 = 0x0;
+    const OUTPUT_BUILTIN_BIT: u8 = 0x0;
     // 1
-    const PEDERSEN_BUILTIN_BIT: u256 = 0x1;
-    // 128
-    const PEDERSEN_BUILTIN_RATIO: u256 = 0x80;
+    const PEDERSEN_BUILTIN_BIT: u8 = 0x1;
+    // 32
+    const PEDERSEN_BUILTIN_RATIO: u256 = 0x20;
     // 1
     const PEDERSEN_BUILTIN_REPETITIONS: u256 = 0x1;
     // 7
-    const POSEIDON_BUILTIN_BIT: u256 = 0x7;
-    // 8
-    const POSEIDON__RATIO: u256 = 0x8;
+    const POSEIDON_BUILTIN_BIT: u8 = 0x7;
+    // 32
+    const POSEIDON__RATIO: u256 = 0x20;
     // 2
-    const RANGE_CHECK_BUILTIN_BIT: u256 = 0x2;
-    // 8
-    const RANGE_CHECK_BUILTIN_RATIO: u256 = 0x8;
+    const RANGE_CHECK_BUILTIN_BIT: u8 = 0x2;
+    // 16
+    const RANGE_CHECK_BUILTIN_RATIO: u256 = 0x10;
     // End of generating constants!
 
     #[view]
     public fun get_layout_info(): (u256, u256) {
         let public_memory_offset = OFFSET_N_PUBLIC_MEMORY_PAGES;
-        let selected_builtins = (1u256 << (OUTPUT_BUILTIN_BIT as u8)) |
-            (1 << (PEDERSEN_BUILTIN_BIT as u8)) |
-            (1 << (RANGE_CHECK_BUILTIN_BIT as u8)) |
-            (1 << (BITWISE_BUILTIN_BIT as u8)) |
-            (1 << (POSEIDON_BUILTIN_BIT as u8));
+        let selected_builtins = (1 << OUTPUT_BUILTIN_BIT) |
+            (1 << PEDERSEN_BUILTIN_BIT) |
+            (1 << RANGE_CHECK_BUILTIN_BIT) |
+            (1 << ECDSA_BUILTIN_BIT) |
+            (1 << BITWISE_BUILTIN_BIT) |
+            (1 << EC_OP_BUILTIN_BIT) |
+            (1 << POSEIDON_BUILTIN_BIT);
         ((public_memory_offset as u256), selected_builtins)
     }
 
@@ -176,17 +216,47 @@ module cpu_addr::layout_specific_7 {
         set_el(ctx, MM_INITIAL_RANGE_CHECK_ADDR, *borrow(public_input, OFFSET_RANGE_CHECK_BEGIN_ADDR));
         validate_builtin_pointers(
             *borrow(ctx, MM_INITIAL_RANGE_CHECK_ADDR), *borrow(public_input, OFFSET_RANGE_CHECK_STOP_PTR),
-            RANGE_CHECK_BUILTIN_RATIO, 1, n_steps);
+            RANGE_CHECK_BUILTIN_RATIO, 1, n_steps
+        );
         set_el(ctx, MM_RANGE_CHECK16__PERM__PUBLIC_MEMORY_PROD, 1);
+
+        // "ecdsa" memory segment.
+        set_el(ctx, MM_INITIAL_ECDSA_ADDR, *borrow(public_input, OFFSET_ECDSA_BEGIN_ADDR));
+        validate_builtin_pointers(
+            *borrow(ctx, MM_INITIAL_ECDSA_ADDR), *borrow(public_input, OFFSET_ECDSA_STOP_PTR),
+            ECDSA_BUILTIN_RATIO, 2, n_steps
+        );
+
+        set_el(ctx, MM_ECDSA__SIG_CONFIG_ALPHA, 1);
+        set_el(ctx, MM_ECDSA__SIG_CONFIG_BETA, 0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89);
+        set_el(
+            ctx,
+            MM_ECDSA__SIG_CONFIG_SHIFT_POINT_X,
+            0x49ee3eba8c1600700ee1b87eb599f16716b0b1022947733551fde4050ca6804
+        );
+        set_el(
+            ctx,
+            MM_ECDSA__SIG_CONFIG_SHIFT_POINT_Y,
+            0x3ca0cfe4b3bc6ddf346d49d06ea0ed34e621062c0e056c1d0405d266e10268a
+        );
 
         // "bitwise" memory segment.
         set_el(ctx, MM_INITIAL_BITWISE_ADDR, *borrow(public_input, OFFSET_BITWISE_BEGIN_ADDR));
         validate_builtin_pointers(
-            *borrow(ctx, MM_INITIAL_BITWISE_ADDR), *borrow(public_input, OFFSET_BITWISE_STOP_PTR),
-            BITWISE__RATIO, 5, n_steps);
+            *borrow(ctx, MM_INITIAL_BITWISE_ADDR), *borrow(public_input, OFFSET_BITWISE_STOP_ADDR),
+            BITWISE__RATIO, 5, n_steps
+        );
 
         set_el(ctx, MM_DILUTED_CHECK__PERMUTATION__PUBLIC_MEMORY_PROD, 1);
         set_el(ctx, MM_DILUTED_CHECK__FIRST_ELM, 0);
+
+        // "ec_op" memory segment.
+        set_el(ctx, MM_INITIAL_EC_OP_ADDR, *borrow(public_input, OFFSET_EC_OP_BEGIN_ADDR));
+        validate_builtin_pointers(
+            *borrow(ctx, MM_INITIAL_EC_OP_ADDR), *borrow(public_input, OFFSET_EC_OP_STOP_ADDR),
+            EC_OP_BUILTIN_RATIO, 7, n_steps
+        );
+        set_el(ctx, MM_EC_OP__CURVE_CONFIG_ALPHA, 1);
 
         // "poseidon" memory segment.
         set_el(ctx, MM_INITIAL_POSEIDON_ADDR, *borrow(public_input, OFFSET_POSEIDON_BEGIN_ADDR));
@@ -217,6 +287,16 @@ module cpu_addr::layout_specific_7 {
             MM_PERIODIC_COLUMN__PEDERSEN__POINTS__Y,
             pedersen_hash_points_y_column::compute(z_point_pow_pedersen)
         );
+
+        // The number of copies in the ECDSA signature periodic columns is
+        // nSteps / ECDSA_BUILTIN_RATIO / ECDSA_BUILTIN_REPETITIONS.
+        let n_ecdsa_signature_copies = safe_div(
+            1 << (*borrow(ctx, MM_LOG_N_STEPS) as u8),
+            ECDSA_BUILTIN_RATIO * ECDSA_BUILTIN_REPETITIONS);
+        let z_point_pow_ecdsa = fpow(oods_point, n_ecdsa_signature_copies);
+
+        set_el(ctx, MM_PERIODIC_COLUMN__ECDSA__GENERATOR_POINTS__X, ecdsa_points_x_column::compute(z_point_pow_ecdsa));
+        set_el(ctx, MM_PERIODIC_COLUMN__ECDSA__GENERATOR_POINTS__Y, ecdsa_points_y_column::compute(z_point_pow_ecdsa));
 
         let tmp = *borrow(ctx, mm_interaction_elements + 3);
         set_el(
@@ -256,27 +336,27 @@ module cpu_addr::layout_specific_7 {
         set_el(
             ctx,
             MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__FULL_ROUND_KEY0,
-            poseidon_poseidon_full_round_key_0_column_7::compute(z_point_pow_poseidon)
+            poseidon_poseidon_full_round_key_0_column_6::compute(z_point_pow_poseidon)
         );
         set_el(
             ctx,
             MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__FULL_ROUND_KEY1,
-            poseidon_poseidon_full_round_key_1_column_7::compute(z_point_pow_poseidon)
+            poseidon_poseidon_full_round_key_1_column_6::compute(z_point_pow_poseidon)
         );
         set_el(
             ctx,
             MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__FULL_ROUND_KEY2,
-            poseidon_poseidon_full_round_key_2_column_7::compute(z_point_pow_poseidon)
+            poseidon_poseidon_full_round_key_2_column_6::compute(z_point_pow_poseidon)
         );
         set_el(
             ctx,
             MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__PARTIAL_ROUND_KEY0,
-            poseidon_poseidon_partial_round_key_0_column_7::compute(z_point_pow_poseidon)
+            poseidon_poseidon_partial_round_key_0_column_6::compute(z_point_pow_poseidon)
         );
         set_el(
             ctx,
             MM_PERIODIC_COLUMN__POSEIDON__POSEIDON__PARTIAL_ROUND_KEY1,
-            poseidon_poseidon_partial_round_key_1_column_7::compute(z_point_pow_poseidon)
+            poseidon_poseidon_partial_round_key_1_column_6::compute(z_point_pow_poseidon)
         );
     }
 
