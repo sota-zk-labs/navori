@@ -1433,9 +1433,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for memory/multi_column_perm/perm/init0: (memory/multi_column_perm/perm/interaction_elm - (column6_row0 + memory/multi_column_perm/hash_interaction_elm0 * column6_row1)) * column9_inter1_row0 + column5_row0 + memory/multi_column_perm/hash_interaction_elm0 * column5_row1 - memory/multi_column_perm/perm/interaction_elm
+//Constraint expression for memory/multi_column_perm/perm/init0: (memory__multi_column_perm__perm__interaction_elm - (column6_row0 + memory__multi_column_perm__hash_interaction_elm0 * column6_row1)) * column9_inter1_row0 + column5_row0 + memory__multi_column_perm__hash_interaction_elm0 * column5_row1 - memory__multi_column_perm__perm__interaction_elm
 {
-let val =((((((fmul((((((/*memory*/ *borrow(&ctx, ### unknow ###) / /*multi_column_perm*/ *borrow(&ctx, ### unknow ###)) / /*perm*/ *borrow(&ctx, ### unknow ###)) / /*interaction_elm*/ *borrow(&ctx, ### unknow ###)) + (PRIME - ((/*column6_row0*/ *borrow(&ctx, 297) + fmul(((/*memory*/ *borrow(&ctx, ### unknow ###) / /*multi_column_perm*/ *borrow(&ctx, ### unknow ###)) / /*hash_interaction_elm0*/ *borrow(&ctx, ### unknow ###)), /*column6_row1*/ *borrow(&ctx, 298))) % PRIME))) % PRIME), /*column9_inter1_row0*/ *borrow(&ctx, 415)) + /*column5_row0*/ *borrow(&ctx, 247)) % PRIME) + fmul(((/*memory*/ *borrow(&ctx, ### unknow ###) / /*multi_column_perm*/ *borrow(&ctx, ### unknow ###)) / /*hash_interaction_elm0*/ *borrow(&ctx, ### unknow ###)), /*column5_row1*/ *borrow(&ctx, 248))) % PRIME) + (PRIME - (((/*memory*/ *borrow(&ctx, ### unknow ###) / /*multi_column_perm*/ *borrow(&ctx, ### unknow ###)) / /*perm*/ *borrow(&ctx, ### unknow ###)) / /*interaction_elm*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((((((fmul(((/*memory__multi_column_perm__perm__interaction_elm*/ memory__multi_column_perm__perm__interaction_elm + (PRIME - ((/*column6_row0*/ *borrow(&ctx, 297) + fmul(/*memory__multi_column_perm__hash_interaction_elm0*/ memory__multi_column_perm__hash_interaction_elm0, /*column6_row1*/ *borrow(&ctx, 298))) % PRIME))) % PRIME), /*column9_inter1_row0*/ *borrow(&ctx, 415)) + /*column5_row0*/ *borrow(&ctx, 247)) % PRIME) + fmul(/*memory__multi_column_perm__hash_interaction_elm0*/ memory__multi_column_perm__hash_interaction_elm0, /*column5_row1*/ *borrow(&ctx, 248))) % PRIME) + (PRIME - /*memory__multi_column_perm__perm__interaction_elm*/ memory__multi_column_perm__perm__interaction_elm)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -1446,9 +1446,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for memory/multi_column_perm/perm/step0: (memory/multi_column_perm/perm/interaction_elm - (column6_row2 + memory/multi_column_perm/hash_interaction_elm0 * column6_row3)) * column9_inter1_row2 - (memory/multi_column_perm/perm/interaction_elm - (column5_row2 + memory/multi_column_perm/hash_interaction_elm0 * column5_row3)) * column9_inter1_row0
+//Constraint expression for memory/multi_column_perm/perm/step0: (memory__multi_column_perm__perm__interaction_elm - (column6_row2 + memory__multi_column_perm__hash_interaction_elm0 * column6_row3)) * column9_inter1_row2 - (memory__multi_column_perm__perm__interaction_elm - (column5_row2 + memory__multi_column_perm__hash_interaction_elm0 * column5_row3)) * column9_inter1_row0
 {
-let val =((fmul((((((/*memory*/ *borrow(&ctx, ### unknow ###) / /*multi_column_perm*/ *borrow(&ctx, ### unknow ###)) / /*perm*/ *borrow(&ctx, ### unknow ###)) / /*interaction_elm*/ *borrow(&ctx, ### unknow ###)) + (PRIME - ((/*column6_row2*/ *borrow(&ctx, 299) + fmul(((/*memory*/ *borrow(&ctx, ### unknow ###) / /*multi_column_perm*/ *borrow(&ctx, ### unknow ###)) / /*hash_interaction_elm0*/ *borrow(&ctx, ### unknow ###)), /*column6_row3*/ *borrow(&ctx, 300))) % PRIME))) % PRIME), /*column9_inter1_row2*/ *borrow(&ctx, 417)) + (PRIME - fmul((((((/*memory*/ *borrow(&ctx, ### unknow ###) / /*multi_column_perm*/ *borrow(&ctx, ### unknow ###)) / /*perm*/ *borrow(&ctx, ### unknow ###)) / /*interaction_elm*/ *borrow(&ctx, ### unknow ###)) + (PRIME - ((/*column5_row2*/ *borrow(&ctx, 249) + fmul(((/*memory*/ *borrow(&ctx, ### unknow ###) / /*multi_column_perm*/ *borrow(&ctx, ### unknow ###)) / /*hash_interaction_elm0*/ *borrow(&ctx, ### unknow ###)), /*column5_row3*/ *borrow(&ctx, 250))) % PRIME))) % PRIME), /*column9_inter1_row0*/ *borrow(&ctx, 415)))) % PRIME);
+let val =((fmul(((/*memory__multi_column_perm__perm__interaction_elm*/ memory__multi_column_perm__perm__interaction_elm + (PRIME - ((/*column6_row2*/ *borrow(&ctx, 299) + fmul(/*memory__multi_column_perm__hash_interaction_elm0*/ memory__multi_column_perm__hash_interaction_elm0, /*column6_row3*/ *borrow(&ctx, 300))) % PRIME))) % PRIME), /*column9_inter1_row2*/ *borrow(&ctx, 417)) + (PRIME - fmul(((/*memory__multi_column_perm__perm__interaction_elm*/ memory__multi_column_perm__perm__interaction_elm + (PRIME - ((/*column5_row2*/ *borrow(&ctx, 249) + fmul(/*memory__multi_column_perm__hash_interaction_elm0*/ memory__multi_column_perm__hash_interaction_elm0, /*column5_row3*/ *borrow(&ctx, 250))) % PRIME))) % PRIME), /*column9_inter1_row0*/ *borrow(&ctx, 415)))) % PRIME);
 // Numerator
 // val *= numerator
 val = fmul(val, *borrow(&ctx, 572));
@@ -1462,9 +1462,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for memory/multi_column_perm/perm/last: column9_inter1_row0 - memory/multi_column_perm/perm/public_memory_prod
+//Constraint expression for memory/multi_column_perm/perm/last: column9_inter1_row0 - memory__multi_column_perm__perm__public_memory_prod
 {
-let val =((/*column9_inter1_row0*/ *borrow(&ctx, 415) + (PRIME - (((/*memory*/ *borrow(&ctx, ### unknow ###) / /*multi_column_perm*/ *borrow(&ctx, ### unknow ###)) / /*perm*/ *borrow(&ctx, ### unknow ###)) / /*public_memory_prod*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((/*column9_inter1_row0*/ *borrow(&ctx, 415) + (PRIME - /*memory__multi_column_perm__perm__public_memory_prod*/ memory__multi_column_perm__perm__public_memory_prod)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -1546,9 +1546,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for rc16/perm/init0: (rc16/perm/interaction_elm - column7_row2) * column9_inter1_row1 + column7_row0 - rc16/perm/interaction_elm
+//Constraint expression for rc16/perm/init0: (rc16__perm__interaction_elm - column7_row2) * column9_inter1_row1 + column7_row0 - rc16__perm__interaction_elm
 {
-let val =((((fmul(((((/*rc16*/ *borrow(&ctx, ### unknow ###) / /*perm*/ *borrow(&ctx, ### unknow ###)) / /*interaction_elm*/ *borrow(&ctx, ### unknow ###)) + (PRIME - /*column7_row2*/ *borrow(&ctx, 303))) % PRIME), /*column9_inter1_row1*/ *borrow(&ctx, 416)) + /*column7_row0*/ *borrow(&ctx, 301)) % PRIME) + (PRIME - ((/*rc16*/ *borrow(&ctx, ### unknow ###) / /*perm*/ *borrow(&ctx, ### unknow ###)) / /*interaction_elm*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((((fmul(((/*rc16__perm__interaction_elm*/ rc16__perm__interaction_elm + (PRIME - /*column7_row2*/ *borrow(&ctx, 303))) % PRIME), /*column9_inter1_row1*/ *borrow(&ctx, 416)) + /*column7_row0*/ *borrow(&ctx, 301)) % PRIME) + (PRIME - /*rc16__perm__interaction_elm*/ rc16__perm__interaction_elm)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -1559,9 +1559,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for rc16/perm/step0: (rc16/perm/interaction_elm - column7_row6) * column9_inter1_row5 - (rc16/perm/interaction_elm - column7_row4) * column9_inter1_row1
+//Constraint expression for rc16/perm/step0: (rc16__perm__interaction_elm - column7_row6) * column9_inter1_row5 - (rc16__perm__interaction_elm - column7_row4) * column9_inter1_row1
 {
-let val =((fmul(((((/*rc16*/ *borrow(&ctx, ### unknow ###) / /*perm*/ *borrow(&ctx, ### unknow ###)) / /*interaction_elm*/ *borrow(&ctx, ### unknow ###)) + (PRIME - /*column7_row6*/ *borrow(&ctx, 307))) % PRIME), /*column9_inter1_row5*/ *borrow(&ctx, 419)) + (PRIME - fmul(((((/*rc16*/ *borrow(&ctx, ### unknow ###) / /*perm*/ *borrow(&ctx, ### unknow ###)) / /*interaction_elm*/ *borrow(&ctx, ### unknow ###)) + (PRIME - /*column7_row4*/ *borrow(&ctx, 305))) % PRIME), /*column9_inter1_row1*/ *borrow(&ctx, 416)))) % PRIME);
+let val =((fmul(((/*rc16__perm__interaction_elm*/ rc16__perm__interaction_elm + (PRIME - /*column7_row6*/ *borrow(&ctx, 307))) % PRIME), /*column9_inter1_row5*/ *borrow(&ctx, 419)) + (PRIME - fmul(((/*rc16__perm__interaction_elm*/ rc16__perm__interaction_elm + (PRIME - /*column7_row4*/ *borrow(&ctx, 305))) % PRIME), /*column9_inter1_row1*/ *borrow(&ctx, 416)))) % PRIME);
 // Numerator
 // val *= numerator
 val = fmul(val, *borrow(&ctx, 575));
@@ -1575,9 +1575,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for rc16/perm/last: column9_inter1_row1 - rc16/perm/public_memory_prod
+//Constraint expression for rc16/perm/last: column9_inter1_row1 - rc16__perm__public_memory_prod
 {
-let val =((/*column9_inter1_row1*/ *borrow(&ctx, 416) + (PRIME - ((/*rc16*/ *borrow(&ctx, ### unknow ###) / /*perm*/ *borrow(&ctx, ### unknow ###)) / /*public_memory_prod*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((/*column9_inter1_row1*/ *borrow(&ctx, 416) + (PRIME - /*rc16__perm__public_memory_prod*/ rc16__perm__public_memory_prod)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -1630,9 +1630,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for diluted_check/permutation/init0: (diluted_check/permutation/interaction_elm - column7_row5) * column9_inter1_row7 + column7_row1 - diluted_check/permutation/interaction_elm
+//Constraint expression for diluted_check/permutation/init0: (diluted_check__permutation__interaction_elm - column7_row5) * column9_inter1_row7 + column7_row1 - diluted_check__permutation__interaction_elm
 {
-let val =((((fmul(((((/*diluted_check*/ *borrow(&ctx, ### unknow ###) / /*permutation*/ *borrow(&ctx, ### unknow ###)) / /*interaction_elm*/ *borrow(&ctx, ### unknow ###)) + (PRIME - /*column7_row5*/ *borrow(&ctx, 306))) % PRIME), /*column9_inter1_row7*/ *borrow(&ctx, 420)) + /*column7_row1*/ *borrow(&ctx, 302)) % PRIME) + (PRIME - ((/*diluted_check*/ *borrow(&ctx, ### unknow ###) / /*permutation*/ *borrow(&ctx, ### unknow ###)) / /*interaction_elm*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((((fmul(((/*diluted_check__permutation__interaction_elm*/ diluted_check__permutation__interaction_elm + (PRIME - /*column7_row5*/ *borrow(&ctx, 306))) % PRIME), /*column9_inter1_row7*/ *borrow(&ctx, 420)) + /*column7_row1*/ *borrow(&ctx, 302)) % PRIME) + (PRIME - /*diluted_check__permutation__interaction_elm*/ diluted_check__permutation__interaction_elm)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -1643,9 +1643,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for diluted_check/permutation/step0: (diluted_check/permutation/interaction_elm - column7_row13) * column9_inter1_row15 - (diluted_check/permutation/interaction_elm - column7_row9) * column9_inter1_row7
+//Constraint expression for diluted_check/permutation/step0: (diluted_check__permutation__interaction_elm - column7_row13) * column9_inter1_row15 - (diluted_check__permutation__interaction_elm - column7_row9) * column9_inter1_row7
 {
-let val =((fmul(((((/*diluted_check*/ *borrow(&ctx, ### unknow ###) / /*permutation*/ *borrow(&ctx, ### unknow ###)) / /*interaction_elm*/ *borrow(&ctx, ### unknow ###)) + (PRIME - /*column7_row13*/ *borrow(&ctx, 313))) % PRIME), /*column9_inter1_row15*/ *borrow(&ctx, 422)) + (PRIME - fmul(((((/*diluted_check*/ *borrow(&ctx, ### unknow ###) / /*permutation*/ *borrow(&ctx, ### unknow ###)) / /*interaction_elm*/ *borrow(&ctx, ### unknow ###)) + (PRIME - /*column7_row9*/ *borrow(&ctx, 310))) % PRIME), /*column9_inter1_row7*/ *borrow(&ctx, 420)))) % PRIME);
+let val =((fmul(((/*diluted_check__permutation__interaction_elm*/ diluted_check__permutation__interaction_elm + (PRIME - /*column7_row13*/ *borrow(&ctx, 313))) % PRIME), /*column9_inter1_row15*/ *borrow(&ctx, 422)) + (PRIME - fmul(((/*diluted_check__permutation__interaction_elm*/ diluted_check__permutation__interaction_elm + (PRIME - /*column7_row9*/ *borrow(&ctx, 310))) % PRIME), /*column9_inter1_row7*/ *borrow(&ctx, 420)))) % PRIME);
 // Numerator
 // val *= numerator
 val = fmul(val, *borrow(&ctx, 576));
@@ -1659,9 +1659,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for diluted_check/permutation/last: column9_inter1_row7 - diluted_check/permutation/public_memory_prod
+//Constraint expression for diluted_check/permutation/last: column9_inter1_row7 - diluted_check__permutation__public_memory_prod
 {
-let val =((/*column9_inter1_row7*/ *borrow(&ctx, 420) + (PRIME - ((/*diluted_check*/ *borrow(&ctx, ### unknow ###) / /*permutation*/ *borrow(&ctx, ### unknow ###)) / /*public_memory_prod*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((/*column9_inter1_row7*/ *borrow(&ctx, 420) + (PRIME - /*diluted_check__permutation__public_memory_prod*/ diluted_check__permutation__public_memory_prod)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -1685,9 +1685,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for diluted_check/first_element: column7_row5 - diluted_check/first_elm
+//Constraint expression for diluted_check/first_element: column7_row5 - diluted_check__first_elm
 {
-let val =((/*column7_row5*/ *borrow(&ctx, 306) + (PRIME - (/*diluted_check*/ *borrow(&ctx, ### unknow ###) / /*first_elm*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((/*column7_row5*/ *borrow(&ctx, 306) + (PRIME - /*diluted_check__first_elm*/ diluted_check__first_elm)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -1698,9 +1698,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for diluted_check/step: column9_inter1_row11 - (column9_inter1_row3 * (1 + diluted_check/interaction_z * (column7_row13 - column7_row5)) + diluted_check/interaction_alpha * (column7_row13 - column7_row5) * (column7_row13 - column7_row5))
+//Constraint expression for diluted_check/step: column9_inter1_row11 - (column9_inter1_row3 * (1 + diluted_check__interaction_z * (column7_row13 - column7_row5)) + diluted_check__interaction_alpha * (column7_row13 - column7_row5) * (column7_row13 - column7_row5))
 {
-let val =((/*column9_inter1_row11*/ *borrow(&ctx, 421) + (PRIME - ((fmul(/*column9_inter1_row3*/ *borrow(&ctx, 418), ((1 + fmul((/*diluted_check*/ *borrow(&ctx, ### unknow ###) / /*interaction_z*/ *borrow(&ctx, ### unknow ###)), ((/*column7_row13*/ *borrow(&ctx, 313) + (PRIME - /*column7_row5*/ *borrow(&ctx, 306))) % PRIME))) % PRIME)) + fmul(fmul((/*diluted_check*/ *borrow(&ctx, ### unknow ###) / /*interaction_alpha*/ *borrow(&ctx, ### unknow ###)), ((/*column7_row13*/ *borrow(&ctx, 313) + (PRIME - /*column7_row5*/ *borrow(&ctx, 306))) % PRIME)), ((/*column7_row13*/ *borrow(&ctx, 313) + (PRIME - /*column7_row5*/ *borrow(&ctx, 306))) % PRIME))) % PRIME))) % PRIME);
+let val =((/*column9_inter1_row11*/ *borrow(&ctx, 421) + (PRIME - ((fmul(/*column9_inter1_row3*/ *borrow(&ctx, 418), ((1 + fmul(/*diluted_check__interaction_z*/ diluted_check__interaction_z, ((/*column7_row13*/ *borrow(&ctx, 313) + (PRIME - /*column7_row5*/ *borrow(&ctx, 306))) % PRIME))) % PRIME)) + fmul(fmul(/*diluted_check__interaction_alpha*/ diluted_check__interaction_alpha, ((/*column7_row13*/ *borrow(&ctx, 313) + (PRIME - /*column7_row5*/ *borrow(&ctx, 306))) % PRIME)), ((/*column7_row13*/ *borrow(&ctx, 313) + (PRIME - /*column7_row5*/ *borrow(&ctx, 306))) % PRIME))) % PRIME))) % PRIME);
 // Numerator
 // val *= numerator
 val = fmul(val, *borrow(&ctx, 576));
@@ -1714,9 +1714,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for diluted_check/last: column9_inter1_row3 - diluted_check/final_cum_val
+//Constraint expression for diluted_check/last: column9_inter1_row3 - diluted_check__final_cum_val
 {
-let val =((/*column9_inter1_row3*/ *borrow(&ctx, 418) + (PRIME - (/*diluted_check*/ *borrow(&ctx, ### unknow ###) / /*final_cum_val*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((/*column9_inter1_row3*/ *borrow(&ctx, 418) + (PRIME - /*diluted_check__final_cum_val*/ diluted_check__final_cum_val)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -1959,9 +1959,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for pedersen/hash0/init/x: column1_row0 - pedersen/shift_point.x
+//Constraint expression for pedersen/hash0/init/x: column1_row0 - pedersen__shift_point.x
 {
-let val =((/*column1_row0*/ *borrow(&ctx, 227) + (PRIME - (/*pedersen*/ *borrow(&ctx, ### unknow ###) / /*shift_point.x*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((/*column1_row0*/ *borrow(&ctx, 227) + (PRIME - /*pedersen__shift_point__x*/ pedersen__shift_point__x)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -1972,9 +1972,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for pedersen/hash0/init/y: column2_row0 - pedersen/shift_point.y
+//Constraint expression for pedersen/hash0/init/y: column2_row0 - pedersen__shift_point.y
 {
-let val =((/*column2_row0*/ *borrow(&ctx, 232) + (PRIME - (/*pedersen*/ *borrow(&ctx, ### unknow ###) / /*shift_point.y*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((/*column2_row0*/ *borrow(&ctx, 232) + (PRIME - /*pedersen__shift_point__y*/ pedersen__shift_point__y)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -2121,9 +2121,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for ecdsa/signature0/doubling_key/slope: ecdsa__signature0__doubling_key__x_squared + ecdsa__signature0__doubling_key__x_squared + ecdsa__signature0__doubling_key__x_squared + ecdsa/sig_config.alpha - (column8_row36 + column8_row36) * column8_row50
+//Constraint expression for ecdsa/signature0/doubling_key/slope: ecdsa__signature0__doubling_key__x_squared + ecdsa__signature0__doubling_key__x_squared + ecdsa__signature0__doubling_key__x_squared + ecdsa__sig_config.alpha - (column8_row36 + column8_row36) * column8_row50
 {
-let val =((((((((/*ecdsa__signature0__doubling_key__x_squared*/ *borrow(&ctx, 455) + /*ecdsa__signature0__doubling_key__x_squared*/ *borrow(&ctx, 455)) % PRIME) + /*ecdsa__signature0__doubling_key__x_squared*/ *borrow(&ctx, 455)) % PRIME) + (/*ecdsa*/ *borrow(&ctx, ### unknow ###) / /*sig_config.alpha*/ *borrow(&ctx, ### unknow ###))) % PRIME) + (PRIME - fmul(((/*column8_row36*/ *borrow(&ctx, 366) + /*column8_row36*/ *borrow(&ctx, 366)) % PRIME), /*column8_row50*/ *borrow(&ctx, 370)))) % PRIME);
+let val =((((((((/*ecdsa__signature0__doubling_key__x_squared*/ *borrow(&ctx, 455) + /*ecdsa__signature0__doubling_key__x_squared*/ *borrow(&ctx, 455)) % PRIME) + /*ecdsa__signature0__doubling_key__x_squared*/ *borrow(&ctx, 455)) % PRIME) + /*ecdsa__sig_config__alpha*/ ecdsa__sig_config__alpha) % PRIME) + (PRIME - fmul(((/*column8_row36*/ *borrow(&ctx, 366) + /*column8_row36*/ *borrow(&ctx, 366)) % PRIME), /*column8_row50*/ *borrow(&ctx, 370)))) % PRIME);
 // Numerator
 // val *= numerator
 val = fmul(val, *borrow(&ctx, 582));
@@ -2445,9 +2445,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for ecdsa/signature0/init_gen/x: column8_row6 - ecdsa/sig_config.shift_point.x
+//Constraint expression for ecdsa/signature0/init_gen/x: column8_row6 - ecdsa__sig_config.shift_point.x
 {
-let val =((/*column8_row6*/ *borrow(&ctx, 356) + (PRIME - (/*ecdsa*/ *borrow(&ctx, ### unknow ###) / /*sig_config.shift_point.x*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((/*column8_row6*/ *borrow(&ctx, 356) + (PRIME - /*ecdsa__sig_config__shift_point__x*/ ecdsa__sig_config__shift_point__x)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -2458,9 +2458,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for ecdsa/signature0/init_gen/y: column8_row70 + ecdsa/sig_config.shift_point.y
+//Constraint expression for ecdsa/signature0/init_gen/y: column8_row70 + ecdsa__sig_config.shift_point.y
 {
-let val =((/*column8_row70*/ *borrow(&ctx, 376) + (/*ecdsa*/ *borrow(&ctx, ### unknow ###) / /*sig_config.shift_point.y*/ *borrow(&ctx, ### unknow ###))) % PRIME);
+let val =((/*column8_row70*/ *borrow(&ctx, 376) + /*ecdsa__sig_config__shift_point__y*/ ecdsa__sig_config__shift_point__y) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -2471,9 +2471,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for ecdsa/signature0/init_key/x: column8_row20 - ecdsa/sig_config.shift_point.x
+//Constraint expression for ecdsa/signature0/init_key/x: column8_row20 - ecdsa__sig_config.shift_point.x
 {
-let val =((/*column8_row20*/ *borrow(&ctx, 361) + (PRIME - (/*ecdsa*/ *borrow(&ctx, ### unknow ###) / /*sig_config.shift_point.x*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((/*column8_row20*/ *borrow(&ctx, 361) + (PRIME - /*ecdsa__sig_config__shift_point__x*/ ecdsa__sig_config__shift_point__x)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -2484,9 +2484,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for ecdsa/signature0/init_key/y: column8_row52 - ecdsa/sig_config.shift_point.y
+//Constraint expression for ecdsa/signature0/init_key/y: column8_row52 - ecdsa__sig_config.shift_point.y
 {
-let val =((/*column8_row52*/ *borrow(&ctx, 371) + (PRIME - (/*ecdsa*/ *borrow(&ctx, ### unknow ###) / /*sig_config.shift_point.y*/ *borrow(&ctx, ### unknow ###)))) % PRIME);
+let val =((/*column8_row52*/ *borrow(&ctx, 371) + (PRIME - /*ecdsa__sig_config__shift_point__y*/ ecdsa__sig_config__shift_point__y)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -2549,9 +2549,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for ecdsa/signature0/extract_r/slope: column8_row32756 + ecdsa/sig_config.shift_point.y - column8_row16346 * (column8_row32724 - ecdsa/sig_config.shift_point.x)
+//Constraint expression for ecdsa/signature0/extract_r/slope: column8_row32756 + ecdsa__sig_config.shift_point.y - column8_row16346 * (column8_row32724 - ecdsa__sig_config.shift_point.x)
 {
-let val =((((/*column8_row32756*/ *borrow(&ctx, 413) + (/*ecdsa*/ *borrow(&ctx, ### unknow ###) / /*sig_config.shift_point.y*/ *borrow(&ctx, ### unknow ###))) % PRIME) + (PRIME - fmul(/*column8_row16346*/ *borrow(&ctx, 399), ((/*column8_row32724*/ *borrow(&ctx, 410) + (PRIME - (/*ecdsa*/ *borrow(&ctx, ### unknow ###) / /*sig_config.shift_point.x*/ *borrow(&ctx, ### unknow ###)))) % PRIME)))) % PRIME);
+let val =((((/*column8_row32756*/ *borrow(&ctx, 413) + /*ecdsa__sig_config__shift_point__y*/ ecdsa__sig_config__shift_point__y) % PRIME) + (PRIME - fmul(/*column8_row16346*/ *borrow(&ctx, 399), ((/*column8_row32724*/ *borrow(&ctx, 410) + (PRIME - /*ecdsa__sig_config__shift_point__x*/ ecdsa__sig_config__shift_point__x)) % PRIME)))) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -2562,9 +2562,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for ecdsa/signature0/extract_r/x: column8_row16346 * column8_row16346 - (column8_row32724 + ecdsa/sig_config.shift_point.x + column8_row12)
+//Constraint expression for ecdsa/signature0/extract_r/x: column8_row16346 * column8_row16346 - (column8_row32724 + ecdsa__sig_config.shift_point.x + column8_row12)
 {
-let val =((fmul(/*column8_row16346*/ *borrow(&ctx, 399), /*column8_row16346*/ *borrow(&ctx, 399)) + (PRIME - ((((/*column8_row32724*/ *borrow(&ctx, 410) + (/*ecdsa*/ *borrow(&ctx, ### unknow ###) / /*sig_config.shift_point.x*/ *borrow(&ctx, ### unknow ###))) % PRIME) + /*column8_row12*/ *borrow(&ctx, 359)) % PRIME))) % PRIME);
+let val =((fmul(/*column8_row16346*/ *borrow(&ctx, 399), /*column8_row16346*/ *borrow(&ctx, 399)) + (PRIME - ((((/*column8_row32724*/ *borrow(&ctx, 410) + /*ecdsa__sig_config__shift_point__x*/ ecdsa__sig_config__shift_point__x) % PRIME) + /*column8_row12*/ *borrow(&ctx, 359)) % PRIME))) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -2575,9 +2575,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for ecdsa/signature0/extract_r/x_diff_inv: column8_row32730 * (column8_row32724 - ecdsa/sig_config.shift_point.x) - 1
+//Constraint expression for ecdsa/signature0/extract_r/x_diff_inv: column8_row32730 * (column8_row32724 - ecdsa__sig_config.shift_point.x) - 1
 {
-let val =((fmul(/*column8_row32730*/ *borrow(&ctx, 411), ((/*column8_row32724*/ *borrow(&ctx, 410) + (PRIME - (/*ecdsa*/ *borrow(&ctx, ### unknow ###) / /*sig_config.shift_point.x*/ *borrow(&ctx, ### unknow ###)))) % PRIME)) + (PRIME - 1)) % PRIME);
+let val =((fmul(/*column8_row32730*/ *borrow(&ctx, 411), ((/*column8_row32724*/ *borrow(&ctx, 410) + (PRIME - /*ecdsa__sig_config__shift_point__x*/ ecdsa__sig_config__shift_point__x)) % PRIME)) + (PRIME - 1)) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -2627,9 +2627,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for ecdsa/signature0/q_on_curve/on_curve: column8_row36 * column8_row36 - (column8_row4 * column8_row32762 + ecdsa/sig_config.alpha * column8_row4 + ecdsa/sig_config.beta)
+//Constraint expression for ecdsa/signature0/q_on_curve/on_curve: column8_row36 * column8_row36 - (column8_row4 * column8_row32762 + ecdsa__sig_config.alpha * column8_row4 + ecdsa__sig_config.beta)
 {
-let val =((fmul(/*column8_row36*/ *borrow(&ctx, 366), /*column8_row36*/ *borrow(&ctx, 366)) + (PRIME - ((((fmul(/*column8_row4*/ *borrow(&ctx, 355), /*column8_row32762*/ *borrow(&ctx, 414)) + fmul((/*ecdsa*/ *borrow(&ctx, ### unknow ###) / /*sig_config.alpha*/ *borrow(&ctx, ### unknow ###)), /*column8_row4*/ *borrow(&ctx, 355))) % PRIME) + (/*ecdsa*/ *borrow(&ctx, ### unknow ###) / /*sig_config.beta*/ *borrow(&ctx, ### unknow ###))) % PRIME))) % PRIME);
+let val =((fmul(/*column8_row36*/ *borrow(&ctx, 366), /*column8_row36*/ *borrow(&ctx, 366)) + (PRIME - ((((fmul(/*column8_row4*/ *borrow(&ctx, 355), /*column8_row32762*/ *borrow(&ctx, 414)) + fmul(/*ecdsa__sig_config__alpha*/ ecdsa__sig_config__alpha, /*column8_row4*/ *borrow(&ctx, 355))) % PRIME) + /*ecdsa__sig_config__beta*/ ecdsa__sig_config__beta) % PRIME))) % PRIME);
 
 // Denominator
 // val *= denominator inverse
@@ -2964,9 +2964,9 @@ composition_alpha_pow = fmul(composition_alpha_pow, composition_alpha);
 
 };
 
-//Constraint expression for ec_op/doubling_q/slope: ec_op__doubling_q__x_squared_0 + ec_op__doubling_q__x_squared_0 + ec_op__doubling_q__x_squared_0 + ec_op/curve_config.alpha - (column8_row28 + column8_row28) * column8_row60
+//Constraint expression for ec_op/doubling_q/slope: ec_op__doubling_q__x_squared_0 + ec_op__doubling_q__x_squared_0 + ec_op__doubling_q__x_squared_0 + ec_op__curve_config.alpha - (column8_row28 + column8_row28) * column8_row60
 {
-let val =((((((((/*ec_op__doubling_q__x_squared_0*/ *borrow(&ctx, 462) + /*ec_op__doubling_q__x_squared_0*/ *borrow(&ctx, 462)) % PRIME) + /*ec_op__doubling_q__x_squared_0*/ *borrow(&ctx, 462)) % PRIME) + (/*ec_op*/ *borrow(&ctx, ### unknow ###) / /*curve_config.alpha*/ *borrow(&ctx, ### unknow ###))) % PRIME) + (PRIME - fmul(((/*column8_row28*/ *borrow(&ctx, 364) + /*column8_row28*/ *borrow(&ctx, 364)) % PRIME), /*column8_row60*/ *borrow(&ctx, 373)))) % PRIME);
+let val =((((((((/*ec_op__doubling_q__x_squared_0*/ *borrow(&ctx, 462) + /*ec_op__doubling_q__x_squared_0*/ *borrow(&ctx, 462)) % PRIME) + /*ec_op__doubling_q__x_squared_0*/ *borrow(&ctx, 462)) % PRIME) + /*ec_op__curve_config__alpha*/ ec_op__curve_config__alpha) % PRIME) + (PRIME - fmul(((/*column8_row28*/ *borrow(&ctx, 364) + /*column8_row28*/ *borrow(&ctx, 364)) % PRIME), /*column8_row60*/ *borrow(&ctx, 373)))) % PRIME);
 // Numerator
 // val *= numerator
 val = fmul(val, *borrow(&ctx, 582));
