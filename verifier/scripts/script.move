@@ -5,14 +5,15 @@ script {
     use verifier_addr::stark_verifier_6::init_stark_verifier;
     use verifier_addr::fact_registry::init_fact_registry;
 
+    // data is taken from https://dashboard.tenderly.co/tx/mainnet/0xf46a29813535d2a53e225a20704647469d521084aaafa6ef99ba12ae2579cb83/debugger?trace=0.1.1
     fun all_constructor(signer: &signer) {
         gps_statement_verifier::init_data_type(signer);
         init_fact_registry(signer);
         init_stark_verifier(signer, 96, 30);
         init_gps_statement_verifier(
             signer,
-            988080400528720010398639244351885480706475299330001427790099377094461351470,
-            160268921359133235574810995023520895391777547407923205700393332203861498631
+            2512868110374320373201527039528844198060791559490644211790716345994094747600,
+            382450030162484995497251732956824096484321811411123989415157331925872358847
         );
         init_compiled_program(signer, vector[
             290341444919459839,

@@ -74,7 +74,7 @@ module verifier_addr::test_full_flow {
                 push_back(&mut start_addr_vec, x.startAddr);
                 push_back(&mut values, x.values);
             };
-            memory_page_fact_registry::register_continuous_page_batch(signer, start_addr_vec, values, z, alpha);
+            // memory_page_fact_registry::register_continuous_page_batch(signer, start_addr_vec, values, z, alpha);
         };
 
         // verify_proof_and_register

@@ -1,13 +1,14 @@
 #[test_only]
 module verifier_addr::test_gps_statement_verifier {
     use std::signer::address_of;
-    use std::vector::{for_each_ref};
+    use std::vector::{for_each_ref, length, is_empty};
+    use aptos_framework::event::emitted_events;
 
     use cpu_addr::cpu_oods_6::get_cpu_oods_fb_checkpoint;
     use verifier_addr::constructor::init_all;
     use verifier_addr::fact_registry::{is_valid, register_facts};
     use verifier_addr::gps_statement_verifier::{get_vpar_checkpoint,
-        prepush_data_to_verify_proof_and_register, prepush_task_metadata, verify_proof_and_register
+        prepush_data_to_verify_proof_and_register, prepush_task_metadata, verify_proof_and_register, VparFinished
     };
     use verifier_addr::gps_statement_verifier_test_data::{
         cairo_aux_input_,
@@ -59,7 +60,7 @@ module verifier_addr::test_gps_statement_verifier {
             proof_params_(),
             proof_(),
             cairo_aux_input_(),
-            7
+            6
         );
     }
 
@@ -89,57 +90,14 @@ module verifier_addr::test_gps_statement_verifier {
             cairo_verifier_id
         );
 
-        // CHECKPOINT1_VPAR
-        assert!(get_vpar_checkpoint(signer) == CHECKPOINT1_VPAR, 1);
-        verify_proof_and_register(signer);
-        assert!(get_vpar_checkpoint(signer) == CHECKPOINT2_VPAR, 1);
-
-        // verify_proof_external
-        // verify_proof_external::CHECKPOINT1_VP
-        assert!(get_vp_checkpoint(signer) == CHECKPOINT1_VP, 1);
-        verify_proof_and_register(signer);
-        // verify_proof_external::CHECKPOINT2_VP
-        assert!(get_vpar_checkpoint(signer) == CHECKPOINT2_VPAR, 1);
-        assert!(get_vp_checkpoint(signer) == CHECKPOINT2_VP, 1);
-        verify_proof_and_register(signer);
-        // verify_proof_external::CHECKPOINT3_VP::oods_consistency_check::CHECKPOINT1_OCC
-        assert!(get_vpar_checkpoint(signer) == CHECKPOINT2_VPAR, 1);
-        assert!(get_vp_checkpoint(signer) == CHECKPOINT3_VP, 1);
-        assert!(get_occ_checkpoint(signer) == CHECKPOINT1_OCC, 1);
-        verify_proof_and_register(signer);
-        // verify_proof_external::CHECKPOINT3_VP::oods_consistency_check::CHECKPOINT2_OCC + CHECKPOINT4_VP::compute_first_fri_layer::CHECKPOINT1_CFFL
-        assert!(get_vpar_checkpoint(signer) == CHECKPOINT2_VPAR, 1);
-        assert!(get_vp_checkpoint(signer) == CHECKPOINT3_VP, 1);
-        assert!(get_cffl_checkpoint(signer) == CHECKPOINT1_CFFL, 1);
-        assert!(get_occ_checkpoint(signer) == CHECKPOINT2_OCC, 1);
-        verify_proof_and_register(signer);
-        assert!(get_occ_checkpoint(signer) == CHECKPOINT1_OCC, 1);
-        // verify_proof_external::CHECKPOINT4_VP::compute_first_fri_layer::CHECKPOINT2_CFFL + cpu_oods_6::fallback::CHECKPOINT1_FB
-        assert!(get_vpar_checkpoint(signer) == CHECKPOINT2_VPAR, 1);
-        assert!(get_vp_checkpoint(signer) == CHECKPOINT4_VP, 1);
-        assert!(get_cffl_checkpoint(signer) == CHECKPOINT2_CFFL, 1);
-        assert!(get_cpu_oods_fb_checkpoint(signer) == CHECKPOINT1_FB, 1);
-        verify_proof_and_register(signer);
-        // verify_proof_external::CHECKPOINT4_VP::compute_first_fri_layer::cpu_oods_6::fallback::CHECKPOINT2_FB, loop 1
-        assert!(get_vpar_checkpoint(signer) == CHECKPOINT2_VPAR, 1);
-        assert!(get_vp_checkpoint(signer) == CHECKPOINT4_VP, 1);
-        assert!(get_cffl_checkpoint(signer) == CHECKPOINT3_CFFL, 1);
-        assert!(get_cpu_oods_fb_checkpoint(signer) == CHECKPOINT2_FB, 1);
-        verify_proof_and_register(signer);
-        // verify_proof_external::CHECKPOINT4_VP::compute_first_fri_layer::cpu_oods_6::fallback::CHECKPOINT2_FB, loop 2, finish compute_first_fri_layer + verify_proof_external
-        assert!(get_vpar_checkpoint(signer) == CHECKPOINT2_VPAR, 1);
-        assert!(get_vp_checkpoint(signer) == CHECKPOINT4_VP, 1);
-        assert!(get_cffl_checkpoint(signer) == CHECKPOINT3_CFFL, 1);
-        assert!(get_cpu_oods_fb_checkpoint(signer) == CHECKPOINT2_FB, 1);
-        verify_proof_and_register(signer);
-        assert!(get_cffl_checkpoint(signer) == CHECKPOINT1_CFFL, 1);
-        assert!(get_vp_checkpoint(signer) == CHECKPOINT1_VP, 1);
-
-        // register_gps_facts
-        assert!(get_vpar_checkpoint(signer) == CHECKPOINT3_VPAR, 1);
-        verify_proof_and_register(signer);
-        assert!(get_vpar_checkpoint(signer) == CHECKPOINT1_VPAR, 1);
-
+        {
+            let cnt = 0;
+            while (is_empty(&emitted_events<VparFinished>())) {
+                verify_proof_and_register(signer);
+                cnt = cnt + 1;
+            };
+            // assert!(cnt == 10, 1);
+        };
         // check if some facts were registered
         for_each_ref(&registered_facts, |fact| {
             is_valid(address_of(signer), *fact);

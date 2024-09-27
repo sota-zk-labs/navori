@@ -177,7 +177,7 @@ module verifier_addr::gps_statement_verifier {
             // Aptos has no abstract contract, so we set `cairo_verifier_id` to 7, as shown in these transactions
             // https://etherscan.io/address/0x47312450b3ac8b5b8e247a6bb6d523e7605bdb60
             // Todo: Consider this function with another `cairo_verifier_id`
-            assert!(*cairo_verifier_id == 7, EWRONG_CAIRO_VERIFIER_ID);
+            assert!(*cairo_verifier_id == 6, EWRONG_CAIRO_VERIFIER_ID);
 
             // The values z and alpha are used only for the fact registration of the main page.
             // They are not part of the public input of CpuVerifier as they are computed there.
