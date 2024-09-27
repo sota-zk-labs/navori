@@ -751,7 +751,7 @@ module cpu_addr::cpu_constraint_poly {
             // Compute the inverses.
             // Loop over denominator_invs in reverse order.
             // currentPartialProductPtr is initialized to one past the end.
-            let currentPartialProductPtr = 380;
+            let currentPartialProductPtr = 566;
             while (currentPartialProductPtr > firstPartialProductPtr) {
                 currentPartialProductPtr = currentPartialProductPtr - 1;
                 // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
