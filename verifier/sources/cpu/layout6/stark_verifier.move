@@ -993,7 +993,7 @@ module verifier_addr::stark_verifier_6 {
         };
 
         let composition_from_trace_value = cpu_constraint_poly::fallback(
-            slice(ctx, MM_CONSTRAINT_POLY_ARGS_START, MM_CONSTRAINT_POLY_ARGS_END)
+            &slice(ctx, MM_CONSTRAINT_POLY_ARGS_START, MM_CONSTRAINT_POLY_ARGS_END)
         );
         let claimed_composition = fadd(
             *borrow(ctx, MM_COMPOSITION_OODS_VALUES),
