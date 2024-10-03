@@ -123,9 +123,8 @@ module cpu_constraint_poly_addr::cpu_constraint_poly {
     // [0x3e80, 0x41c0) - denominators
     // [0x41c0, 0x4280) - expmod_context
 
-
-    public fun fallback(ctx: &vector<u256>): u256 {
-        let ctx = *ctx;
+    #[view]
+    public fun fallback(ctx: vector<u256>): u256 {
         let res = 0;
 
         let remain = 532 - vector::length(&ctx);
@@ -3976,10 +3975,6 @@ module cpu_constraint_poly_addr::cpu_constraint_poly {
         res
     }
 
-
-    #[test_only]
-    use aptos_std::debug;
-
     #[test]
     fun test_fallback() {
         let ctx: vector<u256> = vector[
@@ -4307,6 +4302,6 @@ module cpu_constraint_poly_addr::cpu_constraint_poly {
             1168095051658602970512479413689565228133059840972106807001703195332031377312
         ];
         // assert!(vector::length(&ctx) == 322, 1);
-        assert!(fallback(&ctx) == 0x05e8d33e084cfc2c21b89b4dac503f8cfedf475f16f6f9c3a8686b860bfbbbd9, 1);
+        assert!(fallback(ctx) == 0x05e8d33e084cfc2c21b89b4dac503f8cfedf475f16f6f9c3a8686b860bfbbbd9, 1);
     }
 }
