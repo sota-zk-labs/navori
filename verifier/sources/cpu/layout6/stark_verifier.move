@@ -2,7 +2,6 @@ module verifier_addr::stark_verifier_6 {
     use std::signer::address_of;
     use std::vector::{append, borrow, length, slice, borrow_mut};
     use aptos_std::aptos_hash::keccak256;
-    use cpu_constraint_poly_addr::cpu_constraint_poly;
 
     use cpu_addr::cpu_oods_6;
     use cpu_addr::layout_specific_6::{layout_specific_init, prepare_for_oods_check, safe_div};
@@ -10,6 +9,7 @@ module verifier_addr::stark_verifier_6 {
     use cpu_addr::public_memory_offsets_6::{get_offset_page_addr, get_offset_page_hash, get_offset_page_prod,
         get_offset_page_size, get_public_input_length
     };
+    use cpu_2_addr::cpu_constraint_poly;
 
     use lib_addr::bytes::{bytes32_to_u256, num_to_bytes_le, vec_to_bytes_le, merge_num_offset_8};
     use lib_addr::prime_field_element_0::{fadd, fmul, fpow, fsub, inverse};
@@ -40,6 +40,8 @@ module verifier_addr::stark_verifier_6 {
     const CHECKPOINT3_VP: u8 = 0x8;
     // 9
     const CHECKPOINT4_VP: u8 = 0x9;
+    // 30
+    const CHECKPOINT5_VP: u8 = 0x1e;
     // 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000
     const COMMITMENT_MASK: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000;
     // 2
@@ -657,12 +659,14 @@ module verifier_addr::stark_verifier_6 {
 
         if (*checkpoint == CHECKPOINT4_VP) {
             if (compute_first_fri_layer(signer, ctx, proof)) {
-                fri_statement_verifier_6::fri_verify_layers(signer, ctx, proof, proof_params);
-                *checkpoint = CHECKPOINT1_VP;
-                return true
-            } else {
-                return false
-            }
+                *checkpoint = CHECKPOINT5_VP;
+            };
+            return false
+        };
+
+        if (*checkpoint == CHECKPOINT5_VP) {
+            fri_statement_verifier_6::fri_verify_layers(signer, ctx, proof, proof_params);
+            return true
         };
         return false
     }

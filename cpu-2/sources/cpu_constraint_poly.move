@@ -1,4 +1,4 @@
-module cpu_constraint_poly_addr::cpu_constraint_poly {
+module cpu_2_addr::cpu_constraint_poly {
 
     use std::vector;
     use std::vector::{push_back, borrow, borrow_mut};

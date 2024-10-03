@@ -241,7 +241,6 @@ module verifier_addr::gps_statement_verifier {
             if (verify_proof_external(signer, proof_params, proof, &cairo_public_input)) {
                 *checkpoint = CHECKPOINT3_VPAR;
             };
-            return
         };
 
         if (*checkpoint == CHECKPOINT3_VPAR) {

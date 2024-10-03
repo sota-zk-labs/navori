@@ -1,6 +1,4 @@
 module verifier_addr::fri_statement_verifier_6 {
-    #[test_only]
-    use std::vector::push_back;
     use std::signer::address_of;
     use std::vector::{borrow, borrow_mut, length, slice};
     use aptos_std::aptos_hash::keccak256;

@@ -1,7 +1,5 @@
 module cpu_addr::layout_specific_6 {
     use std::vector::borrow;
-    use cpu_addr::ecdsa_points_y_column;
-    use cpu_addr::ecdsa_points_x_column;
 
     use lib_addr::prime_field_element_0::{fadd, fmul, fpow};
     use lib_addr::vector::set_el;
@@ -13,6 +11,8 @@ module cpu_addr::layout_specific_6 {
     use cpu_addr::poseidon_poseidon_full_round_key_2_column_6;
     use cpu_addr::poseidon_poseidon_partial_round_key_0_column_6;
     use cpu_addr::poseidon_poseidon_partial_round_key_1_column_6;
+    use cpu_2_addr::ecdsa_points_y_column;
+    use cpu_2_addr::ecdsa_points_x_column;
 
     // This line is used for generating constants DO NOT REMOVE!
     // 4

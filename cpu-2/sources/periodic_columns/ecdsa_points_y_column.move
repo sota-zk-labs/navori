@@ -1,4 +1,4 @@
-module cpu_addr::ecdsa_points_y_column {
+module cpu_2_addr::ecdsa_points_y_column {
     use lib_addr::prime_field_element_0::fmul;
 
     // This line is used for generating constants DO NOT REMOVE!
@@ -647,8 +647,8 @@ module cpu_addr::ecdsa_points_y_column {
 }
 
 #[test_only]
-module cpu_addr::test_ecdsa_points_y_column {
-    use cpu_addr::ecdsa_points_y_column::compute;
+module cpu_2_addr::test_ecdsa_points_y_column {
+    use cpu_2_addr::ecdsa_points_y_column::compute;
 
     #[test]
     fun test_compute() {

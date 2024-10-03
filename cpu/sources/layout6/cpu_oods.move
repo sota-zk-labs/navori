@@ -10,10 +10,16 @@ module cpu_addr::cpu_oods_6 {
     const BATCH_INVERSE_CHUNK: u64 = 0xc3;
     // 4
     const CHECKPOINT1_FB: u8 = 0x4;
+    // 20
+    const CHECKPOINT1_OPI: u8 = 0x14;
     // 5
     const CHECKPOINT2_FB: u8 = 0x5;
-    // 8
-    const CPU_OODS_CP2_ITERATION_LENGTH: u64 = 0x8;
+    // 21
+    const CHECKPOINT2_OPI: u8 = 0x15;
+    // 6
+    const CPU_OODS_CP2_ITERATION_LENGTH: u64 = 0x6;
+    // 2600
+    const CPU_OODS_OPI_ITERATION_LENGTH: u64 = 0xa28;
     // 1
     const EBATCH_INVERSE_PRODUCT_IS_ZERO: u64 = 0x1;
     // 3
@@ -80,6 +86,15 @@ module cpu_addr::cpu_oods_6 {
                 composition_query_responses: 0,
                 first_invoking: true
             });
+            move_to(signer, OpiCache {
+                checkpoint: CHECKPOINT1_OPI,
+                partial_product: 0,
+                products_ptr: 0,
+                products_to_values_offset: 0,
+                current_partial_product_ptr: 0,
+                is_in_iteration: false,
+                prod_inv: 0
+            })
         };
     }
 
@@ -100,7 +115,10 @@ module cpu_addr::cpu_oods_6 {
     //   k is the offset in the mask.
     //   d is the degree of the composition polynomial.
     //   c is the evaluation sent by the prover.
-    public fun fallback(signer: &signer, ctx: &mut vector<u256>): bool acquires FbCheckpoint, FbCache, FbCheckpoint2Cache {
+    public fun fallback(
+        signer: &signer,
+        ctx: &mut vector<u256>
+    ): bool acquires FbCheckpoint, FbCache, FbCheckpoint2Cache, OpiCache {
         let signer_addr = address_of(signer);
         let FbCheckpoint {
             inner: checkpoint
@@ -111,8 +129,9 @@ module cpu_addr::cpu_oods_6 {
         } = borrow_global_mut<FbCache>(signer_addr);
         if (*checkpoint == CHECKPOINT1_FB) {
             *n_queries = (*borrow(ctx, MM_N_UNIQUE_QUERIES) as u64);
-            *batch_inverse_array = oods_prepare_inverses(ctx, *n_queries);
-            *checkpoint = CHECKPOINT2_FB;
+            if (oods_prepare_inverses(signer, ctx, *n_queries, batch_inverse_array)) {
+                *checkpoint = CHECKPOINT2_FB;
+            };
             return false
         };
 
@@ -237,16 +256,32 @@ module cpu_addr::cpu_oods_6 {
     // 0..(N_ROWS_IN_MASK-1):   [(x - g^i * z)^(-1) for i in rowsInMask]
     // N_ROWS_IN_MASK:          (x - z^constraintDegree)^-1
     // N_ROWS_IN_MASK+1:        frieval_pointInv.
-    fun oods_prepare_inverses(ctx: &vector<u256>, n_queries: u64): vector<u256> {
-        let batch_inverse_array = assign(0u256, 2 * n_queries * BATCH_INVERSE_CHUNK);
-        let eval_coset_offset = GENERATOR_VAL;
-        // The array expmodsAndPoints stores subexpressions that are needed
-        // for the denominators computation.
-        // The array is segmented as follows:
-        //    expmodsAndPoints[0:33] (.expmods) expmods used during calculations of the points below.
-        //    expmodsAndPoints[33:226] (.points) points used during the denominators calculation.
-        let expmods_and_points = &mut vector[];
-        {
+    fun oods_prepare_inverses(
+        signer: &signer,
+        ctx: &vector<u256>,
+        n_queries: u64,
+        batch_inverse_array: &mut vector<u256>
+    ): bool acquires OpiCache {
+        let OpiCache {
+            checkpoint,
+            partial_product,
+            products_ptr,
+            products_to_values_offset,
+            current_partial_product_ptr,
+            is_in_iteration,
+            prod_inv
+        } = borrow_global_mut<OpiCache>(address_of(signer));
+        if (*checkpoint == CHECKPOINT1_OPI) {
+            *checkpoint = CHECKPOINT2_OPI;
+            *batch_inverse_array = assign(0u256, 2 * n_queries * BATCH_INVERSE_CHUNK);
+
+            // The array expmodsAndPoints stores subexpressions that are needed
+            // for the denominators computation.
+            // The array is segmented as follows:
+            //    expmodsAndPoints[0:33] (.expmods) expmods used during calculations of the points below.
+            //    expmodsAndPoints[33:226] (.points) points used during the denominators calculation.
+
+            let expmods_and_points = &mut vector[];
             let g = /*trace_generator*/ *borrow(ctx, MM_TRACE_GENERATOR);
 
             // Prepare expmods for computations of trace generator powers.
@@ -306,73 +341,85 @@ module cpu_addr::cpu_oods_6 {
             // The batchInverseArray is split into two halves.
             // The first half is used for cumulative products and the second half for values to invert.
             // Consequently the products and values are half the array size apart.
-            let products_ptr = 0;
+            *products_ptr = 0;
             // Compute an offset in bytes to the middle of the array.
-            let products_to_values_offset = n_queries * BATCH_INVERSE_CHUNK;
-            let values_ptr = products_to_values_offset;
-            let partial_product = 1;
+            *products_to_values_offset = n_queries * BATCH_INVERSE_CHUNK;
+            let values_ptr = *products_to_values_offset;
+            *partial_product = 1;
             let minus_point_pow = K_MODULUS - fmul(oods_point, oods_point);
+
             while (eval_points_ptr < eval_points_end_ptr) {
                 let eval_point = *borrow(ctx, eval_points_ptr);
 
                 // Shift eval_point to evaluation domain coset.
-                let shifted_eval_point = fmul(eval_point, eval_coset_offset);
+                let shifted_eval_point = fmul(eval_point, GENERATOR_VAL);
 
                 for (offset in 0..193) {
                     let denominator = shifted_eval_point + *borrow(expmods_and_points, offset);
-                    set_el(&mut batch_inverse_array, products_ptr + offset, partial_product);
-                    set_el(&mut batch_inverse_array, values_ptr + offset, denominator);
-                    partial_product = fmul(partial_product, denominator);
+                    set_el(batch_inverse_array, *products_ptr + offset, *partial_product);
+                    set_el(batch_inverse_array, values_ptr + offset, denominator);
+                    *partial_product = fmul(*partial_product, denominator);
                 };
 
                 {
                     // Calculate the denominator for the composition polynomial columns: x - z^2.
                     let denominator = shifted_eval_point + minus_point_pow;
-                    set_el(&mut batch_inverse_array, products_ptr + 193, partial_product);
-                    set_el(&mut batch_inverse_array, values_ptr + 193, denominator);
-                    partial_product = fmul(partial_product, denominator);
+                    set_el(batch_inverse_array, *products_ptr + 193, *partial_product);
+                    set_el(batch_inverse_array, values_ptr + 193, denominator);
+                    *partial_product = fmul(*partial_product, denominator);
                 };
 
                 // Add eval_point to batch inverse inputs.
                 // inverse(eval_point) is going to be used by FRI.
-                set_el(&mut batch_inverse_array, products_ptr + 194, partial_product);
-                set_el(&mut batch_inverse_array, values_ptr + 194, eval_point);
-                partial_product = fmul(partial_product, eval_point);
+                set_el(batch_inverse_array, *products_ptr + 194, *partial_product);
+                set_el(batch_inverse_array, values_ptr + 194, eval_point);
+                *partial_product = fmul(*partial_product, eval_point);
 
                 // Advance pointers.
-                products_ptr = products_ptr + 195;
+                *products_ptr = *products_ptr + 195;
                 values_ptr = values_ptr + 195;
                 eval_points_ptr = eval_points_ptr + 1;
             };
+            return false
+        };
+        {
+            if (!*is_in_iteration) {
+                *is_in_iteration = true;
+                // Compute the inverse of the product.
+                *prod_inv = inverse(*partial_product);
 
-            let first_partial_product_ptr = 0;
-            // Compute the inverse of the product.
-            let prod_inv = inverse(partial_product);
+                assert!(*prod_inv != 0, EBATCH_INVERSE_PRODUCT_IS_ZERO);
 
-            assert!(prod_inv != 0, EBATCH_INVERSE_PRODUCT_IS_ZERO);
-
-            // Compute the inverses.
-            // Loop over denominator_invs in reverse order.
-            // currentpartial_productPtr is initialized to one past the end.
-            let current_partial_product_ptr = products_ptr;
+                // Compute the inverses.
+                // Loop over denominator_invs in reverse order.
+                // currentpartial_productPtr is initialized to one past the end.
+                *current_partial_product_ptr = *products_ptr;
+            };
             // Loop in blocks of size 8 as much as possible: we can loop over a full block as long as
             // currentpartial_productPtr >= first_partial_product_ptr + 8*0x20, or equivalently,
             // currentpartial_productPtr > first_partial_product_ptr + 7*0x20.
             // We use the latter comparison since there is no >= evm opcode.
-            while (current_partial_product_ptr > first_partial_product_ptr) {
-                current_partial_product_ptr = current_partial_product_ptr - 1;
+            let cnt = 0;
+            while (*current_partial_product_ptr > 0 && cnt < CPU_OODS_OPI_ITERATION_LENGTH) {
+                cnt = cnt + 1;
+                *current_partial_product_ptr = *current_partial_product_ptr - 1;
                 // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
-                let tmp = borrow_mut(&mut batch_inverse_array, current_partial_product_ptr);
-                *tmp = fmul(*tmp, prod_inv);
+                let tmp = borrow_mut(batch_inverse_array, *current_partial_product_ptr);
+                *tmp = fmul(*tmp, *prod_inv);
 
                 // Update prodInv to be 1/(d_0 * ... * d_{i-1}) by multiplying by d_i.
-                prod_inv = fmul(
-                    prod_inv,
-                    *borrow(&batch_inverse_array, current_partial_product_ptr + products_to_values_offset)
+                *prod_inv = fmul(
+                    *prod_inv,
+                    *borrow(batch_inverse_array, *current_partial_product_ptr + *products_to_values_offset)
                 );
             };
+            if (*current_partial_product_ptr > 0) {
+                return false
+            };
         };
-        batch_inverse_array
+        *checkpoint = CHECKPOINT1_OPI;
+        *is_in_iteration = false;
+        true
     }
 
     #[test_only]
@@ -380,8 +427,12 @@ module cpu_addr::cpu_oods_6 {
         borrow_global<FbCheckpoint>(address_of(signer)).inner
     }
 
-    // Data of the function `fallback`
+    #[test_only]
+    public fun get_opi_checkpoint(signer: &signer): u8 acquires OpiCache {
+        borrow_global<OpiCache>(address_of(signer)).checkpoint
+    }
 
+    // Data of the function `fallback`
     struct FbCheckpoint has key {
         inner: u8
     }
@@ -399,21 +450,36 @@ module cpu_addr::cpu_oods_6 {
         composition_query_responses: u64,
         first_invoking: bool
     }
+
+    // Data of the function `oods_prepare_inverses`
+    struct OpiCache has key {
+        checkpoint: u8,
+        partial_product: u256,
+        products_ptr: u64,
+        products_to_values_offset: u64,
+        current_partial_product_ptr: u64,
+        is_in_iteration: bool,
+        prod_inv: u256,
+    }
 }
 
 #[test_only]
 module cpu_addr::test_cpu_oods_6 {
-    use cpu_addr::cpu_oods_6::{fallback, init_data_type, get_cpu_oods_fb_checkpoint};
+    use cpu_addr::cpu_oods_6::{fallback, get_cpu_oods_fb_checkpoint, get_opi_checkpoint, init_data_type};
     use cpu_addr::cpu_oods_6_test_data::{ctx_input, ctx_output};
 
     #[test(signer = @cpu_addr)]
     fun test_fallback(signer: &signer) {
         let ctx = ctx_input();
         init_data_type(signer);
+        let cnt = 0;
         while (!fallback(signer, &mut ctx)) {
-
+            cnt = cnt + 1;
         };
+        let ctx_output_ = ctx_output();
+        assert!(ctx == ctx_output_, 1);
+        assert!(cnt + 1 == 6, 1);
         assert!(get_cpu_oods_fb_checkpoint(signer) == 4, 1);
-        assert!(ctx == ctx_output(), 1);
+        assert!(get_opi_checkpoint(signer) == 20, 1);
     }
 }

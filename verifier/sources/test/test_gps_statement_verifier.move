@@ -1,13 +1,12 @@
 #[test_only]
 module verifier_addr::test_gps_statement_verifier {
     use std::signer::address_of;
-    use std::vector::{for_each_ref, length, is_empty};
+    use std::vector::{for_each_ref, is_empty};
     use aptos_framework::event::emitted_events;
 
-    use cpu_addr::cpu_oods_6::get_cpu_oods_fb_checkpoint;
     use verifier_addr::constructor::init_all;
     use verifier_addr::fact_registry::{is_valid, register_facts};
-    use verifier_addr::gps_statement_verifier::{get_vpar_checkpoint,
+    use verifier_addr::gps_statement_verifier::{
         prepush_data_to_verify_proof_and_register, prepush_task_metadata, verify_proof_and_register, VparFinished
     };
     use verifier_addr::gps_statement_verifier_test_data::{
@@ -15,7 +14,6 @@ module verifier_addr::test_gps_statement_verifier {
         pre_registered_facts_,
         proof_,
         proof_params_, registered_facts_, task_metadata_};
-    use verifier_addr::stark_verifier_6::{get_cffl_checkpoint, get_occ_checkpoint, get_vp_checkpoint};
 
     // This line is used for generating constants DO NOT REMOVE!
     // 1
@@ -96,7 +94,7 @@ module verifier_addr::test_gps_statement_verifier {
                 verify_proof_and_register(signer);
                 cnt = cnt + 1;
             };
-            // assert!(cnt == 10, 1);
+            assert!(cnt == 12, 1);
         };
         // check if some facts were registered
         for_each_ref(&registered_facts, |fact| {
