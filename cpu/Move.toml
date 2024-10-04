@@ -15,7 +15,7 @@ cpu_2_addr = "54ba5979fbdf5fa56c4f4b5147fa33068148d08f6f191c23bca865c21192dcab"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
-rev = "aptos-release-v1.17"
+rev = "mainnet"
 subdir = "aptos-move/framework/aptos-framework"
 
 [dependencies]
