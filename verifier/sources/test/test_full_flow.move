@@ -1,15 +1,13 @@
 #[test_only]
 module verifier_addr::test_full_flow {
-    use std::vector::{borrow, length, pop_back, push_back};
-    use aptos_framework::event::emitted_events;
-    use verifier_addr::gps_statement_verifier_test_data::registered_facts_;
+    use std::vector::{borrow, length, push_back};
 
     use verifier_addr::constructor::init_all;
     use verifier_addr::fri_statement_contract;
+    use verifier_addr::gps_statement_verifier_test_data::registered_facts_;
     use verifier_addr::memory_page_fact_registry;
     use verifier_addr::memory_page_fact_registry::register_continuous_memorypage;
     use verifier_addr::merkle_statement_contract;
-    use verifier_addr::merkle_statement_contract::{merkle_verifier_test, register_fact_verify_merkle_test};
     use verifier_addr::test_gps_statement_verifier::test_vpar_with_data;
 
     #[test(signer = @0xC0FFEE)]
@@ -27,12 +25,6 @@ module verifier_addr::test_full_flow {
                 d.height,
                 d.expected_root
             );
-            let verify_merkle_data = pop_back(&mut emitted_events<merkle_statement_contract::VerifyMerkle>());
-            let register_fact_data = pop_back(
-                &mut emitted_events<merkle_statement_contract::RegisterFactVerifyMerkle>()
-            );
-            merkle_verifier_test(signer, verify_merkle_data);
-            register_fact_verify_merkle_test(signer, register_fact_data);
         };
 
         // verify_fri
@@ -48,19 +40,6 @@ module verifier_addr::test_full_flow {
                 d.fri_step_size,
                 d.expected_root
             );
-
-            let fri_ctx_data = pop_back(&mut emitted_events<fri_statement_contract::FriCtx>());
-            let compute_next_layer_data = pop_back(&mut emitted_events<fri_statement_contract::ComputeNextLayer>());
-            let register_fact_data = pop_back(&mut emitted_events<fri_statement_contract::RegisterFactVerifyFri>());
-
-            fri_statement_contract::init_fri_group_test(signer, fri_ctx_data);
-            fri_statement_contract::compute_next_layer_test(signer, compute_next_layer_data);
-            fri_statement_contract::merkle_verifier_verify_merkle_test(
-                signer,
-                compute_next_layer_data,
-                d.expected_root
-            );
-            fri_statement_contract::register_fact_verify_fri_test(signer, register_fact_data, compute_next_layer_data);
         };
 
         // register_continuous_page_batch
@@ -107,7 +86,7 @@ module verifier_addr::test_full_flow {
     struct MerkleVerifyData has drop {
         merkle_view: vector<u256>,
         initial_merkle_queue: vector<u256>,
-        height: u64,
+        height: u8,
         expected_root: u256
     }
 
@@ -115,7 +94,7 @@ module verifier_addr::test_full_flow {
         proof: vector<u256>,
         fri_queue: vector<u256>,
         evaluation_point: u256,
-        fri_step_size: u256,
+        fri_step_size: u8,
         expected_root: u256
     }
 

@@ -11,3 +11,6 @@ build
 .env
 
 .aptos
+target
+script.mv
+node_modules

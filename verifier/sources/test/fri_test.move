@@ -441,7 +441,7 @@ module verifier_addr::fri_test {
         1127319757609087129328200675198280716580310204088624481346247862057464086751
     }
 
-    public fun get_fri_step_size_3(): u256 {
+    public fun get_fri_step_size_3(): u8 {
         3
     }
 

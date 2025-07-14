@@ -1,0 +1,17 @@
+{
+  "name": "fetch-tx-script",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "csv-parser": "^3.2.0",
+    "ethers": "^6.13.7"
+  }
+}

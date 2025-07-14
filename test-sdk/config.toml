@@ -1,0 +1,9 @@
+#private_key = "0x53c552dc9d159aed0979ea91afb90f5fb30fb38f9c7d547071ad0689f752383c"
+#node_url = "https://api.devnet.aptoslabs.com/v1"
+#verifier_address = "d6286855feb4f01b25f4e29025e41a7d2e1bf3f22b9851c8422717f87ca90c9f"
+#chain_id = "devnet"
+
+private_key = "0x3d31ef06ed8003c3a85125b6e6287967a7b80a3e4367ccf2649e7acd574e4261"
+node_url = "https://rpc.ankr.com/premium-http/aptos_testnet/090ce4fe42402bd2cb87f94bda2e24e72aef10d47de3bc8b9eb0a53bad7a5175/v1"
+verifier_address = "2e88397957d97a90d01f0dbf665b357b9e7053a9efd416beb9a981a69caeda50"
+chain_id = "testnet"

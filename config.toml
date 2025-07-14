@@ -1,0 +1,11 @@
+module_type = "Object"
+network = "Testnet"
+modules_path = [
+    "verifier",
+]
+addresses_name = ["verifier_addr"]
+private_key = "0x3d31ef06ed8003c3a85125b6e6287967a7b80a3e4367ccf2649e7acd574e4261"
+yes = true
+output_json = "deploy.json"
+deployed_addresses = { lib_addr = "c1980667a5223f14f5f139892be109ccb108e5880d70b7bffac944bf5ea46c89", cpu_addr = "9a059f0e5ecff6ee90f2e9a45aa34b5d87425c68a1305036ad2f89c569fba857" }
+publish_code = false

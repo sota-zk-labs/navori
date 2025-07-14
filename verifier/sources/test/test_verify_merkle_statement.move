@@ -2,12 +2,9 @@
 module verifier_addr::test_verify_merkle_statement {
     use std::signer::address_of;
 
-    use verifier_addr::fact_registry::{has_registered_fact, init_fact_registry, is_valid};
-    use verifier_addr::merkle_statement_contract::{register_fact_verify_merkle,
-        verify_merkle
-    };
+    use verifier_addr::fact_registry::{init_fact_registry, is_valid};
+    use verifier_addr::merkle_statement_contract::verify_merkle;
     use verifier_addr::merkle_test::{get_initial_merkle_queue, get_merkle_view_data};
-    use verifier_addr::merkle_verifier;
 
     #[test(s = @verifier_addr)]
     fun test_verify_merkle(s: &signer) {
@@ -16,25 +13,10 @@ module verifier_addr::test_verify_merkle_statement {
             get_merkle_view_data(),
             get_initial_merkle_queue(),
             32,
-            66279586371982341056910360864513599119118930197222666183661655062851553853440
+            10028740412614278997957658341540121122792137513379868883624040118376804122624
         );
-        merkle_verifier::verify_merkle(
-            s,
-            339,
-            317,
-            66279586371982341056910360864513599119118930197222666183661655062851553853440,
-            11
-        );
-        register_fact_verify_merkle(
-            s,
-            339,
-            362,
-            11,
-            66279586371982341056910360864513599119118930197222666183661655062851553853440
-        );
-        assert!(has_registered_fact(address_of(s)), 1);
         assert!(
-            is_valid(address_of(s), 90537849416064557563569375121414678656919271734973262170882463995226949569973),
+            is_valid(address_of(s), 0xe5a075894b9d396f9d78159b43d2d16da5fd2fed9562c193308b190e7eeedc76),
             1
         );
     }

@@ -1,13 +1,13 @@
 #[test_only]
 module verifier_addr::test_gps_statement_verifier {
     use std::signer::address_of;
-    use std::vector::{for_each_ref};
+    use std::vector::for_each_ref;
 
     use cpu_addr::cpu_oods_7::get_cpu_oods_fb_checkpoint;
     use verifier_addr::constructor::init_all;
     use verifier_addr::fact_registry::{is_valid, register_facts};
     use verifier_addr::gps_statement_verifier::{get_vpar_checkpoint,
-        prepush_data_to_verify_proof_and_register, prepush_task_metadata, verify_proof_and_register
+        prepush_data_to_verify_proof_and_register, prepush_task_metadata, reset_data, verify_proof_and_register
     };
     use verifier_addr::gps_statement_verifier_test_data::{
         cairo_aux_input_,
@@ -144,5 +144,7 @@ module verifier_addr::test_gps_statement_verifier {
         for_each_ref(&registered_facts, |fact| {
             is_valid(address_of(signer), *fact);
         });
+
+        reset_data(signer);
     }
 }

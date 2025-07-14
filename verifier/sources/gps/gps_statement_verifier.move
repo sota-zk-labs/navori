@@ -122,6 +122,21 @@ module verifier_addr::gps_statement_verifier {
         stark_verifier_7::init_data_type(signer);
     }
 
+    public entry fun reset_data(signer: &signer) acquires TaskMetaData, VparParams, VparCheckpoint {
+        let signer_addr = address_of(signer);
+        if (exists<TaskMetaData>(signer_addr)) {
+            move_from<TaskMetaData>(signer_addr);
+        };
+        if (exists<VparParams>(signer_addr)) {
+            move_from<VparParams>(signer_addr);
+        };
+        if (exists<VparCheckpoint>(signer_addr)) {
+            move_from<VparCheckpoint>(signer_addr);
+        };
+        stark_verifier_7::reset_data(signer);
+        init_data_type(signer)
+    }
+
     public entry fun prepush_data_to_verify_proof_and_register(
         signer: &signer,
         proof_params: vector<u256>,

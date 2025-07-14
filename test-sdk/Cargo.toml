@@ -1,0 +1,17 @@
+[package]
+name = "test-sdk"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aptos-sdk = { git = "https://github.com/sota-zk-labs/aptos-core", branch = "jayce-aptos-node-v1.23.5" }
+serde = { version = "1.0.219", features = ["derive"] }
+anyhow = "1.0.98"
+config = "0.15.11"
+tokio = { version = "1.41.1" }
+serde_json = "1.0.140"
+log = "0.4.27"
+
+[patch.crates-io]
+merlin = { git = "https://github.com/aptos-labs/merlin" }
+x25519-dalek = { git = "https://github.com/Tranduy1dol/x25519-dalek", branch = "zeroize_v1.7" }

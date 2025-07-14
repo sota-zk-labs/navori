@@ -85,6 +85,19 @@ module cpu_addr::cpu_oods_7 {
         };
     }
 
+    public fun reset_data(signer: &signer) acquires FbCheckpoint2Cache, FbCheckpoint, FbCache {
+        let signer_addr = address_of(signer);
+        if (exists<FbCheckpoint>(signer_addr)) {
+            move_from<FbCheckpoint>(signer_addr);
+        };
+        if (exists<FbCache>(signer_addr)) {
+            move_from<FbCache>(signer_addr);
+        };
+        if (exists<FbCheckpoint2Cache>(signer_addr)) {
+            move_from<FbCheckpoint2Cache>(signer_addr);
+        };
+    }
+
     //  Builds and sums boundary constraints that check that the prover provided the proper evaluations
     //  out of domain evaluations for the trace and composition columns.
     //  The inputs to this function are:
@@ -857,16 +870,16 @@ module cpu_addr::cpu_oods_7 {
 
     // Data of the function `fallback`
 
-    struct FbCheckpoint has key {
+    struct FbCheckpoint has key, drop {
         inner: u8
     }
 
-    struct FbCache has key {
+    struct FbCache has key, drop {
         n_queries: u64,
         batch_inverse_array: vector<u256>
     }
 
-    struct FbCheckpoint2Cache has key {
+    struct FbCheckpoint2Cache has key, drop {
         fri_queue: u64,
         fri_queue_end: u64,
         trace_query_responses: u64,
